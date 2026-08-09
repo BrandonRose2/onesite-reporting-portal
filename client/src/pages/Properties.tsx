@@ -1,0 +1,20 @@
+import { Panel, currency } from "@/components/delinquency-ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpc } from "@/lib/trpc";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
+
+export default function Properties() {
+  const [, setLocation] = useLocation();
+  const periodsQuery = trpc.delinquency.periods.useQuery();
+  const [periodId, setPeriodId] = useState<number | undefined>();
+  useEffect(() => { if (!periodId && periodsQuery.data?.[0]) setPeriodId(periodsQuery.data[0].id); }, [periodId, periodsQuery.data]);
+  const dashboardQuery = trpc.delinquency.dashboard.useQuery(periodId ? { reportingPeriodId: periodId } : undefined);
+  const [search, setSearch] = useState("");
+  const properties = useMemo(() => (dashboardQuery.data?.regions.flatMap(region => region.properties) ?? []).filter(property => `${property.name} ${property.externalId} ${property.region}`.toLowerCase().includes(search.toLowerCase())), [dashboardQuery.data, search]);
+  if (dashboardQuery.isLoading) return <Skeleton className="h-96 rounded-[1.25rem]" />;
+  return <div className="space-y-6"><section><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0c7469]">Portfolio register</p><h1 className="mt-1 text-3xl font-semibold tracking-[-0.045em] text-[#122b4b]">Property reporting status</h1><p className="mt-2 text-sm text-slate-600">Review current-period exposure, aging, and source-report readiness across the portfolio.</p></section><Panel title="Property summaries" action={<div className="flex gap-2"><div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" /><Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search property or ID" className="h-9 w-56 pl-9 text-xs" /></div><Button variant="outline" size="icon" aria-label="Filter properties"><SlidersHorizontal className="h-4 w-4" /></Button></div>}><div className="overflow-x-auto"><table className="w-full min-w-[820px] text-left"><thead className="bg-[#f6f8fb] text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500"><tr><th className="px-6 py-3">Property</th><th className="px-4 py-3">Region</th><th className="px-4 py-3 text-right">Net balance</th><th className="px-4 py-3 text-right">Current</th><th className="px-4 py-3 text-right">30 days</th><th className="px-4 py-3 text-right">60 days</th><th className="px-4 py-3 text-right">90+ days</th><th className="px-6 py-3 text-right">Units</th></tr></thead><tbody className="divide-y divide-slate-100">{properties.map(property => <tr key={property.id} className="cursor-pointer text-sm transition-colors hover:bg-[#f8fafc]" onClick={() => setLocation(`/properties/${property.id}?period=${periodId}`)}><td className="px-6 py-4"><p className="font-semibold text-[#122b4b]">{property.name}</p><p className="mt-1 text-xs text-slate-500">ID {property.externalId}</p></td><td className="px-4 py-4"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{property.region}</span></td><td className="px-4 py-4 text-right font-semibold text-[#122b4b]">{currency(property.netBalance)}</td><td className="px-4 py-4 text-right text-slate-600">{currency(property.currentAmount)}</td><td className="px-4 py-4 text-right text-slate-600">{currency(property.days30Amount)}</td><td className="px-4 py-4 text-right text-[#b7791f]">{currency(property.days60Amount)}</td><td className="px-4 py-4 text-right font-semibold text-[#b44851]">{currency(property.days90PlusAmount)}</td><td className="px-6 py-4 text-right text-slate-600">{property.delinquentUnits}</td></tr>)}{!properties.length ? <tr><td colSpan={8} className="px-6 py-10 text-center text-sm text-slate-500">No matching property summaries are available for this reporting period.</td></tr> : null}</tbody></table></div></Panel></div>;
+}

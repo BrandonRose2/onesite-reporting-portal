@@ -3,14 +3,31 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import Compare from "./pages/Compare";
+import History from "./pages/History";
+import Properties from "./pages/Properties";
+import PropertyDetail from "./pages/PropertyDetail";
+import Refresh from "./pages/Refresh";
+import AutomationSettings from "./pages/AutomationSettings";
+
+function PortalRoute({ children }: { children: React.ReactNode }) {
+  return <DashboardLayout>{children}</DashboardLayout>;
+}
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"}><PortalRoute><Dashboard /></PortalRoute></Route>
+      <Route path={"/properties"}><PortalRoute><Properties /></PortalRoute></Route>
+      <Route path={"/properties/:propertyId"}><PortalRoute><PropertyDetail /></PortalRoute></Route>
+      <Route path={"/history"}><PortalRoute><History /></PortalRoute></Route>
+      <Route path={"/compare"}><PortalRoute><Compare /></PortalRoute></Route>
+      <Route path={"/refresh"}><PortalRoute><Refresh /></PortalRoute></Route>
+      <Route path={"/automation"}><PortalRoute><AutomationSettings /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

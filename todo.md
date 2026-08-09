@@ -1,0 +1,57 @@
+# Project TODO
+
+- [x] Define database tables for reporting periods, properties, source files, resident-account detail, and audit metadata.
+- [x] Implement role-aware authenticated access using the existing Manus OAuth model.
+- [x] Add administrator-only XLS batch-ingestion service for 35-property Delinquent and Prepaid exports.
+- [x] Preserve source filenames, property IDs, import timestamps, and source-file links for every imported period.
+- [x] Build the portfolio dashboard with net delinquent, net prepaid, resident count, and Current / 30 / 60 / 90+ aging metrics.
+- [x] Build four regional property views with property-level balance, delinquent-unit, and aging summaries.
+- [x] Build an entity drill-down with resident-account detail, transaction codes, collection notes, and aging fields.
+- [x] Add named reporting-period history and month-over-month comparison views.
+- [x] Add printable portfolio summaries and CSV / Excel data exports.
+- [ ] Align the Run Scraper interaction with the reference dashboard’s same-entry control and progress workflow.
+- [ ] Load and reconcile the Fiscal Period 04/2026, as-of 08/05/2026 initial dataset.
+- [x] Securely extract and validate the attached 35-entity XLS import archive before loading the initial period.
+- [ ] Verify one complete 35-file import creates an auditable reporting-period snapshot and updates dashboard/history views.
+- [x] Add unit tests for XLS parsing and authenticated session behavior.
+- [ ] Verify responsive UI, import behavior, dashboard calculations, exports, and error states.
+- [ ] Save the final project checkpoint and provide publishing guidance.
+- [ ] Configure secure source retrieval and the recurring refresh schedule after initial delivery.
+- [ ] Validate and align the final portal workflow with the referenced Monthly Inspections system, without reusing its source data.
+- [ ] Document the exact report-selection and download steps for both connected source sites during the user-guided browser walkthrough.
+- [ ] Design the two-source secure retrieval mapping, batch validation, and recurring refresh schedule from the observed workflows.
+- [ ] Observe one representative property download flow on each source site, including filters and output formats.
+- [ ] Complete the current RealPage/OneSite workflow capture and implementation before adding the separately demonstrated Yardi workflow.
+- [ ] Use the user-confirmed browser session only for the remaining RealPage/OneSite workflow capture.
+- [x] Transfer the representative Anaheim Gardens RealPage download into a controlled ingestion workspace and validate its portal storage record.
+- [x] Confirm that the RealPage Delinquent and Prepaid report uses its built-in defaults; no separate Filters configuration is required.
+- [x] Diagnose and resolve the user-reported empty portal preview while preserving authenticated access controls.
+- [ ] Map all 35 properties to their correct RealPage/OneSite or Yardi report-source workflow.
+- [ ] Observe and document a representative Yardi delinquency-report download flow separately from the RealPage/OneSite flow.
+- [ ] File every downloaded XLS/PDF in secure storage under its source site, property, and reporting-period snapshot.
+- [ ] Create a scrape-run history record with source-site status, processed properties, stored documents, imported rows, validation totals, and warnings.
+- [ ] Present each scheduled run’s summary alongside its archived documents and resulting reporting period in the portal history.
+- [ ] Implement the approved automated RealPage/OneSite retrieval workflow, including idempotent run execution and source-file archival.
+- [ ] Obtain or capture the authenticated RealPage API/export request that generates the browser CSV, replacing the non-server-retrievable browser blob download.
+- [x] Create one editable manager Markdown checklist per building from the attached delinquency and availability reports.
+- [x] Include availability follow-up, current resident prepaid/paid/owed status, checkboxes, and manager notes in every checklist.
+- [x] Cross-reference every property’s Delinquent and Prepaid spreadsheet with its companion Availability PDF before drafting the manager checklist.
+- [x] Validate and package the manager checklist files for immediate email distribution.
+- [x] Place the manager checklist ZIP and a locally accessible checklist folder in the attached OneDrive workspace.
+- [x] Convert every manager Markdown checklist into an editable Word document and place it in the attached OneDrive workspace.
+- [x] Convert the attached manager Markdown archive into individual PDFs and deliver a consolidated PDF ZIP.
+- [x] Redesign all manager checklist PDFs to match the supplied Boca Ciega Townhomes reference layout and visual style.
+- [x] Review the attached RealPage automation reference and align compatible Reports Hub settings in the portal.
+- [x] Align the portal’s administrator settings with the documented Reports Hub flow for all-property Delinquent and Prepaid Excel plus Availability PDF generation and download.
+- [ ] Add an interactive RealPage 2FA/session-setup step so scheduled retrieval can reuse a trusted browser profile securely.
+- [ ] Provision and configure the approved persistent browser-runner environment for the RealPage scheduled automation.
+- [ ] Evaluate and select a free GitHub, Docker, or local-Mac execution option for the persistent RealPage runner.
+- [ ] Implement or import the tested RealPage Reports Hub runner with persistent trusted-session setup and 2FA bootstrap support.
+- [ ] Wire the authenticated RealPage runner into queued manual and scheduled runs so it generates, downloads, archives, and summarizes both Excel and Availability PDF reports.
+- [ ] Expose each run’s saved parameters, validation totals, warnings, and source-document links in the portal’s operational history.
+- [x] Restore and verify the portal preview after correcting the server-side storage helper runtime error.
+- [ ] Use the approved server-side source connection for RealPage/OneSite retrieval rather than a desktop-assisted runner.
+- [ ] Capture the schedule frequency and Pacific-time run window before activating the recurring job.
+- [x] Confirm the RealPage/OneSite automated run cadence: weekly every Monday at 7:00 AM Pacific.
+- [x] Add an administrator-only Automation Settings screen to edit schedule timing, enable or pause the job, and initiate a run on demand.
+- [x] Add validated scraper parameters to the automation configuration and persist each run’s parameter set in its history summary.

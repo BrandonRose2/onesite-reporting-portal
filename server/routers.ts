@@ -1,7 +1,10 @@
 import { COOKIE_NAME } from "@shared/const";
+import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
+import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,12 +20,38 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  delinquency: router({
+    periods: protectedProcedure.query(() => listReportingPeriods()),
+    dashboard: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int().optional() }).optional()).query(({ input }) => getDashboard(input?.reportingPeriodId)),
+    propertyDetail: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input }) => getPropertyDetail(input)),
+    compare: protectedProcedure.input(z.object({ currentPeriodId: z.number().int(), priorPeriodId: z.number().int() })).query(({ input }) => compareReportingPeriods(input)),
+    exportRows: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int() })).query(({ input }) => getPeriodExportRows(input.reportingPeriodId)),
+    importBatch: adminProcedure.input(z.object({
+      name: z.string().trim().min(3).max(160),
+      fiscalPeriod: z.string().trim().min(3).max(32),
+      asOfDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      files: z.array(z.object({ filename: z.string().min(5).max(512), dataBase64: z.string().min(1) })).min(1).max(35),
+    })).mutation(({ input, ctx }) => importDelinquencyBatch({ ...input, importedByUserId: ctx.user.id })),
+    automation: router({
+      get: adminProcedure.query(() => getRealPageAutomation()),
+      save: adminProcedure.input(z.object({
+        cronExpression: z.string().trim().min(11).max(64),
+        timezone: z.string().trim().min(3).max(64),
+        isEnabled: z.boolean(),
+        parameters: z.object({
+          delinquencyReportName: z.literal("Delinquent and Prepaid (Excel)"),
+          delinquencyFormat: z.literal("excel"),
+          includeAvailabilityPdf: z.boolean(),
+          includePrepaids: z.boolean(),
+          includeZeroBalance: z.boolean(),
+          propertyScope: z.literal("mapped_realpage"),
+        }),
+      })).mutation(({ input }) => saveRealPageAutomation(input)),
+      queueRun: adminProcedure.mutation(() => queueRealPageRun("manual")),
+      runs: adminProcedure.query(() => listRealPageRuns()),
+    }),
+  }),
+
 });
 
 export type AppRouter = typeof appRouter;
