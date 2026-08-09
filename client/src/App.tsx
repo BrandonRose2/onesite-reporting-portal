@@ -12,6 +12,8 @@ import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import Refresh from "./pages/Refresh";
 import AutomationSettings from "./pages/AutomationSettings";
+import ManagerChecklists from "./pages/ManagerChecklists";
+import ManagerChecklistDetail from "./pages/ManagerChecklistDetail";
 
 function PortalRoute({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -28,6 +30,8 @@ function Router() {
       <Route path={"/compare"}><PortalRoute><Compare /></PortalRoute></Route>
       <Route path={"/refresh"}><PortalRoute><Refresh /></PortalRoute></Route>
       <Route path={"/automation"}><PortalRoute><AutomationSettings /></PortalRoute></Route>
+      <Route path={"/manager-checklists"}><PortalRoute><ManagerChecklists /></PortalRoute></Route>
+      <Route path={"/manager-checklists/:propertyId"}><PortalRoute><ManagerChecklistDetail /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

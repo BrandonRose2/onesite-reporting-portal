@@ -41,6 +41,12 @@
 - [x] Convert every manager Markdown checklist into an editable Word document and place it in the attached OneDrive workspace.
 - [x] Convert the attached manager Markdown archive into individual PDFs and deliver a consolidated PDF ZIP.
 - [x] Redesign all manager checklist PDFs to match the supplied Boca Ciega Townhomes reference layout and visual style.
+- [x] Restore an accessible download path for the redesigned manager PDF archive and verify the OneDrive delivery copy.
+- [x] Review the newly attached README and implement the specified website experience.
+- [x] Add the README-aligned checklist index fields for every property: checklist access, availability report filename, and delinquency export count.
+- [x] Verify the Manager Checklists website reproduces the attached README’s package-index content for all 35 properties.
+- [x] Add and run deterministic validation that all 35 checklist entries expose the correct availability filename and two-export metadata.
+- [x] Add an authenticated Manager Checklists website with property directory, editable manager-call fields, resident balance follow-up, availability notes, print support, and source-file links.
 - [x] Review the attached RealPage automation reference and align compatible Reports Hub settings in the portal.
 - [x] Align the portal’s administrator settings with the documented Reports Hub flow for all-property Delinquent and Prepaid Excel plus Availability PDF generation and download.
 - [ ] Add an interactive RealPage 2FA/session-setup step so scheduled retrieval can reuse a trusted browser profile securely.

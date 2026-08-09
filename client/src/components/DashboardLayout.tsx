@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { BarChart3, Building2, CalendarRange, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2 } from "lucide-react";
+import { BarChart3, Building2, CalendarRange, ClipboardCheck, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -32,6 +32,7 @@ const menuItems = [
   { icon: Building2, label: "Properties", path: "/properties" },
   { icon: CalendarRange, label: "Period History", path: "/history" },
   { icon: BarChart3, label: "Compare", path: "/compare" },
+  { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists" },
   { icon: RefreshCw, label: "Run Scraper", path: "/refresh" },
   { icon: Settings2, label: "Automation", path: "/automation" },
 ];
@@ -182,7 +183,7 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path;
+                const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/"));
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton

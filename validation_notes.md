@@ -15,3 +15,7 @@ The dashboard continues to render the complete 35-property Fiscal Period 04/2026
 ## 2026-08-07 (PDT) — Preview Restoration
 
 The development preview was restored after explicitly importing Node's `randomUUID` storage dependency. The verified portfolio dashboard loads the Fiscal Period 04/2026 snapshot with 35 of 35 entities, $370,176 net delinquent balance, $310,544 net prepaid balance, 1,772 resident accounts, aging concentrations, archived-report indicator, exports, and the Run Scraper action.
+
+## 2026-08-09 (PDT) — Manager Checklist Website
+
+The authenticated Manager Checklists directory renders all 35 loaded properties with region filtering, search, current-period selection, property-level balance/90+ exposure/unit summaries, and direct checklist entry points. The Anaheim Gardens detail view was verified against the active Fiscal Period 04/2026 reporting-period ID and renders editable manager-call fields, availability notes, two archived source-document links, categorized resident balance tabs, per-resident follow-up controls, and print support.
