@@ -211,6 +211,68 @@ export const scrapeRuns = mysqlTable(
   ]
 );
 
+export const reportCatalog = mysqlTable(
+  "reportCatalog",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    sourceSystem: mysqlEnum("sourceSystem", ["realpage", "yardi"]).notNull().default("realpage"),
+    slug: varchar("slug", { length: 120 }).notNull().unique(),
+    displayName: varchar("displayName", { length: 255 }).notNull(),
+    exactReportName: varchar("exactReportName", { length: 255 }).notNull(),
+    searchTerm: varchar("searchTerm", { length: 160 }).notNull(),
+    defaultFormat: mysqlEnum("defaultFormat", ["excel", "pdf", "csv"]).notNull(),
+    reportArea: varchar("reportArea", { length: 160 }),
+    description: text("description"),
+    isVerified: boolean("isVerified").default(false).notNull(),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("report_catalog_source_active_idx").on(table.sourceSystem, table.isActive)]
+);
+
+export const reportRequests = mysqlTable(
+  "reportRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    sourceSystem: mysqlEnum("sourceSystem", ["realpage", "yardi"]).notNull().default("realpage"),
+    requestType: mysqlEnum("requestType", ["generate_all_properties", "sync_my_reports"]).notNull(),
+    status: mysqlEnum("status", ["queued", "running", "completed", "completed_with_warnings", "failed"]).default("queued").notNull(),
+    reportCatalogId: int("reportCatalogId"),
+    requestedReportName: varchar("requestedReportName", { length: 255 }).notNull(),
+    requestedFormat: mysqlEnum("requestedFormat", ["excel", "pdf", "csv"]).notNull(),
+    propertyScope: varchar("propertyScope", { length: 64 }).default("all_properties").notNull(),
+    requestedByUserId: int("requestedByUserId").notNull(),
+    sourceRunReference: varchar("sourceRunReference", { length: 160 }),
+    parameterJson: text("parameterJson"),
+    documentCount: int("documentCount").default(0).notNull(),
+    summaryMarkdown: text("summaryMarkdown"),
+    warningSummary: text("warningSummary"),
+    errorMessage: text("errorMessage"),
+    requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+    startedAt: timestamp("startedAt"),
+    completedAt: timestamp("completedAt"),
+  },
+  table => [index("report_requests_status_requested_idx").on(table.status, table.requestedAt), index("report_requests_catalog_idx").on(table.reportCatalogId)]
+);
+
+export const reportDocuments = mysqlTable(
+  "reportDocuments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    reportRequestId: int("reportRequestId").notNull(),
+    propertyId: int("propertyId"),
+    documentKind: mysqlEnum("documentKind", ["source_report", "property_markdown", "property_pdf", "portfolio_markdown", "portfolio_pdf"]).notNull(),
+    originalFilename: varchar("originalFilename", { length: 512 }).notNull(),
+    storageKey: varchar("storageKey", { length: 512 }).notNull(),
+    storageUrl: varchar("storageUrl", { length: 1024 }).notNull(),
+    mimeType: varchar("mimeType", { length: 120 }).notNull(),
+    fileSizeBytes: int("fileSizeBytes").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => [index("report_documents_request_idx").on(table.reportRequestId), index("report_documents_property_idx").on(table.propertyId)]
+);
+
 export type Property = typeof properties.$inferSelect;
 export type ReportingPeriod = typeof reportingPeriods.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;
@@ -219,3 +281,6 @@ export type ResidentLedgerRow = typeof residentLedgerRows.$inferSelect;
 export type PropertySource = typeof propertySources.$inferSelect;
 export type RetrievalAutomation = typeof retrievalAutomations.$inferSelect;
 export type ScrapeRun = typeof scrapeRuns.$inferSelect;
+export type ReportCatalogEntry = typeof reportCatalog.$inferSelect;
+export type ReportRequest = typeof reportRequests.$inferSelect;
+export type ReportDocument = typeof reportDocuments.$inferSelect;

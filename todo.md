@@ -47,11 +47,16 @@
 - [x] Verify the Manager Checklists website reproduces the attached README’s package-index content for all 35 properties.
 - [x] Add and run deterministic validation that all 35 checklist entries expose the correct availability filename and two-export metadata.
 - [x] Add an authenticated Manager Checklists website with property directory, editable manager-call fields, resident balance follow-up, availability notes, print support, and source-file links.
+- [ ] Define the approved RealPage report catalog and all-property report-request workflow.
+- [ ] Add a My Reports workspace for user-generated RealPage reports to be retrieved, filed, and processed.
+- [ ] Add generic source-file filing and property/portfolio report organization for collected RealPage outputs.
+- [ ] Generate property and portfolio Markdown/PDF summaries from collected report data.
 - [x] Review the attached RealPage automation reference and align compatible Reports Hub settings in the portal.
 - [x] Align the portal’s administrator settings with the documented Reports Hub flow for all-property Delinquent and Prepaid Excel plus Availability PDF generation and download.
 - [ ] Add an interactive RealPage 2FA/session-setup step so scheduled retrieval can reuse a trusted browser profile securely.
 - [ ] Provision and configure the approved persistent browser-runner environment for the RealPage scheduled automation.
 - [ ] Evaluate and select a free GitHub, Docker, or local-Mac execution option for the persistent RealPage runner.
+- [ ] Prepare the approved GitHub Actions self-hosted runner repository, macOS prerequisites, and secure configuration template.
 - [ ] Implement or import the tested RealPage Reports Hub runner with persistent trusted-session setup and 2FA bootstrap support.
 - [ ] Wire the authenticated RealPage runner into queued manual and scheduled runs so it generates, downloads, archives, and summarizes both Excel and Availability PDF reports.
 - [ ] Expose each run’s saved parameters, validation totals, warnings, and source-document links in the portal’s operational history.
@@ -61,3 +66,9 @@
 - [x] Confirm the RealPage/OneSite automated run cadence: weekly every Monday at 7:00 AM Pacific.
 - [x] Add an administrator-only Automation Settings screen to edit schedule timing, enable or pause the job, and initiate a run on demand.
 - [x] Add validated scraper parameters to the automation configuration and persist each run’s parameter set in its history summary.
+- [ ] Rename the expanded reporting workspace to OneSite Reporting Hub throughout the portal.
+- [ ] Synchronize OneSite Reports titles into a catalog dropdown for all-property report requests.
+- [x] Repair the Manager Checklists source cross-reference Open control and verify it for period 60001.
+- [ ] Verify the Manager Checklists source cross-reference Open control end-to-end in an authenticated browser session for period 60001, including browser Back navigation.
+- [ ] Restore direct opening/downloading of the archived source files where storage access permits, rather than relying only on the authenticated parsed-data preview.
+- [ ] Add availability PDF source records to the checklist cross-reference archive when those documents are available for a reporting period.

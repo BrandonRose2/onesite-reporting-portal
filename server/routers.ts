@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
+import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
 
 export const appRouter = router({
@@ -24,6 +24,7 @@ export const appRouter = router({
     periods: protectedProcedure.query(() => listReportingPeriods()),
     dashboard: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int().optional() }).optional()).query(({ input }) => getDashboard(input?.reportingPeriodId)),
     propertyDetail: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input }) => getPropertyDetail(input)),
+    sourceDocumentPreview: protectedProcedure.input(z.object({ sourceFileId: z.number().int().positive() })).query(({ input }) => getSourceDocumentPreview(input)),
     compare: protectedProcedure.input(z.object({ currentPeriodId: z.number().int(), priorPeriodId: z.number().int() })).query(({ input }) => compareReportingPeriods(input)),
     exportRows: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int() })).query(({ input }) => getPeriodExportRows(input.reportingPeriodId)),
     importBatch: adminProcedure.input(z.object({

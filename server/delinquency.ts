@@ -422,6 +422,28 @@ export async function getPropertyDetail(input: { reportingPeriodId: number; prop
   return { summary: summary ?? null, rows, sourceDocuments };
 }
 
+export async function getSourceDocumentPreview(input: { sourceFileId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("The reporting database is unavailable.");
+
+  const [document] = await db.select({
+    document: sourceFiles,
+    property: properties,
+    period: reportingPeriods,
+  }).from(sourceFiles)
+    .innerJoin(properties, eq(sourceFiles.propertyId, properties.id))
+    .innerJoin(reportingPeriods, eq(sourceFiles.reportingPeriodId, reportingPeriods.id))
+    .where(eq(sourceFiles.id, input.sourceFileId));
+
+  if (!document) return null;
+
+  const rows = await db.select().from(residentLedgerRows)
+    .where(eq(residentLedgerRows.sourceFileId, input.sourceFileId))
+    .orderBy(residentLedgerRows.unit, residentLedgerRows.residentName);
+
+  return { ...document, rows };
+}
+
 export async function compareReportingPeriods(input: { currentPeriodId: number; priorPeriodId: number }) {
   const db = await getDb();
   if (!db) throw new Error("The reporting database is unavailable.");
