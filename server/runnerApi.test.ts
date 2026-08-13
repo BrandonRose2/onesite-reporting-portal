@@ -15,7 +15,7 @@ describe("OneSite runner token", () => {
     try {
       const address = server.address();
       if (!address || typeof address === "string") throw new Error("Test server did not expose a TCP port.");
-      const response = await fetch(`http://127.0.0.1:${address.port}/api/onesite-runner/health`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(`http://127.0.0.1:${address.port}/api/onesite-runner/health`, { headers: { "x-onesite-runner-token": token } });
       expect(response.status).toBe(200);
       await expect(response.json()).resolves.toMatchObject({ ok: true, service: "onesite-reporting-hub" });
     } finally {
@@ -43,5 +43,6 @@ describe("OneSite runner token", () => {
     const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
     expect(source).toContain('"/api/onesite-runner/live-edge-status"');
     expect(source).toContain('"macos-live-edge"');
+    expect(source).toContain('"x-onesite-runner-token"');
   });
 });

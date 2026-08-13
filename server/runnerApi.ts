@@ -7,7 +7,7 @@ import { storagePut } from "./storage";
 
 function isAuthorized(req: Request) {
   const expected = process.env.ONESITE_RUNNER_TOKEN;
-  const provided = req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const provided = req.header("x-onesite-runner-token") ?? "";
   if (!expected || !provided) return false;
   const expectedBytes = Buffer.from(expected);
   const providedBytes = Buffer.from(provided);
