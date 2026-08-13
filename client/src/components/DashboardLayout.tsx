@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { BarChart3, Building2, CalendarRange, ClipboardCheck, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2 } from "lucide-react";
+import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: CalendarRange, label: "Period History", path: "/history" },
   { icon: BarChart3, label: "Compare", path: "/compare" },
   { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists" },
+  { icon: FileOutput, label: "OneSite Reporting Hub", path: "/onesite-reports" },
   { icon: RefreshCw, label: "Run Scraper", path: "/refresh" },
   { icon: Settings2, label: "Automation", path: "/automation" },
 ];
@@ -173,8 +174,8 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-semibold tracking-tight text-white">Delinquency</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]">Reporting</span>
+                  <span className="truncate text-sm font-semibold tracking-tight text-white">OneSite</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]">Reporting Hub</span>
                 </div>
               ) : null}
             </div>
@@ -183,7 +184,7 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
-                const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/"));
+                const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/")) || (item.path === "/onesite-reports" && location.startsWith("/onesite-reports"));
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton

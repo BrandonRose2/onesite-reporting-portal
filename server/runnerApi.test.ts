@@ -1,0 +1,40 @@
+import express from "express";
+import { describe, expect, it } from "vitest";
+import { registerOneSiteRunnerApi } from "./runnerApi";
+
+describe("OneSite runner token", () => {
+  it("accepts the configured token at the lightweight runner health endpoint", async () => {
+    const token = process.env.ONESITE_RUNNER_TOKEN;
+    expect(token).toBeTruthy();
+    const app = express();
+    registerOneSiteRunnerApi(app);
+    const server = await new Promise<ReturnType<typeof app.listen>>(resolve => {
+      const running = app.listen(0, () => resolve(running));
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Test server did not expose a TCP port.");
+      const response = await fetch(`http://127.0.0.1:${address.port}/api/onesite-runner/health`, { headers: { Authorization: `Bearer ${token}` } });
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toMatchObject({ ok: true, service: "onesite-reporting-hub" });
+    } finally {
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+  });
+
+  it("rejects a missing runner credential", async () => {
+    const app = express();
+    registerOneSiteRunnerApi(app);
+    const server = await new Promise<ReturnType<typeof app.listen>>(resolve => {
+      const running = app.listen(0, () => resolve(running));
+    });
+    try {
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Test server did not expose a TCP port.");
+      const response = await fetch(`http://127.0.0.1:${address.port}/api/onesite-runner/requests/claim`, { method: "POST" });
+      expect(response.status).toBe(401);
+    } finally {
+      await new Promise<void>(resolve => server.close(() => resolve()));
+    }
+  });
+});

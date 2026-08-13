@@ -1,0 +1,1 @@
+ALTER TABLE `reportCatalog` ADD `isApproved` boolean DEFAULT false NOT NULL;

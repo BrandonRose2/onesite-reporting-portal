@@ -47,7 +47,7 @@
 - [x] Verify the Manager Checklists website reproduces the attached README’s package-index content for all 35 properties.
 - [x] Add and run deterministic validation that all 35 checklist entries expose the correct availability filename and two-export metadata.
 - [x] Add an authenticated Manager Checklists website with property directory, editable manager-call fields, resident balance follow-up, availability notes, print support, and source-file links.
-- [ ] Define the approved RealPage report catalog and all-property report-request workflow.
+- [x] Define the approved RealPage report catalog and all-property report-request workflow.
 - [ ] Add a My Reports workspace for user-generated RealPage reports to be retrieved, filed, and processed.
 - [ ] Add generic source-file filing and property/portfolio report organization for collected RealPage outputs.
 - [ ] Generate property and portfolio Markdown/PDF summaries from collected report data.
@@ -66,8 +66,34 @@
 - [x] Confirm the RealPage/OneSite automated run cadence: weekly every Monday at 7:00 AM Pacific.
 - [x] Add an administrator-only Automation Settings screen to edit schedule timing, enable or pause the job, and initiate a run on demand.
 - [x] Add validated scraper parameters to the automation configuration and persist each run’s parameter set in its history summary.
-- [ ] Rename the expanded reporting workspace to OneSite Reporting Hub throughout the portal.
-- [ ] Synchronize OneSite Reports titles into a catalog dropdown for all-property report requests.
+- [x] Rename the expanded reporting workspace to OneSite Reporting Hub throughout the portal.
+- [x] Synchronize OneSite Reports titles into a catalog dropdown for all-property report requests.
+- [x] Store report-area, level, and product metadata to disambiguate duplicate OneSite report titles and represent all 309 authenticated Reports Hub rows.
+- [x] Update the OneSite Reporting Hub search and selector to present duplicate-titled reports as distinct selectable options, then verify the synchronized count matches the Reports Hub.
+- [x] Discover and capture the report-specific controls exposed by OneSite Generate & Schedule for the selected report.
+- [ ] Add a configurable Generate & Schedule settings panel to all-property OneSite report requests.
+- [ ] Persist each requested report’s settings and have the macOS runner apply them before generation and scheduling.
+- [x] Replace raw report-parameter JSON with structured controls generated from discovered OneSite report settings metadata.
+- [ ] Persist per-report Generate & Schedule field definitions so each supported report renders its correct portal controls.
+- [ ] Verify an initial supported report maps portal settings exactly to the OneSite Generate & Schedule drawer before enabling production execution.
+- [ ] Add structured internal-user notification and cloud-service delivery controls matching the discovered OneSite Generate & Schedule options.
+- [ ] Capture and persist settings definitions for additional supported OneSite reports beyond Availability.
+- [x] Replace the broad OneSite catalog selector with the user-approved Leasing & Rents Management report list shown across the three supplied legacy OneSite report pages.
+- [ ] Group the approved report selector by legacy OneSite category and preserve the exact report names shown by the user.
+- [ ] Capture structured Generate & Schedule settings definitions for each approved report as the user provides or confirms its OneSite Parameters view.
+- [ ] Render the approved OneSite report dropdown with explicit Leasing & Rents → Management category grouping rather than a flat selector.
+- [ ] Audit each approved report label against the supplied legacy OneSite pages and correct any manually seeded name that differs from the displayed wording.
+- [ ] Verify newly seeded approved report titles resolve to an intended OneSite report row before treating automated retrieval as production-ready.
+- [ ] Adapt the Microsoft Edge runner to the approved RealPage Reports Hub workflow and user-selected report settings.
+- [ ] Confirm how each approved Reports Hub report runs across all portfolio properties before enabling all-property automation.
+- [ ] Use Microsoft Edge exclusively for connected OneSite access and the trusted macOS report-runner profile.
+- [ ] Verify the Microsoft Edge runner profile reaches the RealPage Reports Hub before any report generation, and never use Comet for OneSite/RealPage access.
+- [ ] Route all RealPage/OneSite popup, CAPTCHA, multi-factor verification, and interactive confirmation steps through Microsoft Edge only.
+- [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
+- [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
+- [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.
+- [ ] Verify in the running authenticated portal that clicking the OneSite Reporting Hub sidebar entry navigates to `/onesite-reports` and highlights the active menu state.
+- [ ] Add interaction-level sidebar navigation coverage for the OneSite Reporting Hub button in addition to static route assertions.
 - [x] Repair the Manager Checklists source cross-reference Open control and verify it for period 60001.
 - [ ] Verify the Manager Checklists source cross-reference Open control end-to-end in an authenticated browser session for period 60001, including browser Back navigation.
 - [ ] Restore direct opening/downloading of the archived source files where storage access permits, rather than relying only on the authenticated parsed-data preview.

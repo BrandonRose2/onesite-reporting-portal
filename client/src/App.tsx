@@ -15,6 +15,7 @@ import AutomationSettings from "./pages/AutomationSettings";
 import ManagerChecklists from "./pages/ManagerChecklists";
 import ManagerChecklistDetail from "./pages/ManagerChecklistDetail";
 import SourceDocumentPreview from "./pages/SourceDocumentPreview";
+import OneSiteReportingHub from "./pages/OneSiteReportingHub";
 
 function PortalRoute({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -34,6 +35,7 @@ function Router() {
       <Route path={"/manager-checklists"}><PortalRoute><ManagerChecklists /></PortalRoute></Route>
       <Route path={"/manager-checklists/:propertyId"}><PortalRoute><ManagerChecklistDetail /></PortalRoute></Route>
       <Route path={"/source-documents/:sourceFileId"}><PortalRoute><SourceDocumentPreview /></PortalRoute></Route>
+      <Route path={"/onesite-reports"}><PortalRoute><OneSiteReportingHub /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

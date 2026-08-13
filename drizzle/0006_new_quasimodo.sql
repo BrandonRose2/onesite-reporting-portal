@@ -1,0 +1,1 @@
+ALTER TABLE `reportCatalog` ADD `settingsSchemaJson` text;

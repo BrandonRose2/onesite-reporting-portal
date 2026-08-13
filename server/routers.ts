@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
+import { listOneSiteInternalNotificationUsers, listOneSiteReportCatalog, listOneSiteReportRequests, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -51,6 +52,28 @@ export const appRouter = router({
       queueRun: adminProcedure.mutation(() => queueRealPageRun("manual")),
       runs: adminProcedure.query(() => listRealPageRuns()),
     }),
+  }),
+
+  onesiteReporting: router({
+    catalog: protectedProcedure.query(() => listOneSiteReportCatalog()),
+    requests: protectedProcedure.query(() => listOneSiteReportRequests()),
+    internalNotificationUsers: protectedProcedure.query(() => listOneSiteInternalNotificationUsers()),
+    queueCatalogReport: adminProcedure.input(z.object({
+      catalogId: z.number().int().positive(),
+      format: z.enum(["excel", "pdf", "csv"]).optional(),
+      settings: z.object({
+        mode: z.enum(["generate_now", "schedule_later"]).default("generate_now"),
+        scheduledFor: z.string().datetime({ offset: true }).optional(),
+        externalEmails: z.array(z.string().email()).max(20).default([]),
+        notifyUserIds: z.array(z.number().int().positive()).max(50).default([]),
+        cloudService: z.string().trim().max(160).optional(),
+        reportParameters: z.record(z.string().max(120), z.union([z.string().trim().max(500), z.boolean()])).default({}),
+      }).optional(),
+    }).superRefine((value, ctx) => {
+      if (value.settings?.mode === "schedule_later" && !value.settings.scheduledFor) ctx.addIssue({ code: "custom", path: ["settings", "scheduledFor"], message: "Choose a scheduled date and time." });
+    })).mutation(({ input, ctx }) => queueCatalogReportRequest({ ...input, requestedByUserId: ctx.user.id })),
+    queueCustomReport: adminProcedure.input(z.object({ exactReportName: z.string().trim().min(2).max(255), format: z.enum(["excel", "pdf", "csv"]) })).mutation(({ input, ctx }) => queueCustomReportRequest({ ...input, requestedByUserId: ctx.user.id })),
+    syncMyReports: adminProcedure.mutation(({ ctx }) => queueMyReportsSynchronization({ requestedByUserId: ctx.user.id })),
   }),
 
 });
