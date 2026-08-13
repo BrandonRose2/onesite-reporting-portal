@@ -1,5 +1,6 @@
 import express from "express";
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { registerOneSiteRunnerApi } from "./runnerApi";
 
 describe("OneSite runner token", () => {
@@ -36,5 +37,11 @@ describe("OneSite runner token", () => {
     } finally {
       await new Promise<void>(resolve => server.close(() => resolve()));
     }
+  });
+
+  it("registers a protected live Microsoft Edge readiness endpoint", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain('"/api/onesite-runner/live-edge-status"');
+    expect(source).toContain('"macos-live-edge"');
   });
 });

@@ -11,6 +11,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("scheduledFor");
     expect(routers).toContain("reportParameters");
     expect(routers).toContain("internalNotificationUsers");
+    expect(routers).toContain("liveEdgeStatus");
   });
 
   it("renders a report-title selector and an all-properties queue action", () => {
@@ -23,6 +24,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Sync My Reports");
     expect(page).toContain("Search approved management reports");
     expect(page).toContain("Leasing & Rents → Management");
+    expect(page).toContain("Live Edge ready");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {

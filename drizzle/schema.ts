@@ -277,6 +277,22 @@ export const reportDocuments = mysqlTable(
   table => [index("report_documents_request_idx").on(table.reportRequestId), index("report_documents_property_idx").on(table.propertyId)]
 );
 
+export const runnerConnectionStatuses = mysqlTable(
+  "runnerConnectionStatuses",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    runnerKey: varchar("runnerKey", { length: 96 }).notNull().unique(),
+    connectionMode: varchar("connectionMode", { length: 64 }).notNull(),
+    status: mysqlEnum("status", ["ready", "unavailable", "interactive_required"]).notNull(),
+    detail: text("detail"),
+    checkedAt: timestamp("checkedAt").defaultNow().notNull(),
+    lastReadyAt: timestamp("lastReadyAt"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("runner_connection_status_checked_idx").on(table.status, table.checkedAt)]
+);
+
 export type Property = typeof properties.$inferSelect;
 export type ReportingPeriod = typeof reportingPeriods.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;

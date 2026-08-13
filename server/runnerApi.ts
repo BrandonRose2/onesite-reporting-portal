@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
 import { and, asc, eq } from "drizzle-orm";
-import { properties, reportDocuments, reportRequests } from "../drizzle/schema";
+import { properties, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
 
@@ -29,6 +29,36 @@ export function registerOneSiteRunnerApi(app: Express) {
       return;
     }
     res.status(200).json({ ok: true, service: "onesite-reporting-hub" });
+  });
+
+  app.post("/api/onesite-runner/live-edge-status", async (req, res) => {
+    if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
+    const status = req.body?.status;
+    if (!['ready', 'unavailable', 'interactive_required'].includes(status)) return res.status(400).json({ ok: false, error: "A valid live Edge status is required" });
+    const detail = typeof req.body?.detail === "string" ? req.body.detail.slice(0, 4096) : null;
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
+    const [existing] = await db.select().from(runnerConnectionStatuses).where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge")).limit(1);
+    const now = new Date();
+    if (existing) {
+      await db.update(runnerConnectionStatuses).set({
+        connectionMode: "live_microsoft_edge",
+        status,
+        detail,
+        checkedAt: now,
+        ...(status === "ready" ? { lastReadyAt: now } : {}),
+      }).where(eq(runnerConnectionStatuses.id, existing.id));
+    } else {
+      await db.insert(runnerConnectionStatuses).values({
+        runnerKey: "macos-live-edge",
+        connectionMode: "live_microsoft_edge",
+        status,
+        detail,
+        checkedAt: now,
+        ...(status === "ready" ? { lastReadyAt: now } : {}),
+      });
+    }
+    res.status(200).json({ ok: true, status });
   });
 
   app.post("/api/onesite-runner/requests/claim", async (req, res) => {

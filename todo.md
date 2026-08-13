@@ -87,8 +87,13 @@
 - [ ] Adapt the Microsoft Edge runner to the approved RealPage Reports Hub workflow and user-selected report settings.
 - [ ] Confirm how each approved Reports Hub report runs across all portfolio properties before enabling all-property automation.
 - [ ] Use Microsoft Edge exclusively for connected OneSite access and the trusted macOS report-runner profile.
-- [ ] Verify the Microsoft Edge runner profile reaches the RealPage Reports Hub before any report generation, and never use Comet for OneSite/RealPage access.
+- [x] Verify the live Microsoft Edge session reaches the RealPage Reports Hub before any report generation, and never use Comet for OneSite/RealPage access.
 - [ ] Route all RealPage/OneSite popup, CAPTCHA, multi-factor verification, and interactive confirmation steps through Microsoft Edge only.
+- [x] Replace the separate persistent browser profile with a live Microsoft Edge session connection for RealPage/OneSite requests.
+- [ ] Require the live Edge session to be open and authenticated before a queued request can run, with a clear portal status when it is unavailable.
+- [ ] Add a portal-visible live Edge readiness indicator and clear reconnect guidance before queueing a report request.
+- [ ] Wire queued OneSite report requests to the live Microsoft Edge session adapter instead of the separate-profile `RealPageSession` login flow.
+- [ ] Block generation when the live Edge Reports Hub session is unavailable and surface the preflight result in runner logs and portal request status.
 - [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
 - [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
 - [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.

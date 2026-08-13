@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
-import { listOneSiteInternalNotificationUsers, listOneSiteReportCatalog, listOneSiteReportRequests, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
+import { getLiveEdgeRunnerStatus, listOneSiteInternalNotificationUsers, listOneSiteReportCatalog, listOneSiteReportRequests, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -57,6 +57,7 @@ export const appRouter = router({
   onesiteReporting: router({
     catalog: protectedProcedure.query(() => listOneSiteReportCatalog()),
     requests: protectedProcedure.query(() => listOneSiteReportRequests()),
+    liveEdgeStatus: protectedProcedure.query(() => getLiveEdgeRunnerStatus()),
     internalNotificationUsers: protectedProcedure.query(() => listOneSiteInternalNotificationUsers()),
     queueCatalogReport: adminProcedure.input(z.object({
       catalogId: z.number().int().positive(),

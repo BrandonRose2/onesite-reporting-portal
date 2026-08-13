@@ -29,6 +29,7 @@ export default function OneSiteReportingHub() {
   const { user, loading } = useAuth();
   const catalogQuery = trpc.onesiteReporting.catalog.useQuery();
   const requestsQuery = trpc.onesiteReporting.requests.useQuery();
+  const liveEdgeStatusQuery = trpc.onesiteReporting.liveEdgeStatus.useQuery(undefined, { refetchInterval: 30_000 });
   const internalUsersQuery = trpc.onesiteReporting.internalNotificationUsers.useQuery();
   const utils = trpc.useUtils();
   const [catalogId, setCatalogId] = useState("");
@@ -68,6 +69,7 @@ export default function OneSiteReportingHub() {
   const refreshHistory = () => {
     utils.onesiteReporting.requests.invalidate();
     utils.onesiteReporting.catalog.invalidate();
+    utils.onesiteReporting.liveEdgeStatus.invalidate();
   };
   const queueCatalog = trpc.onesiteReporting.queueCatalogReport.useMutation({
     onSuccess: result => { toast.success(`${result.reportName} queued with its Generate & Schedule settings.`); refreshHistory(); },
@@ -110,7 +112,7 @@ export default function OneSiteReportingHub() {
   const completed = requestsQuery.data?.filter(item => item.request.status === "completed" || item.request.status === "completed_with_warnings").length ?? 0;
 
   return <div className="mx-auto max-w-6xl space-y-6">
-    <section className="rounded-[1.5rem] bg-[#122b4b] p-6 text-white shadow-[0_18px_50px_rgba(16,37,63,0.18)] sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a9d8d1]">All-property report operations</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">OneSite Reporting Hub</h1><p className="mt-2 max-w-3xl text-sm text-slate-200">Choose from your approved Leasing & Rents Management report list, modify Generate & Schedule settings, and request the report for every mapped OneSite property.</p></div><Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">All properties</Badge></div></section>
+    <section className="rounded-[1.5rem] bg-[#122b4b] p-6 text-white shadow-[0_18px_50px_rgba(16,37,63,0.18)] sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a9d8d1]">All-property report operations</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">OneSite Reporting Hub</h1><p className="mt-2 max-w-3xl text-sm text-slate-200">Choose from your approved Leasing & Rents Management report list, modify Generate & Schedule settings, and request the report for every mapped OneSite property.</p></div><div className="flex flex-wrap justify-end gap-2"><Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">All properties</Badge><LiveEdgeReadiness status={liveEdgeStatusQuery.data} isLoading={liveEdgeStatusQuery.isLoading} /></div></div></section>
     <section className="grid gap-4 sm:grid-cols-3"><Metric label="Approved report titles" value={catalogQuery.data?.length ?? 0} helper="Leasing & Rents → Management" /><Metric label="Queued / running" value={queued} helper="Requests awaiting collection" /><Metric label="Filed report runs" value={completed} helper="Completed request records" /></section>
     <section className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
       <Panel eyebrow="Request a OneSite report" title="Configure Generate & Schedule"><div className="space-y-5 p-5 sm:p-6">
@@ -135,6 +137,13 @@ export default function OneSiteReportingHub() {
 
 function Metric({ label, value, helper }: { label: string; value: number; helper: string }) {
   return <div className="rounded-2xl border bg-white p-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p><p className="mt-2 text-3xl font-semibold text-[#122b4b]">{value}</p><p className="mt-1 text-xs text-slate-500">{helper}</p></div>;
+}
+
+function LiveEdgeReadiness({ status, isLoading }: { status: { status: "ready" | "unavailable" | "interactive_required"; checkedAt: Date; detail: string | null } | null | undefined; isLoading: boolean }) {
+  if (isLoading) return <Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">Checking Microsoft Edge…</Badge>;
+  if (status?.status === "ready") return <Badge className="border border-[#77d2c5] bg-[#0c7469] px-3 py-1.5 text-white hover:bg-[#0c7469]">Live Edge ready</Badge>;
+  const helper = status?.status === "interactive_required" ? "Edge action required" : "Open signed-in Edge";
+  return <Badge variant="outline" title={status?.detail ?? "Open the authenticated RealPage Reports Hub in Microsoft Edge before a queued request runs."} className="border-[#e9c979] bg-[#5b4925] px-3 py-1.5 text-[#fff6dc] hover:bg-[#5b4925]">{helper}</Badge>;
 }
 
 function StructuredReportSettings({ fields, values, onChange }: { fields: SettingsField[]; values: Record<string, string | boolean>; onChange: (values: Record<string, string | boolean>) => void }) {

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { reportCatalog, reportRequests, users } from "../drizzle/schema";
+import { reportCatalog, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type ReportFormat = "excel" | "pdf" | "csv";
@@ -66,6 +66,15 @@ export async function listOneSiteInternalNotificationUsers() {
   return db.select({ id: users.id, name: users.name, email: users.email, role: users.role })
     .from(users)
     .orderBy(asc(users.name));
+}
+
+export async function getLiveEdgeRunnerStatus() {
+  const db = await getDb();
+  if (!db) return null;
+  const [status] = await db.select().from(runnerConnectionStatuses)
+    .where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge"))
+    .limit(1);
+  return status ?? null;
 }
 
 export async function queueCatalogReportRequest(input: { catalogId: number; requestedByUserId: number; format?: ReportFormat; settings?: Partial<GenerateScheduleSettings> }) {
