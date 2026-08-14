@@ -25,6 +25,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Search approved management reports");
     expect(page).toContain("Leasing & Rents → Management");
     expect(page).toContain("Live Edge ready");
+    expect(page).toContain("Last checked:");
+    expect(page).toContain("Last ready:");
+    expect(page).toContain("Open signed-in Edge to queue");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {

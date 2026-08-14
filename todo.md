@@ -91,9 +91,21 @@
 - [ ] Route all RealPage/OneSite popup, CAPTCHA, multi-factor verification, and interactive confirmation steps through Microsoft Edge only.
 - [x] Replace the separate persistent browser profile with a live Microsoft Edge session connection for RealPage/OneSite requests.
 - [ ] Require the live Edge session to be open and authenticated before a queued request can run, with a clear portal status when it is unavailable.
-- [ ] Add a portal-visible live Edge readiness indicator and clear reconnect guidance before queueing a report request.
+- [x] Add a portal-visible live Edge readiness indicator and clear reconnect guidance before queueing a report request.
 - [ ] Wire queued OneSite report requests to the live Microsoft Edge session adapter instead of the separate-profile `RealPageSession` login flow.
 - [ ] Block generation when the live Edge Reports Hub session is unavailable and surface the preflight result in runner logs and portal request status.
+- [x] Synchronize the Mac runner’s private connection token with the portal secret and verify authenticated live-Edge health reporting without exposing either value.
+- [ ] Enforce live Edge readiness immediately before queued request claim and execution rather than only through a no-claim preflight mode.
+- [x] Show inline live Edge reconnect instructions and last checked/ready details in the Hub, and warn or disable report queueing until readiness is restored.
+- [x] Display both last checked and last ready timestamps in the live Edge notice, including when Edge is unavailable or interactive action is required.
+- [ ] Add regression coverage for the Hub’s live Edge timestamps and disabled queueing state.
+- [ ] Add a UI-focused non-ready-state test that verifies both timestamps, reconnect guidance, and disabled queue/sync actions.
+- [ ] Add a UI-focused ready-state test that verifies both timestamps, ready messaging, and enabled queue/sync actions.
+- [x] Preserve the deployed portal’s current sign-in protection; do not add a public-access bypass at this stage.
+- [ ] Locate and validate the authorized Company Contacts 7.23.2026 Notion property-contact source.
+- [ ] Retrieve the authorized Company Contacts 7.23.2026 content through the user’s live Microsoft Edge session when direct Notion integration access is unavailable.
+- [ ] Add property-level manager name, phone number, extension, and email fields synchronized from the authorized Company Contacts source.
+- [ ] Autofill the selected property’s manager contact details in OneSite Reporting Hub and Manager Checklists workflows.
 - [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
 - [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
 - [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.

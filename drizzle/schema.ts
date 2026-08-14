@@ -293,6 +293,27 @@ export const runnerConnectionStatuses = mysqlTable(
   table => [index("runner_connection_status_checked_idx").on(table.status, table.checkedAt)]
 );
 
+export const propertyContacts = mysqlTable(
+  "propertyContacts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    propertyId: int("propertyId").notNull().unique(),
+    managerName: varchar("managerName", { length: 255 }),
+    managerEmail: varchar("managerEmail", { length: 320 }),
+    mobilePhone: varchar("mobilePhone", { length: 80 }),
+    officePhone: varchar("officePhone", { length: 80 }),
+    extension: varchar("extension", { length: 32 }),
+    sourcePropertyName: varchar("sourcePropertyName", { length: 255 }),
+    sourcePageTitle: varchar("sourcePageTitle", { length: 255 }).notNull(),
+    sourceUrl: varchar("sourceUrl", { length: 1024 }),
+    mappingStatus: mysqlEnum("mappingStatus", ["verified", "review_required", "unmapped"]).default("review_required").notNull(),
+    sourceSyncedAt: timestamp("sourceSyncedAt").defaultNow().notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("property_contacts_status_idx").on(table.mappingStatus)]
+);
+
 export type Property = typeof properties.$inferSelect;
 export type ReportingPeriod = typeof reportingPeriods.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;
@@ -304,3 +325,4 @@ export type ScrapeRun = typeof scrapeRuns.$inferSelect;
 export type ReportCatalogEntry = typeof reportCatalog.$inferSelect;
 export type ReportRequest = typeof reportRequests.$inferSelect;
 export type ReportDocument = typeof reportDocuments.$inferSelect;
+export type PropertyContact = typeof propertyContacts.$inferSelect;

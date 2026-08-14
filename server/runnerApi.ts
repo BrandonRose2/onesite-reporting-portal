@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
 import { and, asc, eq } from "drizzle-orm";
-import { properties, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
+import { properties, propertyContacts, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
 
@@ -59,6 +59,36 @@ export function registerOneSiteRunnerApi(app: Express) {
       });
     }
     res.status(200).json({ ok: true, status });
+  });
+
+  app.post("/api/onesite-runner/property-contacts/sync", async (req, res) => {
+    if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
+    const entries = Array.isArray(req.body?.contacts) ? req.body.contacts.slice(0, 100) : [];
+    if (!entries.length) return res.status(400).json({ ok: false, error: "At least one authorized property contact is required" });
+    const sourcePageTitle = typeof req.body?.sourcePageTitle === "string" ? req.body.sourcePageTitle.trim().slice(0, 255) : "";
+    const sourceUrl = typeof req.body?.sourceUrl === "string" ? req.body.sourceUrl.trim().slice(0, 1024) : null;
+    if (sourcePageTitle !== "Company Contacts 7.23.26") return res.status(400).json({ ok: false, error: "Only the authorized Company Contacts 7.23.26 source may synchronize property contacts" });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
+    const synced: number[] = [];
+    for (const entry of entries) {
+      const propertyId = Number(entry?.propertyId);
+      if (!Number.isInteger(propertyId)) continue;
+      const [property] = await db.select({ id: properties.id }).from(properties).where(and(eq(properties.id, propertyId), eq(properties.isActive, true))).limit(1);
+      if (!property) continue;
+      const safe = (value: unknown, limit: number) => typeof value === "string" ? value.trim().slice(0, limit) || null : null;
+      const values = {
+        managerName: safe(entry.managerName, 255), managerEmail: safe(entry.managerEmail, 320), mobilePhone: safe(entry.mobilePhone, 80), officePhone: safe(entry.officePhone, 80), extension: safe(entry.extension, 32),
+        sourcePropertyName: safe(entry.sourcePropertyName, 255), sourcePageTitle, sourceUrl,
+        mappingStatus: ["verified", "review_required", "unmapped"].includes(entry.mappingStatus) ? entry.mappingStatus : "review_required" as "verified" | "review_required" | "unmapped",
+        sourceSyncedAt: new Date(),
+      };
+      const [existing] = await db.select({ id: propertyContacts.id }).from(propertyContacts).where(eq(propertyContacts.propertyId, propertyId)).limit(1);
+      if (existing) await db.update(propertyContacts).set(values).where(eq(propertyContacts.id, existing.id));
+      else await db.insert(propertyContacts).values({ propertyId, ...values });
+      synced.push(propertyId);
+    }
+    res.status(200).json({ ok: true, syncedPropertyIds: synced });
   });
 
   app.post("/api/onesite-runner/requests/claim", async (req, res) => {

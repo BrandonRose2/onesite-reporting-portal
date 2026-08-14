@@ -45,4 +45,11 @@ describe("OneSite runner token", () => {
     expect(source).toContain('"macos-live-edge"');
     expect(source).toContain('"x-onesite-runner-token"');
   });
+
+  it("registers a protected authorized property-contact synchronization endpoint", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain('"/api/onesite-runner/property-contacts/sync"');
+    expect(source).toContain('sourcePageTitle !== "Company Contacts 7.23.26"');
+    expect(source).toContain("propertyContacts");
+  });
 });
