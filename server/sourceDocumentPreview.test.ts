@@ -8,8 +8,9 @@ describe("manager checklist source-document navigation", () => {
     expect(checklistPage).not.toContain("href={document.storageUrl}");
   });
 
-  it("registers a protected source-document preview procedure", () => {
+  it("registers an approved-user source-document preview procedure", () => {
     const routers = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
-    expect(routers).toContain("sourceDocumentPreview: protectedProcedure");
+    expect(routers).toContain("sourceDocumentPreview: portalProcedure");
+    expect(routers).toContain("getSourceDocumentPreview(input, ctx.portalAccess.role === \"manager\"");
   });
 });

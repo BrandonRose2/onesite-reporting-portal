@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -32,10 +33,11 @@ const menuItems = [
   { icon: Building2, label: "Properties", path: "/properties" },
   { icon: CalendarRange, label: "Period History", path: "/history" },
   { icon: BarChart3, label: "Compare", path: "/compare" },
-  { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists" },
+  { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
   { icon: FileOutput, label: "OneSite Reporting Hub", path: "/onesite-reports" },
   { icon: RefreshCw, label: "Run Scraper", path: "/refresh" },
   { icon: Settings2, label: "Automation", path: "/automation" },
+  { icon: ShieldCheck, label: "Portal Access", path: "/access", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -52,7 +54,8 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user, logout } = useAuth();
+  const portalAccessQuery = trpc.auth.portalAccess.useQuery(undefined, { enabled: Boolean(user) });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -86,6 +89,26 @@ export default function DashboardLayout({
     );
   }
 
+  if (portalAccessQuery.isLoading) {
+    return <DashboardLayoutSkeleton />;
+  }
+
+  if (!portalAccessQuery.data) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#f6f8fb] p-5">
+        <section className="w-full max-w-xl rounded-[1.75rem] border border-[#d9e8e6] bg-white p-7 shadow-[0_22px_70px_rgba(16,37,63,0.12)] sm:p-10">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eaf5f3] text-[#0c7469]">
+            <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.17em] text-[#0c7469]">Access approval required</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[#122b4b]">Your account is awaiting portal approval</h1>
+          <p className="mt-4 text-sm leading-6 text-slate-600">Ask a portal administrator to approve <strong>{user.email ?? "this Manus account"}</strong> as a boss or assign your manager property access. You will not receive RealPage credentials or access to the live Microsoft Edge session.</p>
+          <Button onClick={logout} variant="outline" className="mt-7 border-[#0c7469] text-[#0c7469] hover:bg-[#eaf5f3]">Sign out</Button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider
       style={
@@ -94,7 +117,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent accessRole={portalAccessQuery.data.role} setSidebarWidth={setSidebarWidth}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -103,11 +126,13 @@ export default function DashboardLayout({
 
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
+  accessRole: "administrator" | "boss" | "manager";
   setSidebarWidth: (width: number) => void;
 };
 
 function DashboardLayoutContent({
   children,
+  accessRole,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
@@ -118,6 +143,11 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const managerNeedsRedirect = accessRole === "manager" && !location.startsWith("/manager-checklists");
+
+  useEffect(() => {
+    if (managerNeedsRedirect) setLocation("/manager-checklists");
+  }, [managerNeedsRedirect, setLocation]);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -183,7 +213,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {menuItems.filter(item => (!item.adminOnly || user?.role === "admin") && (accessRole !== "manager" || item.managerAllowed)).map(item => {
                 const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/")) || (item.path === "/onesite-reports" && location.startsWith("/onesite-reports"));
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -260,7 +290,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 bg-[#f6f8fb] p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 bg-[#f6f8fb] p-4 sm:p-6 lg:p-8">{managerNeedsRedirect ? <div className="grid min-h-[50vh] place-items-center text-sm text-slate-500">Opening your assigned manager checklists…</div> : children}</main>
       </SidebarInset>
     </>
   );

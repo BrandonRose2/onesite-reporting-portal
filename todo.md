@@ -139,3 +139,9 @@
 - [ ] Verify the Manager Checklists source cross-reference Open control end-to-end in an authenticated browser session for period 60001, including browser Back navigation.
 - [ ] Restore direct opening/downloading of the archived source files where storage access permits, rather than relying only on the authenticated parsed-data preview.
 - [ ] Add availability PDF source records to the checklist cross-reference archive when those documents are available for a reporting period.
+- [x] Define and implement approved-user access control for bosses and managers using their own Manus accounts.
+- [x] Restrict reporting, manager checklist, and request workflows by role so staff can use the portal without accessing the owner’s RealPage browser session or credentials.
+- [x] Add an administrator workflow to approve, assign, or revoke staff access for the reporting portal.
+- [x] Add a clear pending-approval screen for signed-in users without an active portal-access rule.
+- [x] Enforce manager property scope in dashboard, property-contact, and checklist data queries.
+- [ ] Verify administrator, boss, manager, and unapproved access states before publishing the multi-user release.

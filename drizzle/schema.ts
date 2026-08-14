@@ -37,6 +37,30 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+/**
+ * Approved reporting-portal access directory. Entries are matched to a signed-in
+ * Manus account by email, allowing an administrator to grant access before that
+ * staff member first visits the portal.
+ */
+export const portalAccessRules = mysqlTable(
+  "portalAccessRules",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull().unique(),
+    role: mysqlEnum("role", ["boss", "manager"]).notNull(),
+    /** JSON array of property IDs available to a manager; null means full portfolio for a boss. */
+    propertyIdsJson: text("propertyIdsJson"),
+    isActive: boolean("isActive").default(true).notNull(),
+    createdByUserId: int("createdByUserId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [index("portal_access_rules_active_idx").on(table.isActive)]
+);
+
+export type PortalAccessRule = typeof portalAccessRules.$inferSelect;
+export type InsertPortalAccessRule = typeof portalAccessRules.$inferInsert;
+
 export const properties = mysqlTable(
   "properties",
   {

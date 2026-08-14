@@ -2,7 +2,9 @@ import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, portfolioProcedure, portalProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { canAccessProperty, getPortalAccessForUser } from "./portalAccess";
+import { listAccessAssignableProperties, listPortalAccessRules, savePortalAccessRule, setPortalAccessRuleActive } from "./accessAdmin";
 import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
 import { getLiveEdgeRunnerStatus, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportRequests, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
@@ -12,6 +14,7 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    portalAccess: publicProcedure.query(async opts => (opts.ctx.user ? getPortalAccessForUser(opts.ctx.user) : null)),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -21,13 +24,33 @@ export const appRouter = router({
     }),
   }),
 
+  access: router({
+    rules: adminProcedure.query(() => listPortalAccessRules()),
+    properties: adminProcedure.query(() => listAccessAssignableProperties()),
+    saveRule: adminProcedure.input(z.object({
+      email: z.string().trim().email().max(320),
+      role: z.enum(["boss", "manager"]),
+      propertyIds: z.array(z.number().int().positive()).max(35).default([]),
+    }).superRefine((value, ctx) => {
+      if (value.role === "manager" && value.propertyIds.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["propertyIds"], message: "Assign at least one property to a manager." });
+      }
+    })).mutation(({ input, ctx }) => savePortalAccessRule({ ...input, createdByUserId: ctx.user.id })),
+    setActive: adminProcedure.input(z.object({ id: z.number().int().positive(), isActive: z.boolean() }))
+      .mutation(({ input }) => setPortalAccessRuleActive(input)),
+  }),
+
   delinquency: router({
-    periods: protectedProcedure.query(() => listReportingPeriods()),
-    dashboard: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int().optional() }).optional()).query(({ input }) => getDashboard(input?.reportingPeriodId)),
-    propertyDetail: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input }) => getPropertyDetail(input)),
-    sourceDocumentPreview: protectedProcedure.input(z.object({ sourceFileId: z.number().int().positive() })).query(({ input }) => getSourceDocumentPreview(input)),
-    compare: protectedProcedure.input(z.object({ currentPeriodId: z.number().int(), priorPeriodId: z.number().int() })).query(({ input }) => compareReportingPeriods(input)),
-    exportRows: protectedProcedure.input(z.object({ reportingPeriodId: z.number().int() })).query(({ input }) => getPeriodExportRows(input.reportingPeriodId)),
+    periods: portalProcedure.query(() => listReportingPeriods()),
+    dashboard: portfolioProcedure.input(z.object({ reportingPeriodId: z.number().int().optional() }).optional()).query(({ input }) => getDashboard(input?.reportingPeriodId)),
+    managerDashboard: portalProcedure.input(z.object({ reportingPeriodId: z.number().int().optional() }).optional()).query(({ input, ctx }) => getDashboard(input?.reportingPeriodId, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
+    propertyDetail: portalProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input, ctx }) => {
+      if (!canAccessProperty(ctx.portalAccess, input.propertyId)) throw new Error("You are not assigned to this property.");
+      return getPropertyDetail(input);
+    }),
+    sourceDocumentPreview: portalProcedure.input(z.object({ sourceFileId: z.number().int().positive() })).query(({ input, ctx }) => getSourceDocumentPreview(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
+    compare: portfolioProcedure.input(z.object({ currentPeriodId: z.number().int(), priorPeriodId: z.number().int() })).query(({ input }) => compareReportingPeriods(input)),
+    exportRows: portfolioProcedure.input(z.object({ reportingPeriodId: z.number().int() })).query(({ input }) => getPeriodExportRows(input.reportingPeriodId)),
     importBatch: adminProcedure.input(z.object({
       name: z.string().trim().min(3).max(160),
       fiscalPeriod: z.string().trim().min(3).max(32),
@@ -55,11 +78,11 @@ export const appRouter = router({
   }),
 
   onesiteReporting: router({
-    catalog: protectedProcedure.query(() => listOneSiteReportCatalog()),
-    requests: protectedProcedure.query(() => listOneSiteReportRequests()),
-    liveEdgeStatus: protectedProcedure.query(() => getLiveEdgeRunnerStatus()),
-    propertyContacts: protectedProcedure.query(() => listOneSitePropertyContacts()),
-    internalNotificationUsers: protectedProcedure.query(() => listOneSiteInternalNotificationUsers()),
+    catalog: portfolioProcedure.query(() => listOneSiteReportCatalog()),
+    requests: portfolioProcedure.query(() => listOneSiteReportRequests()),
+    liveEdgeStatus: portfolioProcedure.query(() => getLiveEdgeRunnerStatus()),
+    propertyContacts: portalProcedure.query(({ ctx }) => listOneSitePropertyContacts(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
+    internalNotificationUsers: portfolioProcedure.query(() => listOneSiteInternalNotificationUsers()),
     queueCatalogReport: adminProcedure.input(z.object({
       catalogId: z.number().int().positive(),
       format: z.enum(["excel", "pdf", "csv"]).optional(),

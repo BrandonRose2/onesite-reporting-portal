@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import * as XLSX from "xlsx";
 import {
@@ -360,21 +360,22 @@ export async function listReportingPeriods() {
   return db.select().from(reportingPeriods).where(eq(reportingPeriods.status, "ready")).orderBy(desc(reportingPeriods.asOfDate));
 }
 
-export async function getDashboard(reportingPeriodId?: number) {
+export async function getDashboard(reportingPeriodId?: number, propertyIds?: number[]) {
   const db = await getDb();
   if (!db) throw new Error("The reporting database is unavailable.");
   const periods = await listReportingPeriods();
   const period = reportingPeriodId ? periods.find(item => item.id === reportingPeriodId) : periods.find(item => item.status === "ready");
   if (!period) return { period: null, metrics: emptyMetrics(), regions: [] as Array<{ region: string; metrics: DelinquencyMetrics; properties: PropertyDashboardRow[] }> };
 
-  const rows = await db.select({
+  const propertyScope = propertyIds ? Array.from(new Set(propertyIds.filter(id => Number.isInteger(id) && id > 0))) : null;
+  const rows = propertyScope?.length === 0 ? [] : await db.select({
     property: properties,
     summary: propertyPeriodSummaries,
     sourceFile: sourceFiles,
   }).from(propertyPeriodSummaries)
     .innerJoin(properties, eq(propertyPeriodSummaries.propertyId, properties.id))
     .leftJoin(sourceFiles, eq(propertyPeriodSummaries.sourceFileId, sourceFiles.id))
-    .where(eq(propertyPeriodSummaries.reportingPeriodId, period.id));
+    .where(propertyScope ? and(eq(propertyPeriodSummaries.reportingPeriodId, period.id), inArray(propertyPeriodSummaries.propertyId, propertyScope)) : eq(propertyPeriodSummaries.reportingPeriodId, period.id));
 
   const metrics = emptyMetrics();
   const byRegion = new Map<string, { region: string; metrics: DelinquencyMetrics; properties: PropertyDashboardRow[] }>();
@@ -422,7 +423,7 @@ export async function getPropertyDetail(input: { reportingPeriodId: number; prop
   return { summary: summary ?? null, rows, sourceDocuments };
 }
 
-export async function getSourceDocumentPreview(input: { sourceFileId: number }) {
+export async function getSourceDocumentPreview(input: { sourceFileId: number }, propertyIds?: number[]) {
   const db = await getDb();
   if (!db) throw new Error("The reporting database is unavailable.");
 
@@ -436,6 +437,10 @@ export async function getSourceDocumentPreview(input: { sourceFileId: number }) 
     .where(eq(sourceFiles.id, input.sourceFileId));
 
   if (!document) return null;
+  const propertyScope = propertyIds ? Array.from(new Set(propertyIds.filter(id => Number.isInteger(id) && id > 0))) : null;
+  if (propertyScope && !propertyScope.includes(document.document.propertyId)) {
+    throw new Error("You are not assigned to this property.");
+  }
 
   const rows = await db.select().from(residentLedgerRows)
     .where(eq(residentLedgerRows.sourceFileId, input.sourceFileId))

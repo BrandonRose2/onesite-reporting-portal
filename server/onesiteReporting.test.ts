@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("OneSite Reporting Hub request workflow", () => {
-  it("exposes the protected catalog, all-property queue, custom request, and My Reports synchronization procedures", () => {
+  it("exposes approved-user catalog and contact access plus administrator-controlled queue actions", () => {
     const routers = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(routers).toContain("onesiteReporting: router");
     expect(routers).toContain("queueCatalogReport: adminProcedure");
@@ -12,7 +12,8 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("reportParameters");
     expect(routers).toContain("internalNotificationUsers");
     expect(routers).toContain("liveEdgeStatus");
-    expect(routers).toContain("propertyContacts: protectedProcedure");
+    expect(routers).toContain("catalog: portfolioProcedure");
+    expect(routers).toContain("propertyContacts: portalProcedure");
   });
 
   it("renders a report-title selector and an all-properties queue action", () => {

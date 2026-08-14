@@ -77,9 +77,11 @@ export async function getLiveEdgeRunnerStatus() {
   return status ?? null;
 }
 
-export async function listOneSitePropertyContacts() {
+export async function listOneSitePropertyContacts(propertyIds?: number[]) {
   const db = await getDb();
   if (!db) return [];
+  const propertyScope = propertyIds ? Array.from(new Set(propertyIds.filter(id => Number.isInteger(id) && id > 0))) : null;
+  if (propertyScope?.length === 0) return [];
   return db.select({
     propertyId: properties.id,
     propertyName: properties.name,
@@ -93,7 +95,7 @@ export async function listOneSitePropertyContacts() {
     sourceSyncedAt: propertyContacts.sourceSyncedAt,
   }).from(properties)
     .leftJoin(propertyContacts, eq(propertyContacts.propertyId, properties.id))
-    .where(eq(properties.isActive, true))
+    .where(propertyScope ? and(eq(properties.isActive, true), inArray(properties.id, propertyScope)) : eq(properties.isActive, true))
     .orderBy(asc(properties.name));
 }
 

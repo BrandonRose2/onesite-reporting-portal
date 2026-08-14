@@ -58,7 +58,7 @@ export default function ManagerChecklists() {
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState("All regions");
   const periodId = selectedPeriodId ?? periodsQuery.data?.[0]?.id;
-  const dashboardQuery = trpc.delinquency.dashboard.useQuery(
+  const dashboardQuery = trpc.delinquency.managerDashboard.useQuery(
     periodId ? { reportingPeriodId: periodId } : undefined,
     { enabled: Boolean(periodId) }
   );
