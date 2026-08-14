@@ -95,8 +95,10 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
     const db = await getDb();
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
+    const requestedId = req.body?.requestId === undefined ? null : Number(req.body.requestId);
+    if (requestedId !== null && !Number.isInteger(requestedId)) return res.status(400).json({ ok: false, error: "A valid request ID is required" });
     const [request] = await db.select().from(reportRequests)
-      .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued")))
+      .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)])))
       .orderBy(asc(reportRequests.requestedAt))
       .limit(1);
     if (!request) return res.status(200).json({ ok: true, request: null });

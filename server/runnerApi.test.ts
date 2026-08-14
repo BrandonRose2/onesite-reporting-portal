@@ -52,4 +52,10 @@ describe("OneSite runner token", () => {
     expect(source).toContain('sourcePageTitle !== "Company Contacts 7.23.26"');
     expect(source).toContain("propertyContacts");
   });
+
+  it("supports an explicit authorized request ID when claiming a queued report", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain("req.body?.requestId");
+    expect(source).toContain("eq(reportRequests.id, requestedId)");
+  });
 });

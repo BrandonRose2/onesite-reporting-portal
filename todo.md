@@ -128,6 +128,8 @@
 - [x] Document the Google Fold unfolded and narrow-phone review findings for the reporting overview, OneSite Reporting Hub, and Manager Checklists.
 - [ ] Add targeted responsive regression coverage for any identified Google Fold mobile layout correction, then re-verify it with screenshots.
 - [x] Create the private GitHub repository `onesite-reporting-portal` and push the current portal source with safe ignore rules and an initial project commit.
+- [ ] Run one authorized delinquency-only all-property validation through live Microsoft Edge with the RealPage delinquent-rent-only setting enabled.
+- [ ] Exclude prepaid data and terminology from the portal-facing report title, filenames, summaries, and generated deliverables for the delinquency-only validation.
 - [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
 - [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
 - [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.
