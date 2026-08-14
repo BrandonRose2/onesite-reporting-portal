@@ -18,13 +18,17 @@ describe("OneSite Reporting Hub request workflow", () => {
   it("renders a report-title selector and an all-properties queue action", () => {
     const page = readFileSync(new URL("../client/src/pages/OneSiteReportingHub.tsx", import.meta.url), "utf8");
     expect(page).toContain("OneSite Reporting Hub");
-    expect(page).toContain("OneSite management report");
+    expect(page).toContain("Find a report");
+    expect(page).toContain("Start typing to search");
+    expect(page).toContain("Type a title such as “rent roll” or “delinquency,”");
+    expect(page).toContain("role=\"combobox\"");
+    expect(page).toContain("selectReport");
     expect(page).toContain("Generate report for all properties");
     expect(page).toContain("Schedule report for all properties");
     expect(page).toContain("Report-specific parameters");
     expect(page).toContain("Sync My Reports");
-    expect(page).toContain("Search approved management reports");
-    expect(page).toContain("Leasing & Rents → Management");
+    expect(page).toContain("Delinquency + OneSite management");
+    expect(page).toContain("Approved OneSite report");
     expect(page).toContain("Live Edge ready");
     expect(page).toContain("Last checked:");
     expect(page).toContain("Last ready:");

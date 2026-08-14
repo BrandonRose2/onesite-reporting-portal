@@ -37,6 +37,8 @@ export default function OneSiteReportingHub() {
   const utils = trpc.useUtils();
   const [catalogId, setCatalogId] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalogHighlight, setCatalogHighlight] = useState(0);
   const [selectedFormat, setSelectedFormat] = useState<"excel" | "pdf" | "csv">("pdf");
   const [generationMode, setGenerationMode] = useState<"generate_now" | "schedule_later">("generate_now");
   const [scheduledForLocal, setScheduledForLocal] = useState("");
@@ -53,6 +55,7 @@ export default function OneSiteReportingHub() {
     const query = catalogSearch.trim().toLowerCase();
     return catalogQuery.data?.filter(item => !query || item.displayName.toLowerCase().includes(query) || item.exactReportName.toLowerCase().includes(query)) ?? [];
   }, [catalogQuery.data, catalogSearch]);
+  const suggestedCatalog = filteredCatalog.slice(0, 8);
   const selectedPropertyContact = useMemo(() => propertyContactsQuery.data?.find(contact => String(contact.propertyId) === contactPropertyId), [contactPropertyId, propertyContactsQuery.data]);
   const isAdmin = user?.role === "admin";
   const liveEdgeReady = isLiveEdgeReady(liveEdgeStatusQuery.data);
@@ -82,6 +85,22 @@ export default function OneSiteReportingHub() {
   useEffect(() => {
     if (selectedPropertyContact?.managerEmail) setExternalEmails(selectedPropertyContact.managerEmail);
   }, [selectedPropertyContact?.managerEmail]);
+
+  const selectReport = (id: string) => {
+    const report = catalogQuery.data?.find(item => String(item.id) === id);
+    setCatalogId(id);
+    setCatalogSearch(report?.displayName ?? "");
+    setCatalogOpen(false);
+    setCatalogHighlight(0);
+  };
+
+  const handleCatalogKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!suggestedCatalog.length) return;
+    if (event.key === "ArrowDown") { event.preventDefault(); setCatalogOpen(true); setCatalogHighlight(current => Math.min(current + 1, suggestedCatalog.length - 1)); }
+    if (event.key === "ArrowUp") { event.preventDefault(); setCatalogOpen(true); setCatalogHighlight(current => Math.max(current - 1, 0)); }
+    if (event.key === "Enter" && catalogOpen) { event.preventDefault(); selectReport(String(suggestedCatalog[catalogHighlight]?.id)); }
+    if (event.key === "Escape") setCatalogOpen(false);
+  };
 
   const refreshHistory = () => {
     utils.onesiteReporting.requests.invalidate();
@@ -133,14 +152,13 @@ export default function OneSiteReportingHub() {
   const completed = requestsQuery.data?.filter(item => item.request.status === "completed" || item.request.status === "completed_with_warnings").length ?? 0;
 
   return <div className="onesite-reporting-hub mx-auto max-w-6xl space-y-6">
-    <section className="rounded-[1.5rem] bg-[#122b4b] p-6 text-white shadow-[0_18px_50px_rgba(16,37,63,0.18)] sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a9d8d1]">All-property report operations</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">OneSite Reporting Hub</h1><p className="mt-2 max-w-3xl text-sm text-slate-200">Choose from your approved Leasing & Rents Management report list, modify Generate & Schedule settings, and request the report for every mapped OneSite property.</p></div><div className="flex flex-wrap justify-end gap-2"><Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">All properties</Badge><LiveEdgeReadiness status={liveEdgeStatusQuery.data} isLoading={liveEdgeStatusQuery.isLoading} /></div></div></section>
-    <section className="grid gap-4 sm:grid-cols-3"><Metric label="Approved report titles" value={catalogQuery.data?.length ?? 0} helper="Leasing & Rents → Management" /><Metric label="Queued / running" value={queued} helper="Requests awaiting collection" /><Metric label="Filed report runs" value={completed} helper="Completed request records" /></section>
+    <section className="rounded-[1.5rem] bg-[#122b4b] p-6 text-white shadow-[0_18px_50px_rgba(16,37,63,0.18)] sm:p-7"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#a9d8d1]">All-property report operations</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">OneSite Reporting Hub</h1><p className="mt-2 max-w-3xl text-sm text-slate-200">Choose Delinquency or another approved OneSite report, modify Generate & Schedule settings, and request it for every mapped property.</p></div><div className="flex flex-wrap justify-end gap-2"><Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">All properties</Badge><LiveEdgeReadiness status={liveEdgeStatusQuery.data} isLoading={liveEdgeStatusQuery.isLoading} /></div></div></section>
+    <section className="grid gap-4 sm:grid-cols-3"><Metric label="Approved report titles" value={catalogQuery.data?.length ?? 0} helper="Delinquency + OneSite management" /><Metric label="Queued / running" value={queued} helper="Requests awaiting collection" /><Metric label="Filed report runs" value={completed} helper="Completed request records" /></section>
     <LiveEdgeConnectionNotice status={liveEdgeStatusQuery.data} isLoading={liveEdgeStatusQuery.isLoading} />
     <section className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
       <Panel eyebrow="Request a OneSite report" title="Configure Generate & Schedule"><div className="space-y-5 p-5 sm:p-6">
-        <div className="space-y-2"><Label htmlFor="onesite-catalog-search">Search approved management reports</Label><Input id="onesite-catalog-search" value={catalogSearch} onChange={event => setCatalogSearch(event.target.value)} placeholder={`Search ${catalogQuery.data?.length ?? 0} approved report titles`} /><p className="text-xs text-slate-500">{filteredCatalog.length} matching approved report title{filteredCatalog.length === 1 ? "" : "s"}</p></div>
-        <div className="space-y-2"><Label htmlFor="onesite-report">OneSite management report</Label><Select value={catalogId} onValueChange={setCatalogId}><SelectTrigger id="onesite-report"><SelectValue placeholder="Select an approved report" /></SelectTrigger><SelectContent><SelectGroup><SelectLabel>Leasing & Rents → Management</SelectLabel>{filteredCatalog.map(item => <SelectItem key={item.id} value={String(item.id)}>{item.displayName} · {formatLabel(item.defaultFormat)}</SelectItem>)}</SelectGroup></SelectContent></Select></div>
-        {selection ? <div className="rounded-xl border border-[#d5ebe6] bg-[#f5fbfa] p-4"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="border-[#82c5ba] bg-white text-[#0c7469]">{formatLabel(selectedFormat)}</Badge>{selection.isVerified ? <Badge className="bg-[#0c7469] text-white hover:bg-[#0c7469]">Verified title</Badge> : <Badge variant="outline">Approved management report</Badge>}</div><p className="mt-3 text-sm font-medium text-[#122b4b]">{selection.exactReportName}</p><p className="mt-1 text-xs leading-5 text-slate-600">Leasing & Rents → Management · {selection.description ?? "This request will be generated using the exact OneSite title above."}</p></div> : null}
+        <div className="relative space-y-2"><Label htmlFor="onesite-catalog-search">Find a report</Label><Input id="onesite-catalog-search" value={catalogSearch} onFocus={() => setCatalogOpen(true)} onChange={event => { setCatalogSearch(event.target.value); setCatalogOpen(true); setCatalogHighlight(0); }} onKeyDown={handleCatalogKeyDown} placeholder={`Start typing to search ${catalogQuery.data?.length ?? 0} approved reports`} role="combobox" aria-expanded={catalogOpen} aria-controls="onesite-report-suggestions" aria-autocomplete="list" /><p className="text-xs text-slate-500">Type a title such as “rent roll” or “delinquency,” then choose a matching report.</p>{catalogOpen ? <div id="onesite-report-suggestions" role="listbox" className="absolute z-30 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-[#78a99a] bg-white p-1 shadow-[0_12px_30px_rgba(14,57,43,0.18)]">{suggestedCatalog.length ? suggestedCatalog.map((item, index) => <button key={item.id} type="button" role="option" aria-selected={String(item.id) === catalogId} onMouseDown={event => event.preventDefault()} onClick={() => selectReport(String(item.id))} className={`block w-full rounded-lg px-3 py-2.5 text-left transition-colors ${index === catalogHighlight ? "bg-[#e5f4ef]" : "hover:bg-[#f4faf8]"}`}><span className="flex items-center justify-between gap-3"><span className="font-semibold text-[#173d32]">{item.displayName}</span><Badge variant="outline" className="shrink-0 text-[10px]">{formatLabel(item.defaultFormat)}</Badge></span><span className="mt-1 block text-xs text-slate-500">{item.reportArea ?? "Approved OneSite report"} · {item.exactReportName}</span></button>) : <p className="px-3 py-4 text-sm text-slate-500">No approved reports match “{catalogSearch}”.</p>}</div> : null}</div>
+        {selection ? <div className="rounded-xl border border-[#d5ebe6] bg-[#f5fbfa] p-4"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="border-[#82c5ba] bg-white text-[#0c7469]">{formatLabel(selectedFormat)}</Badge>{selection.isVerified ? <Badge className="bg-[#0c7469] text-white hover:bg-[#0c7469]">Verified title</Badge> : <Badge variant="outline">Approved report</Badge>}</div><p className="mt-3 text-sm font-medium text-[#122b4b]">{selection.exactReportName}</p><p className="mt-1 text-xs leading-5 text-slate-600">{selection.reportArea ?? "Approved OneSite report"} · {selection.description ?? "This request will be generated using the exact OneSite title above."}</p></div> : null}
         <div className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-2"><div className="space-y-2"><Label>Generation timing</Label><Select value={generationMode} onValueChange={value => setGenerationMode(value as "generate_now" | "schedule_later")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="generate_now">Generate now</SelectItem><SelectItem value="schedule_later">Schedule for later</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Requested export format</Label><Select value={selectedFormat} onValueChange={value => setSelectedFormat(value as "excel" | "pdf" | "csv")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="excel">Excel</SelectItem><SelectItem value="pdf">PDF</SelectItem><SelectItem value="csv">CSV</SelectItem></SelectContent></Select></div>{generationMode === "schedule_later" ? <div className="space-y-2 sm:col-span-2"><Label htmlFor="scheduled-at">Date and time</Label><Input id="scheduled-at" type="datetime-local" value={scheduledForLocal} onChange={event => setScheduledForLocal(event.target.value)} /></div> : null}</div>
         <PropertyContactAutofill contacts={propertyContactsQuery.data ?? []} selectedId={contactPropertyId} onSelect={setContactPropertyId} />
         <div className="space-y-2"><Label htmlFor="external-emails">External completion emails</Label><Input id="external-emails" value={externalEmails} onChange={event => setExternalEmails(event.target.value)} placeholder="manager@example.com; accounting@example.com" /><p className="text-xs text-slate-500">Selecting a property automatically fills its authorized Company Contacts email when available. You may add additional recipients with commas, semicolons, or new lines.</p></div>
