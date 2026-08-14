@@ -123,6 +123,9 @@
 - [x] Add rendered or interaction-level regression coverage for the overall reporting homepage quick actions and branded overview state.
 - [x] Add a rendered reporting-overview test that asserts the branded hero and all three quick-action cards are visible.
 - [x] Add interaction-level coverage showing the rendered quick actions target the OneSite Reporting Hub, Properties, and Manager Checklists routes.
+- [ ] Verify the Reporting Overview, OneSite Reporting Hub, and Manager Checklists at Google Fold unfolded and narrow-phone viewports.
+- [ ] Correct any mobile overflow, inaccessible controls, unreadable data, or unnecessary horizontal scrolling found during the Google Fold layout review.
+- [ ] Create the private GitHub repository `onesite-reporting-portal` and push the current portal source with safe ignore rules and an initial project commit.
 - [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
 - [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
 - [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.
