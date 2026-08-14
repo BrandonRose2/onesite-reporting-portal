@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Archive, CalendarClock, ChevronDown, FileOutput, History, Play, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { Archive, CalendarClock, ChevronDown, FileOutput, History, Mail, Phone, Play, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -32,6 +32,7 @@ export default function OneSiteReportingHub() {
   const catalogQuery = trpc.onesiteReporting.catalog.useQuery();
   const requestsQuery = trpc.onesiteReporting.requests.useQuery();
   const liveEdgeStatusQuery = trpc.onesiteReporting.liveEdgeStatus.useQuery(undefined, { refetchInterval: 30_000 });
+  const propertyContactsQuery = trpc.onesiteReporting.propertyContacts.useQuery();
   const internalUsersQuery = trpc.onesiteReporting.internalNotificationUsers.useQuery();
   const utils = trpc.useUtils();
   const [catalogId, setCatalogId] = useState("");
@@ -40,6 +41,7 @@ export default function OneSiteReportingHub() {
   const [generationMode, setGenerationMode] = useState<"generate_now" | "schedule_later">("generate_now");
   const [scheduledForLocal, setScheduledForLocal] = useState("");
   const [externalEmails, setExternalEmails] = useState("");
+  const [contactPropertyId, setContactPropertyId] = useState("");
   const [notifyUserIds, setNotifyUserIds] = useState<number[]>([]);
   const [cloudService, setCloudService] = useState("");
   const [reportParameters, setReportParameters] = useState<Record<string, string | boolean>>({});
@@ -51,6 +53,7 @@ export default function OneSiteReportingHub() {
     const query = catalogSearch.trim().toLowerCase();
     return catalogQuery.data?.filter(item => !query || item.displayName.toLowerCase().includes(query) || item.exactReportName.toLowerCase().includes(query)) ?? [];
   }, [catalogQuery.data, catalogSearch]);
+  const selectedPropertyContact = useMemo(() => propertyContactsQuery.data?.find(contact => String(contact.propertyId) === contactPropertyId), [contactPropertyId, propertyContactsQuery.data]);
   const isAdmin = user?.role === "admin";
   const liveEdgeReady = isLiveEdgeReady(liveEdgeStatusQuery.data);
 
@@ -68,6 +71,17 @@ export default function OneSiteReportingHub() {
     setCloudService("");
     setReportParameters(Object.fromEntries(parseSettingsSchema(selection.settingsSchemaJson).map(field => [field.key, field.default])));
   }, [selection?.id]);
+
+  useEffect(() => {
+    if (!contactPropertyId && propertyContactsQuery.data?.length) {
+      const preferred = propertyContactsQuery.data.find(contact => contact.mappingStatus === "verified") ?? propertyContactsQuery.data[0];
+      setContactPropertyId(String(preferred.propertyId));
+    }
+  }, [contactPropertyId, propertyContactsQuery.data]);
+
+  useEffect(() => {
+    if (selectedPropertyContact?.managerEmail) setExternalEmails(selectedPropertyContact.managerEmail);
+  }, [selectedPropertyContact?.managerEmail]);
 
   const refreshHistory = () => {
     utils.onesiteReporting.requests.invalidate();
@@ -128,7 +142,8 @@ export default function OneSiteReportingHub() {
         <div className="space-y-2"><Label htmlFor="onesite-report">OneSite management report</Label><Select value={catalogId} onValueChange={setCatalogId}><SelectTrigger id="onesite-report"><SelectValue placeholder="Select an approved report" /></SelectTrigger><SelectContent><SelectGroup><SelectLabel>Leasing & Rents → Management</SelectLabel>{filteredCatalog.map(item => <SelectItem key={item.id} value={String(item.id)}>{item.displayName} · {formatLabel(item.defaultFormat)}</SelectItem>)}</SelectGroup></SelectContent></Select></div>
         {selection ? <div className="rounded-xl border border-[#d5ebe6] bg-[#f5fbfa] p-4"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="border-[#82c5ba] bg-white text-[#0c7469]">{formatLabel(selectedFormat)}</Badge>{selection.isVerified ? <Badge className="bg-[#0c7469] text-white hover:bg-[#0c7469]">Verified title</Badge> : <Badge variant="outline">Approved management report</Badge>}</div><p className="mt-3 text-sm font-medium text-[#122b4b]">{selection.exactReportName}</p><p className="mt-1 text-xs leading-5 text-slate-600">Leasing & Rents → Management · {selection.description ?? "This request will be generated using the exact OneSite title above."}</p></div> : null}
         <div className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-2"><div className="space-y-2"><Label>Generation timing</Label><Select value={generationMode} onValueChange={value => setGenerationMode(value as "generate_now" | "schedule_later")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="generate_now">Generate now</SelectItem><SelectItem value="schedule_later">Schedule for later</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Requested export format</Label><Select value={selectedFormat} onValueChange={value => setSelectedFormat(value as "excel" | "pdf" | "csv")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="excel">Excel</SelectItem><SelectItem value="pdf">PDF</SelectItem><SelectItem value="csv">CSV</SelectItem></SelectContent></Select></div>{generationMode === "schedule_later" ? <div className="space-y-2 sm:col-span-2"><Label htmlFor="scheduled-at">Date and time</Label><Input id="scheduled-at" type="datetime-local" value={scheduledForLocal} onChange={event => setScheduledForLocal(event.target.value)} /></div> : null}</div>
-        <div className="space-y-2"><Label htmlFor="external-emails">External completion emails</Label><Input id="external-emails" value={externalEmails} onChange={event => setExternalEmails(event.target.value)} placeholder="manager@example.com; accounting@example.com" /><p className="text-xs text-slate-500">Optional. Separate multiple recipients with commas, semicolons, or new lines.</p></div>
+        <PropertyContactAutofill contacts={propertyContactsQuery.data ?? []} selectedId={contactPropertyId} onSelect={setContactPropertyId} />
+        <div className="space-y-2"><Label htmlFor="external-emails">External completion emails</Label><Input id="external-emails" value={externalEmails} onChange={event => setExternalEmails(event.target.value)} placeholder="manager@example.com; accounting@example.com" /><p className="text-xs text-slate-500">Selecting a property automatically fills its authorized Company Contacts email when available. You may add additional recipients with commas, semicolons, or new lines.</p></div>
         <div className="space-y-2"><Label>Internal completion notifications</Label><div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">{internalUsersQuery.data?.length ? internalUsersQuery.data.map(recipient => <label key={recipient.id} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs text-[#122b4b]"><input type="checkbox" checked={notifyUserIds.includes(recipient.id)} onChange={event => setNotifyUserIds(current => event.target.checked ? [...current, recipient.id] : current.filter(id => id !== recipient.id))} className="h-4 w-4 accent-[#0c7469]" /><span className="min-w-0 truncate">{recipient.name ?? recipient.email ?? `User ${recipient.id}`}</span></label>) : <p className="text-xs text-slate-500">No internal portal users are currently available for notification.</p>}</div><p className="text-xs text-slate-500">Optional. Selected recipients are stored with this report request for OneSite completion notification.</p></div>
         <div className="space-y-2"><Label htmlFor="cloud-service">Cloud service delivery option</Label><Input id="cloud-service" value={cloudService} onChange={event => setCloudService(event.target.value)} placeholder="Optional OneSite cloud-service option" /></div>
         <StructuredReportSettings fields={parseSettingsSchema(selection?.settingsSchemaJson)} values={reportParameters} onChange={setReportParameters} />
@@ -164,4 +179,20 @@ export function LiveEdgeConnectionNotice({ status, isLoading }: { status: LiveEd
 
 function StructuredReportSettings({ fields, values, onChange }: { fields: SettingsField[]; values: Record<string, string | boolean>; onChange: (values: Record<string, string | boolean>) => void }) {
   return <div className="rounded-xl border border-[#d5ebe6] bg-[#f5fbfa] p-4"><div className="flex items-start gap-3"><Settings2 className="mt-0.5 h-5 w-5 shrink-0 text-[#0c7469]" /><div><p className="text-sm font-semibold text-[#122b4b]">Report-specific parameters</p><p className="mt-1 text-xs leading-5 text-slate-600">These fields mirror the captured Generate & Schedule controls for the selected OneSite report. They are saved with this request and applied by the runner before generation.</p></div></div>{fields.length ? <div className="mt-4 grid gap-4 sm:grid-cols-2">{fields.map(field => field.type === "boolean" ? <label key={field.key} className="flex min-h-10 items-center justify-between gap-3 rounded-lg border border-[#cfe4df] bg-white px-3 py-2 text-sm text-[#122b4b]"><span>{field.label}</span><input type="checkbox" checked={Boolean(values[field.key])} onChange={event => onChange({ ...values, [field.key]: event.target.checked })} className="h-4 w-4 accent-[#0c7469]" /></label> : <div key={field.key} className="space-y-2"><Label htmlFor={`report-setting-${field.key}`}>{field.label}</Label><Input id={`report-setting-${field.key}`} value={String(values[field.key] ?? "")} onChange={event => onChange({ ...values, [field.key]: event.target.value })} /></div>)}</div> : <div className="mt-3 rounded-lg border border-dashed border-[#b8d7d0] bg-white/70 p-3 text-xs leading-5 text-slate-600">No report-specific settings have been captured for this title yet. The portal will retain OneSite’s own defaults; capture this report’s Generate & Schedule form before enabling customized settings.</div>}</div>;
+}
+
+type PropertyContactPreview = { propertyId: number; propertyName: string; region: string; managerName: string | null; managerEmail: string | null; mobilePhone: string | null; officePhone: string | null; extension: string | null; mappingStatus: "verified" | "review_required" | "unmapped" | null };
+
+function PropertyContactAutofill({ contacts, selectedId, onSelect }: { contacts: PropertyContactPreview[]; selectedId: string; onSelect: (id: string) => void }) {
+  const contact = contacts.find(item => String(item.propertyId) === selectedId);
+  const status = contact?.mappingStatus ?? "unmapped";
+  const statusLabel = status === "verified" ? "Verified contact" : status === "review_required" ? "Review contact" : "Contact not mapped";
+  const statusClass = status === "verified" ? "border-[#9acdbf] bg-[#edf9f4] text-[#166249]" : "border-[#e8ce8d] bg-[#fff8e7] text-[#795414]";
+  const officeLine = [contact?.officePhone, contact?.extension ? `ext. ${contact.extension}` : null].filter(Boolean).join(" · ") || "Not available";
+  return <div className="rounded-xl border border-[#b9d7cf] bg-[#f1faf7] p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[#122b4b]">Property contact autofill</p><p className="mt-1 text-xs leading-5 text-slate-600">Select a building to load its authorized Company Contacts details into this report configuration.</p></div>{contact ? <Badge variant="outline" className={statusClass}>{statusLabel}</Badge> : null}</div><div className="mt-4 space-y-2"><Label htmlFor="property-contact">Selected property</Label><Select value={selectedId} onValueChange={onSelect}><SelectTrigger id="property-contact"><SelectValue placeholder="Choose a property" /></SelectTrigger><SelectContent>{contacts.map(item => <SelectItem key={item.propertyId} value={String(item.propertyId)}>{item.propertyName} · {item.region}</SelectItem>)}</SelectContent></Select></div>{contact ? <div className="mt-4 grid gap-3 rounded-lg border border-[#c7dfd8] bg-white/90 p-3 sm:grid-cols-2"><ContactField label="Manager / contact" value={contact.managerName || "Contact name requires review"} /><ContactField label="Email" value={contact.managerEmail || "Not available"} icon="mail" /><ContactField label="Mobile" value={contact.mobilePhone || "Not available"} icon="phone" /><ContactField label="Office / extension" value={officeLine} /></div> : null}</div>;
+}
+
+function ContactField({ label, value, icon }: { label: string; value: string; icon?: "mail" | "phone" }) {
+  const Icon = icon === "mail" ? Mail : icon === "phone" ? Phone : null;
+  return <div className={Icon ? "flex items-start gap-2" : ""}>{Icon ? <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#27735a]" /> : null}<div><p className="text-[11px] font-bold uppercase tracking-[0.11em] text-[#437d70]">{label}</p><p className="mt-1 break-all text-sm font-medium text-[#173d32]">{value}</p></div></div>;
 }

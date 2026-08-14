@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { reportCatalog, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
+import { properties, propertyContacts, reportCatalog, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type ReportFormat = "excel" | "pdf" | "csv";
@@ -75,6 +75,26 @@ export async function getLiveEdgeRunnerStatus() {
     .where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge"))
     .limit(1);
   return status ?? null;
+}
+
+export async function listOneSitePropertyContacts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    propertyId: properties.id,
+    propertyName: properties.name,
+    region: properties.region,
+    managerName: propertyContacts.managerName,
+    managerEmail: propertyContacts.managerEmail,
+    mobilePhone: propertyContacts.mobilePhone,
+    officePhone: propertyContacts.officePhone,
+    extension: propertyContacts.extension,
+    mappingStatus: propertyContacts.mappingStatus,
+    sourceSyncedAt: propertyContacts.sourceSyncedAt,
+  }).from(properties)
+    .leftJoin(propertyContacts, eq(propertyContacts.propertyId, properties.id))
+    .where(eq(properties.isActive, true))
+    .orderBy(asc(properties.name));
 }
 
 export async function queueCatalogReportRequest(input: { catalogId: number; requestedByUserId: number; format?: ReportFormat; settings?: Partial<GenerateScheduleSettings> }) {

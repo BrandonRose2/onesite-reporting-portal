@@ -12,6 +12,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("reportParameters");
     expect(routers).toContain("internalNotificationUsers");
     expect(routers).toContain("liveEdgeStatus");
+    expect(routers).toContain("propertyContacts: protectedProcedure");
   });
 
   it("renders a report-title selector and an all-properties queue action", () => {
@@ -28,6 +29,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Last checked:");
     expect(page).toContain("Last ready:");
     expect(page).toContain("Open signed-in Edge to queue");
+    expect(page).toContain("Property contact autofill");
+    expect(page).toContain("Company Contacts");
+    expect(page).toContain("automatically fills its authorized Company Contacts email");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {
