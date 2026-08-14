@@ -106,6 +106,8 @@
 - [ ] Retrieve the authorized Company Contacts 7.23.2026 content through the user’s live Microsoft Edge session when direct Notion integration access is unavailable.
 - [ ] Add property-level manager name, phone number, extension, and email fields synchronized from the authorized Company Contacts source.
 - [ ] Autofill the selected property’s manager contact details in OneSite Reporting Hub and Manager Checklists workflows.
+- [x] Restyle the marked blank OneSite Reporting Hub inputs, dropdowns, checkbox groups, and parameter selectors with stronger contrast and clear empty-state surfaces.
+- [x] Apply a dimensional metallic hunter-green visual treatment to OneSite Reporting Hub action buttons, including hover and pressed states.
 - [x] Repair the OneSite Reporting Hub route mismatch discovered during visual verification and confirm the workspace opens from its sidebar navigation.
 - [x] Verify the OneSite Reporting Hub sidebar entry opens `/onesite-reports` and correct any mismatched navigation target or label.
 - [x] Add regression coverage for the OneSite Reporting Hub sidebar route so navigation-path mismatches are caught before publication.
