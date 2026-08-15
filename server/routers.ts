@@ -64,11 +64,11 @@ export const appRouter = router({
         timezone: z.string().trim().min(3).max(64),
         isEnabled: z.boolean(),
         parameters: z.object({
-          delinquencyReportName: z.literal("Delinquent and Prepaid (Excel)"),
+          delinquencyReportName: z.literal("Delinquency (Current Residents)"),
           delinquencyFormat: z.literal("excel"),
           includeAvailabilityPdf: z.boolean(),
-          includePrepaids: z.boolean(),
           includeZeroBalance: z.boolean(),
+          residentScope: z.literal("current_residents_only"),
           propertyScope: z.literal("mapped_realpage"),
         }),
       })).mutation(({ input }) => saveRealPageAutomation(input)),

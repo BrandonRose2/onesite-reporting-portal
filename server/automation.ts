@@ -3,20 +3,20 @@ import { retrievalAutomations, scrapeRuns } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type AutomationParameters = {
-  delinquencyReportName: string;
+  delinquencyReportName: "Delinquency (Current Residents)";
   delinquencyFormat: "excel";
   includeAvailabilityPdf: boolean;
-  includePrepaids: boolean;
   includeZeroBalance: boolean;
+  residentScope: "current_residents_only";
   propertyScope: "mapped_realpage";
 };
 
 const DEFAULT_PARAMETERS: AutomationParameters = {
-  delinquencyReportName: "Delinquent and Prepaid (Excel)",
+  delinquencyReportName: "Delinquency (Current Residents)",
   delinquencyFormat: "excel",
   includeAvailabilityPdf: true,
-  includePrepaids: true,
   includeZeroBalance: false,
+  residentScope: "current_residents_only",
   propertyScope: "mapped_realpage",
 };
 
@@ -25,7 +25,12 @@ export const DEFAULT_REALPAGE_CRON = "0 0 15 * * 1";
 function parseParameters(value: string | null): AutomationParameters {
   try {
     const parsed = value ? JSON.parse(value) : {};
-    return { ...DEFAULT_PARAMETERS, ...parsed };
+    return {
+      ...DEFAULT_PARAMETERS,
+      ...parsed,
+      delinquencyReportName: "Delinquency (Current Residents)",
+      residentScope: "current_residents_only",
+    };
   } catch {
     return DEFAULT_PARAMETERS;
   }
@@ -98,7 +103,7 @@ export async function queueRealPageRun(trigger: "manual" | "scheduled") {
     sourceSystem: "realpage",
     trigger,
     status: "queued",
-    validationSummary: `Queued with parameters: ${automation.parametersJson ?? JSON.stringify(DEFAULT_PARAMETERS)}`,
+    validationSummary: `Queued with parameters: ${JSON.stringify(parseParameters(automation.parametersJson))}`,
   });
   const [run] = await db.select().from(scrapeRuns).where(eq(scrapeRuns.id, Number(result[0].insertId))).limit(1);
   return run;

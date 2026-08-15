@@ -25,6 +25,10 @@ const VERIFIED_SLUGS: Record<string, string> = {
   "Delinquent and Prepaid (Excel)": "delinquent-and-prepaid-excel",
 };
 
+function portalDisplayName(title: string) {
+  return title === "Delinquent and Prepaid (Excel)" ? "Delinquency (Current Residents)" : title;
+}
+
 function slugify(title: string) {
   const normalized = title.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const base = normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 110) || "onesite-report";
@@ -65,7 +69,7 @@ export function buildOneSiteCatalogSeeds(rawReports: Array<string | OneSiteDisco
     const metadataLabel = [reportArea, reportLevel, product].filter(Boolean).join(" · ");
     return [{
       slug,
-      displayName: isDuplicateTitle && metadataLabel ? `${title} — ${metadataLabel}`.slice(0, 255) : title,
+      displayName: isDuplicateTitle && metadataLabel ? `${portalDisplayName(title)} — ${metadataLabel}`.slice(0, 255) : portalDisplayName(title),
       exactReportName: title,
       searchTerm: title.slice(0, 160),
       defaultFormat: defaultFormat(title),

@@ -52,7 +52,6 @@ export type PropertyDashboardRow = {
   region: RegionName;
   residentCount: number;
   delinquentUnits: number;
-  netPrepaid: number;
   netDelinquent: number;
   netBalance: number;
   currentAmount: number;
@@ -142,7 +141,6 @@ function metricsFor(rows: ParsedLedgerRow[]): DelinquencyMetrics {
   rows.forEach(row => {
     residentKeys.add(row.residentKey);
     if (row.netBalance > 0 && row.unit) delinquentUnits.add(row.unit);
-    metrics.netPrepaid += row.totalPrepaid;
     metrics.netDelinquent += row.totalDelinquent;
     metrics.netBalance += row.netBalance;
     metrics.currentAmount += row.currentAmount;
@@ -320,7 +318,7 @@ export async function importDelinquencyBatch(input: {
         sourceFileId,
         residentCount: metrics.residentCount,
         delinquentUnits: metrics.delinquentUnits,
-        netPrepaid: metrics.netPrepaid.toFixed(2),
+        netPrepaid: "0.00",
         netDelinquent: metrics.netDelinquent.toFixed(2),
         netBalance: metrics.netBalance.toFixed(2),
         currentAmount: metrics.currentAmount.toFixed(2),
@@ -345,7 +343,6 @@ function asNumber(value: unknown) {
 function addToMetrics(metrics: DelinquencyMetrics, row: Record<string, unknown>) {
   metrics.residentCount += asNumber(row.residentCount);
   metrics.delinquentUnits += asNumber(row.delinquentUnits);
-  metrics.netPrepaid += asNumber(row.netPrepaid);
   metrics.netDelinquent += asNumber(row.netDelinquent);
   metrics.netBalance += asNumber(row.netBalance);
   metrics.currentAmount += asNumber(row.currentAmount);
@@ -377,27 +374,58 @@ export async function getDashboard(reportingPeriodId?: number, propertyIds?: num
     .leftJoin(sourceFiles, eq(propertyPeriodSummaries.sourceFileId, sourceFiles.id))
     .where(propertyScope ? and(eq(propertyPeriodSummaries.reportingPeriodId, period.id), inArray(propertyPeriodSummaries.propertyId, propertyScope)) : eq(propertyPeriodSummaries.reportingPeriodId, period.id));
 
+  const currentResidentLedgerRows = propertyScope?.length === 0 ? [] : await db.select().from(residentLedgerRows)
+    .where(propertyScope ? and(eq(residentLedgerRows.reportingPeriodId, period.id), eq(residentLedgerRows.residentStatus, "Current resident"), inArray(residentLedgerRows.propertyId, propertyScope)) : and(eq(residentLedgerRows.reportingPeriodId, period.id), eq(residentLedgerRows.residentStatus, "Current resident")));
+  const ledgerRowsByProperty = new Map<number, ParsedLedgerRow[]>();
+  currentResidentLedgerRows.forEach(row => {
+    const group = ledgerRowsByProperty.get(row.propertyId) ?? [];
+    group.push({
+      residentKey: row.residentKey,
+      reshId: row.reshId,
+      leaseId: row.leaseId,
+      unit: row.unit,
+      residentName: row.residentName,
+      phoneNumber: row.phoneNumber,
+      email: row.email,
+      residentStatus: row.residentStatus,
+      moveInOut: row.moveInOut,
+      transactionCode: row.transactionCode,
+      codeDescription: row.codeDescription,
+      totalPrepaid: 0,
+      totalDelinquent: asNumber(row.totalDelinquent),
+      netBalance: asNumber(row.netBalance),
+      currentAmount: asNumber(row.currentAmount),
+      days30Amount: asNumber(row.days30Amount),
+      days60Amount: asNumber(row.days60Amount),
+      days90PlusAmount: asNumber(row.days90PlusAmount),
+      depositsCreditsHeld: asNumber(row.depositsCreditsHeld),
+      lateCount: row.lateCount,
+      nsfCount: row.nsfCount,
+      collectionNotes: row.collectionNotes,
+    });
+    ledgerRowsByProperty.set(row.propertyId, group);
+  });
   const metrics = emptyMetrics();
   const byRegion = new Map<string, { region: string; metrics: DelinquencyMetrics; properties: PropertyDashboardRow[] }>();
   rows.forEach(row => {
-    addToMetrics(metrics, row.summary);
+    const currentMetrics = metricsFor(ledgerRowsByProperty.get(row.property.id) ?? []);
+    addToMetrics(metrics, currentMetrics);
     const region = row.property.region;
     const group = byRegion.get(region) ?? { region, metrics: emptyMetrics(), properties: [] };
-    addToMetrics(group.metrics, row.summary);
+    addToMetrics(group.metrics, currentMetrics);
     group.properties.push({
       id: row.property.id,
       externalId: row.property.externalId,
       name: row.property.name,
       region: row.property.region,
-      residentCount: row.summary.residentCount,
-      delinquentUnits: row.summary.delinquentUnits,
-      netPrepaid: asNumber(row.summary.netPrepaid),
-      netDelinquent: asNumber(row.summary.netDelinquent),
-      netBalance: asNumber(row.summary.netBalance),
-      currentAmount: asNumber(row.summary.currentAmount),
-      days30Amount: asNumber(row.summary.days30Amount),
-      days60Amount: asNumber(row.summary.days60Amount),
-      days90PlusAmount: asNumber(row.summary.days90PlusAmount),
+      residentCount: currentMetrics.residentCount,
+      delinquentUnits: currentMetrics.delinquentUnits,
+      netDelinquent: currentMetrics.netDelinquent,
+      netBalance: currentMetrics.netBalance,
+      currentAmount: currentMetrics.currentAmount,
+      days30Amount: currentMetrics.days30Amount,
+      days60Amount: currentMetrics.days60Amount,
+      days90PlusAmount: currentMetrics.days90PlusAmount,
       sourceFilename: row.sourceFile?.originalFilename ?? null,
     });
     byRegion.set(region, group);
@@ -415,12 +443,14 @@ export async function getPropertyDetail(input: { reportingPeriodId: number; prop
     .leftJoin(sourceFiles, eq(propertyPeriodSummaries.sourceFileId, sourceFiles.id))
     .where(and(eq(propertyPeriodSummaries.reportingPeriodId, input.reportingPeriodId), eq(propertyPeriodSummaries.propertyId, input.propertyId)));
   const rows = await db.select().from(residentLedgerRows)
-    .where(and(eq(residentLedgerRows.reportingPeriodId, input.reportingPeriodId), eq(residentLedgerRows.propertyId, input.propertyId)))
+    .where(and(eq(residentLedgerRows.reportingPeriodId, input.reportingPeriodId), eq(residentLedgerRows.propertyId, input.propertyId), eq(residentLedgerRows.residentStatus, "Current resident")))
     .orderBy(desc(residentLedgerRows.netBalance));
   const sourceDocuments = await db.select().from(sourceFiles)
     .where(and(eq(sourceFiles.reportingPeriodId, input.reportingPeriodId), eq(sourceFiles.propertyId, input.propertyId)))
     .orderBy(desc(sourceFiles.importedAt));
-  return { summary: summary ?? null, rows, sourceDocuments };
+  if (!summary) return { summary: null, rows, sourceDocuments };
+  const currentMetrics = metricsFor(rows.map(row => ({ ...row, totalPrepaid: 0, totalDelinquent: asNumber(row.totalDelinquent), netBalance: asNumber(row.netBalance), currentAmount: asNumber(row.currentAmount), days30Amount: asNumber(row.days30Amount), days60Amount: asNumber(row.days60Amount), days90PlusAmount: asNumber(row.days90PlusAmount), depositsCreditsHeld: asNumber(row.depositsCreditsHeld) })));
+  return { summary: { ...summary, summary: { ...summary.summary, residentCount: currentMetrics.residentCount, delinquentUnits: currentMetrics.delinquentUnits, netDelinquent: currentMetrics.netDelinquent, netBalance: currentMetrics.netBalance, currentAmount: currentMetrics.currentAmount, days30Amount: currentMetrics.days30Amount, days60Amount: currentMetrics.days60Amount, days90PlusAmount: currentMetrics.days90PlusAmount } }, rows, sourceDocuments };
 }
 
 export async function getSourceDocumentPreview(input: { sourceFileId: number }, propertyIds?: number[]) {
@@ -443,7 +473,7 @@ export async function getSourceDocumentPreview(input: { sourceFileId: number }, 
   }
 
   const rows = await db.select().from(residentLedgerRows)
-    .where(eq(residentLedgerRows.sourceFileId, input.sourceFileId))
+    .where(and(eq(residentLedgerRows.sourceFileId, input.sourceFileId), eq(residentLedgerRows.residentStatus, "Current resident")))
     .orderBy(residentLedgerRows.unit, residentLedgerRows.residentName);
 
   return { ...document, rows };
@@ -456,14 +486,9 @@ export async function compareReportingPeriods(input: { currentPeriodId: number; 
   const [priorPeriod] = await db.select().from(reportingPeriods).where(eq(reportingPeriods.id, input.priorPeriodId));
   if (!currentPeriod || !priorPeriod) throw new Error("Choose two stored reporting periods to compare.");
 
-  const getMetrics = async (reportingPeriodId: number) => {
-    const rows = await db.select().from(propertyPeriodSummaries).where(eq(propertyPeriodSummaries.reportingPeriodId, reportingPeriodId));
-    return rows.reduce((result, row) => {
-      addToMetrics(result, row);
-      return result;
-    }, emptyMetrics());
-  };
-  const [current, prior] = await Promise.all([getMetrics(currentPeriod.id), getMetrics(priorPeriod.id)]);
+  const [currentDashboard, priorDashboard] = await Promise.all([getDashboard(currentPeriod.id), getDashboard(priorPeriod.id)]);
+  const current = currentDashboard.metrics;
+  const prior = priorDashboard.metrics;
   return {
     currentPeriod,
     priorPeriod,
@@ -483,12 +508,12 @@ export async function getPeriodExportRows(reportingPeriodId: number) {
   const rows = await db.select({ property: properties, ledger: residentLedgerRows })
     .from(residentLedgerRows)
     .innerJoin(properties, eq(residentLedgerRows.propertyId, properties.id))
-    .where(eq(residentLedgerRows.reportingPeriodId, reportingPeriodId))
+    .where(and(eq(residentLedgerRows.reportingPeriodId, reportingPeriodId), eq(residentLedgerRows.residentStatus, "Current resident")))
     .orderBy(properties.region, properties.name, desc(residentLedgerRows.netBalance));
   return rows.map(row => ({
     propertyExternalId: row.property.externalId,
     property: row.property.name,
     region: row.property.region,
-    ...row.ledger,
+    ...(() => { const { totalPrepaid: _totalPrepaid, ...ledger } = row.ledger; return ledger; })(),
   }));
 }

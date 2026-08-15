@@ -145,3 +145,8 @@
 - [x] Add a clear pending-approval screen for signed-in users without an active portal-access rule.
 - [x] Enforce manager property scope in dashboard, property-contact, and checklist data queries.
 - [ ] Verify administrator, boss, manager, and unapproved access states before publishing the multi-user release.
+- [x] Exclude former residents from all future OneSite delinquency validation exports and portal-facing deliverables.
+- [x] Validate the live OneSite current-resident control before generating replacement all-property delinquency files.
+- [ ] Retrieve and file only the corrected current-residents-only validation exports.
+- [x] Remove prepaid terminology, metrics, columns, filenames, and summary content from all portal-facing Delinquency surfaces.
+- [x] Preserve the upstream OneSite report’s internal identifier only where technically required and never render it in the Delinquency portal experience.

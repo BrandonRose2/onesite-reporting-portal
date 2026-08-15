@@ -5,7 +5,6 @@ export type RegionName = (typeof REGIONS)[number];
 export type DelinquencyMetrics = {
   residentCount: number;
   delinquentUnits: number;
-  netPrepaid: number;
   netDelinquent: number;
   netBalance: number;
   currentAmount: number;
@@ -17,7 +16,6 @@ export type DelinquencyMetrics = {
 export const emptyMetrics = (): DelinquencyMetrics => ({
   residentCount: 0,
   delinquentUnits: 0,
-  netPrepaid: 0,
   netDelinquent: 0,
   netBalance: 0,
   currentAmount: 0,
