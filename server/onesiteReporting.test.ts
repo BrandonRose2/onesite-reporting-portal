@@ -37,6 +37,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Property contact autofill");
     expect(page).toContain("Company Contacts");
     expect(page).toContain("automatically fills its authorized Company Contacts email");
+    expect(page).toContain("const suggestedCatalog = filteredCatalog;");
+    expect(page).not.toContain("filteredCatalog.slice(0, 8)");
+    expect(page).toContain("matching {suggestedCatalog.length === 1 ? \"report\" : \"reports\"}");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {

@@ -150,3 +150,4 @@
 - [ ] Retrieve and file only the corrected current-residents-only validation exports.
 - [x] Remove prepaid terminology, metrics, columns, filenames, and summary content from all portal-facing Delinquency surfaces.
 - [x] Preserve the upstream OneSite report’s internal identifier only where technically required and never render it in the Delinquency portal experience.
+- [x] Remove the eight-report type-ahead cap so the OneSite selector exposes the complete approved catalog with accessible scrolling and keyboard navigation.
