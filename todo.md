@@ -156,3 +156,4 @@
 - [x] Create an accurately parameterized portal request record for the 35 completed final OneSite Delinquency workbooks before filing them by property.
 - [x] Expose completed OneSite report runs and their filed property documents in a portal-safe My Reports workspace.
 - [x] Verify and test OneSite Reporting Hub sidebar navigation, active state, keyboard focus, and authenticated route behavior.
+- [x] Persist verified structured Delinquency controls for current resident scope, delinquent rent only, and allocated total treatment in the OneSite catalog.
