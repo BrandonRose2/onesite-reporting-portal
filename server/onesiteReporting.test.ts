@@ -52,5 +52,8 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(app).toContain('<Route path={"/onesite-reports"}>');
     expect(layout).toContain('{ icon: FileOutput, label: "OneSite Reporting Hub", path: "/onesite-reports" }');
     expect(layout).toContain('setLocation(item.path)');
+    expect(layout).toContain('location.startsWith("/onesite-reports")');
+    expect(layout).toContain('aria-current={isActive ? "page" : undefined}');
+    expect(layout).toContain('focus-visible:ring-2');
   });
 });

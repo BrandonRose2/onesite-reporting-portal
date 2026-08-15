@@ -219,6 +219,7 @@ function DashboardLayoutContent({
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
                       isActive={isActive}
+                      aria-current={isActive ? "page" : undefined}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
                       className={`h-10 rounded-lg transition-all font-medium ${isActive ? "bg-[#eaf5f3] text-[#0c7469]" : "text-slate-300 hover:bg-white/8 hover:text-white"}`}
