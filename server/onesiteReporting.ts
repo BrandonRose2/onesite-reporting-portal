@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -18,6 +18,8 @@ export const DEFAULT_GENERATE_SETTINGS: GenerateScheduleSettings = {
   notifyUserIds: [],
   reportParameters: {},
 };
+
+const CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"];
 
 function normalizedSettings(settings?: Partial<GenerateScheduleSettings>): GenerateScheduleSettings {
   const mode = settings?.mode === "schedule_later" ? "schedule_later" : "generate_now";
@@ -123,7 +125,9 @@ export async function listOneSitePropertyContacts(propertyIds?: number[]) {
     sourceSyncedAt: propertyContacts.sourceSyncedAt,
   }).from(properties)
     .leftJoin(propertyContacts, eq(propertyContacts.propertyId, properties.id))
-    .where(propertyScope ? and(eq(properties.isActive, true), inArray(properties.id, propertyScope)) : eq(properties.isActive, true))
+    .where(propertyScope
+      ? and(eq(properties.isActive, true), notInArray(properties.externalId, CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS), inArray(properties.id, propertyScope))
+      : and(eq(properties.isActive, true), notInArray(properties.externalId, CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS)))
     .orderBy(asc(properties.name));
 }
 

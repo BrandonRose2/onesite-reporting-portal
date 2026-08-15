@@ -15,6 +15,8 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("catalog: portfolioProcedure");
     expect(routers).toContain("propertyContacts: portalProcedure");
     expect(routers).toContain("documents: portalProcedure");
+    expect(readFileSync(new URL("./onesiteReporting.ts", import.meta.url), "utf8")).toContain("CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS");
+    expect(readFileSync(new URL("./onesiteReporting.ts", import.meta.url), "utf8")).toContain('notInArray(properties.externalId, CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS)');
   });
 
   it("renders a report-title selector and an all-properties queue action", () => {

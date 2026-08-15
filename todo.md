@@ -157,3 +157,5 @@
 - [x] Expose completed OneSite report runs and their filed property documents in a portal-safe My Reports workspace.
 - [x] Verify and test OneSite Reporting Hub sidebar navigation, active state, keyboard focus, and authenticated route behavior.
 - [x] Persist verified structured Delinquency controls for current resident scope, delinquent rent only, and allocated total treatment in the OneSite catalog.
+- [x] Rename Historical – Riverchase Homes to Riverchase across portal property records and reporting associations.
+- [x] Keep Granite Elmwood Indiana Homes and Granite Valencia Villas out of contact autofill and manager outreach until the user confirms their identity and ownership.
