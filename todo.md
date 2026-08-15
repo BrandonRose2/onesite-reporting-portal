@@ -147,7 +147,10 @@
 - [ ] Verify administrator, boss, manager, and unapproved access states before publishing the multi-user release.
 - [x] Exclude former residents from all future OneSite delinquency validation exports and portal-facing deliverables.
 - [x] Validate the live OneSite current-resident control before generating replacement all-property delinquency files.
-- [ ] Retrieve and file only the corrected current-residents-only validation exports.
+- [x] Retrieve and file only the corrected current-residents-only validation exports.
 - [x] Remove prepaid terminology, metrics, columns, filenames, and summary content from all portal-facing Delinquency surfaces.
 - [x] Preserve the upstream OneSite report’s internal identifier only where technically required and never render it in the Delinquency portal experience.
 - [x] Remove the eight-report type-ahead cap so the OneSite selector exposes the complete approved catalog with accessible scrolling and keyboard navigation.
+- [x] Require Include Delinquent Rent Only alongside Current resident for corrected OneSite Delinquency validation exports.
+- [x] Allocate prepaid amounts into the corrected OneSite source-report totals while keeping all portal-facing Delinquency presentation prepaid-free.
+- [x] Create an accurately parameterized portal request record for the 35 completed final OneSite Delinquency workbooks before filing them by property.
