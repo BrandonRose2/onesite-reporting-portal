@@ -14,6 +14,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("liveEdgeStatus");
     expect(routers).toContain("catalog: portfolioProcedure");
     expect(routers).toContain("propertyContacts: portalProcedure");
+    expect(routers).toContain("documents: portalProcedure");
   });
 
   it("renders a report-title selector and an all-properties queue action", () => {
@@ -40,6 +41,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("const suggestedCatalog = filteredCatalog;");
     expect(page).not.toContain("filteredCatalog.slice(0, 8)");
     expect(page).toContain("matching {suggestedCatalog.length === 1 ? \"report\" : \"reports\"}");
+    expect(page).toContain("Completed My Reports documents");
+    expect(page).toContain("Open workbook");
+    expect(page).toContain("delinquency\")");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {

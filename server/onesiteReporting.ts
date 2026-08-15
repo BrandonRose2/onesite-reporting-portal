@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { properties, propertyContacts, reportCatalog, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
+import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type ReportFormat = "excel" | "pdf" | "csv";
@@ -58,6 +58,34 @@ export async function listOneSiteReportRequests() {
     .where(eq(reportRequests.sourceSystem, "realpage"))
     .orderBy(desc(reportRequests.requestedAt))
     .limit(100);
+}
+
+export async function listOneSiteReportDocuments(propertyIds?: number[]) {
+  const db = await getDb();
+  if (!db) return [];
+  const propertyScope = propertyIds ? Array.from(new Set(propertyIds.filter(id => Number.isInteger(id) && id > 0))) : null;
+  if (propertyScope?.length === 0) return [];
+  return db.select({
+    id: reportDocuments.id,
+    reportRequestId: reportDocuments.reportRequestId,
+    originalFilename: reportDocuments.originalFilename,
+    storageUrl: reportDocuments.storageUrl,
+    mimeType: reportDocuments.mimeType,
+    fileSizeBytes: reportDocuments.fileSizeBytes,
+    createdAt: reportDocuments.createdAt,
+    propertyId: properties.id,
+    propertyName: properties.name,
+    region: properties.region,
+    requestStatus: reportRequests.status,
+    requestedReportName: reportRequests.requestedReportName,
+  }).from(reportDocuments)
+    .innerJoin(reportRequests, eq(reportDocuments.reportRequestId, reportRequests.id))
+    .leftJoin(properties, eq(reportDocuments.propertyId, properties.id))
+    .where(propertyScope
+      ? and(eq(reportRequests.sourceSystem, "realpage"), inArray(reportDocuments.propertyId, propertyScope))
+      : eq(reportRequests.sourceSystem, "realpage"))
+    .orderBy(desc(reportDocuments.createdAt), asc(properties.name))
+    .limit(500);
 }
 
 export async function listOneSiteInternalNotificationUsers() {
