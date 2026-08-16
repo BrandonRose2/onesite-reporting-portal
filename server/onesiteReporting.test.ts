@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { isLiveEdgeReady, LiveEdgeConnectionNotice, LiveEdgeReadiness } from "../client/src/pages/OneSiteReportingHub";
+import { formatOfficePhone, isLiveEdgeReady, LiveEdgeConnectionNotice, LiveEdgeReadiness } from "../client/src/pages/OneSiteReportingHub";
 
 describe("OneSite Reporting Hub request workflow", () => {
   it("exposes approved-user catalog and contact access plus administrator-controlled queue actions", () => {
@@ -31,6 +31,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("role=\"combobox\"");
     expect(page).toContain("selectReport");
     expect(page).toContain("Generate report for all properties");
+    expect(page).toContain("Generate for all mapped properties");
+    expect(page).toContain("Property contact selection below only controls optional delivery details; it does not limit the report scope.");
+    expect(page.indexOf("Generate for all mapped properties")).toBeLessThan(page.indexOf("Property contact autofill"));
     expect(page).toContain("Schedule report for all properties");
     expect(page).toContain("Report-specific parameters");
     expect(page).toContain("Sync My Reports");
@@ -85,5 +88,14 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(notice).toContain("Before queueing a report:");
     expect(notice).toContain("Open Microsoft Edge on your Mac");
     expect(notice).toContain("Last ready: not yet recorded.");
+  });
+
+  it("formats office contact numbers and labels extensions without conflating the two", () => {
+    expect(formatOfficePhone("9728782040")).toBe("(972) 878-2040");
+    expect(formatOfficePhone("+1 972 878 2040")).toBe("+1 (972) 878-2040");
+    expect(formatOfficePhone("Not available")).toBe("Not available");
+    const page = readFileSync(new URL("../client/src/pages/OneSiteReportingHub.tsx", import.meta.url), "utf8");
+    expect(page).toContain('label="Office & ext."');
+    expect(page).toContain('`ext. ${contact.extension}`');
   });
 });
