@@ -98,9 +98,9 @@
 - [ ] Enforce live Edge readiness immediately before queued request claim and execution rather than only through a no-claim preflight mode.
 - [x] Show inline live Edge reconnect instructions and last checked/ready details in the Hub, and warn or disable report queueing until readiness is restored.
 - [x] Display both last checked and last ready timestamps in the live Edge notice, including when Edge is unavailable or interactive action is required.
-- [ ] Add regression coverage for the Hub’s live Edge timestamps and disabled queueing state.
-- [ ] Add a UI-focused non-ready-state test that verifies both timestamps, reconnect guidance, and disabled queue/sync actions.
-- [ ] Add a UI-focused ready-state test that verifies both timestamps, ready messaging, and enabled queue/sync actions.
+- [x] Add regression coverage for the Hub’s live Edge timestamps and disabled queueing state.
+- [x] Add a UI-focused non-ready-state test that verifies both timestamps, reconnect guidance, and disabled queue/sync actions.
+- [x] Add a UI-focused ready-state test that verifies both timestamps, ready messaging, and enabled queue/sync actions.
 - [x] Preserve the deployed portal’s current sign-in protection; do not add a public-access bypass at this stage.
 - [x] Locate and validate the authorized Company Contacts 7.23.2026 Notion property-contact source.
 - [x] Retrieve the authorized Company Contacts 7.23.2026 content through the user’s live Microsoft Edge session when direct Notion integration access is unavailable.
@@ -163,3 +163,4 @@
 - [x] Remove the Reporting Overview presentation from the homepage while retaining How to Use guidance and adding accurate quick-look summaries of previously pulled reports.
 - [x] Move OneSite report retrieval to the top of navigation as Pull Reports – OneSite and add an adjacent Pull Reports – Yardi placeholder without credentials or automation.
 - [x] Verify the complete approved OneSite report catalog and refine the selector with contained list scrolling plus outside-click dismissal.
+- [x] Add focused ready and unavailable-state regression coverage for Pull Reports – OneSite queue, sync, and reconnect messaging.

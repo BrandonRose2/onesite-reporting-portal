@@ -193,7 +193,7 @@ function Metric({ label, value, helper }: { label: string; value: number; helper
   return <div className="rounded-2xl border bg-white p-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p><p className="mt-2 text-3xl font-semibold text-[#122b4b]">{value}</p><p className="mt-1 text-xs text-slate-500">{helper}</p></div>;
 }
 
-function LiveEdgeReadiness({ status, isLoading }: { status: LiveEdgeStatus | null | undefined; isLoading: boolean }) {
+export function LiveEdgeReadiness({ status, isLoading }: { status: LiveEdgeStatus | null | undefined; isLoading: boolean }) {
   if (isLoading) return <Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">Checking Microsoft Edge…</Badge>;
   if (status?.status === "ready") return <Badge className="border border-[#77d2c5] bg-[#0c7469] px-3 py-1.5 text-white hover:bg-[#0c7469]">Live Edge ready</Badge>;
   const helper = status?.status === "interactive_required" ? "Edge action required" : "Open signed-in Edge";

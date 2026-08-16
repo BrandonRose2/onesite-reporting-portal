@@ -1,5 +1,8 @@
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { isLiveEdgeReady, LiveEdgeConnectionNotice, LiveEdgeReadiness } from "../client/src/pages/OneSiteReportingHub";
 
 describe("OneSite Reporting Hub request workflow", () => {
   it("exposes approved-user catalog and contact access plus administrator-controlled queue actions", () => {
@@ -62,5 +65,25 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(layout).toContain('location.startsWith("/onesite-reports")');
     expect(layout).toContain('aria-current={isActive ? "page" : undefined}');
     expect(layout).toContain('focus-visible:ring-2');
+  });
+
+  it("renders ready state timestamps and preserves enabled readiness semantics", () => {
+    const readyStatus = { status: "ready" as const, checkedAt: new Date("2026-08-16T17:00:00Z"), lastReadyAt: new Date("2026-08-16T16:59:00Z"), detail: null };
+    expect(isLiveEdgeReady(readyStatus)).toBe(true);
+    expect(renderToStaticMarkup(createElement(LiveEdgeReadiness, { status: readyStatus, isLoading: false }))).toContain("Live Edge ready");
+    const notice = renderToStaticMarkup(createElement(LiveEdgeConnectionNotice, { status: readyStatus, isLoading: false }));
+    expect(notice).toContain("Live Microsoft Edge is ready.");
+    expect(notice).toContain("Last checked:");
+    expect(notice).toContain("Last ready:");
+  });
+
+  it("renders unavailable reconnect guidance and preserves disabled readiness semantics", () => {
+    const unavailableStatus = { status: "unavailable" as const, checkedAt: new Date("2026-08-16T17:00:00Z"), lastReadyAt: null, detail: "Reports Hub is not open" };
+    expect(isLiveEdgeReady(unavailableStatus)).toBe(false);
+    expect(renderToStaticMarkup(createElement(LiveEdgeReadiness, { status: unavailableStatus, isLoading: false }))).toContain("Open signed-in Edge");
+    const notice = renderToStaticMarkup(createElement(LiveEdgeConnectionNotice, { status: unavailableStatus, isLoading: false }));
+    expect(notice).toContain("Before queueing a report:");
+    expect(notice).toContain("Open Microsoft Edge on your Mac");
+    expect(notice).toContain("Last ready: not yet recorded.");
   });
 });
