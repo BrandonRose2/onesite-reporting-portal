@@ -7,17 +7,20 @@ import { reportingOverviewQuickActions } from "../client/src/lib/reportingOvervi
 import { createOverviewNavigationHandlers, ReportingOverviewQuickActions } from "../client/src/components/ReportingOverviewQuickActions";
 
 describe("overall reporting homepage", () => {
-  it("presents reporting operations with clear report, property, and manager entry points", () => {
+  it("presents How to Use guidance and quick-look summaries of completed reports", () => {
     const dashboard = readFileSync(new URL("../client/src/pages/Dashboard.tsx", import.meta.url), "utf8");
-    expect(dashboard).toContain("Reporting Operations");
+    expect(dashboard).toContain("AptCorp Property Reports");
+    expect(dashboard).toContain("How to use");
+    expect(dashboard).toContain("Previously pulled reports");
+    expect(dashboard).toContain("quickLookReports");
     expect(dashboard).toContain("ReportingOverviewQuickActions");
-    expect(dashboard).toContain("Delinquency reporting module");
-    expect(dashboard).toContain("Apartment Corp Portfolio — Reporting Operations");
+    expect(dashboard).not.toContain("Delinquency reporting module");
   });
 
-  it("keeps the root sidebar entry framed as an overall reporting overview", () => {
+  it("keeps the root sidebar entry concise", () => {
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
-    expect(layout).toContain('{ icon: LayoutDashboard, label: "Reporting Overview", path: "/" }');
+    expect(layout).toContain('{ icon: LayoutDashboard, label: "Home", path: "/" }');
+    expect(layout).not.toContain('label: "Reporting Overview"');
   });
 
   it("maps each overview quick action to its intended portal route", () => {
@@ -26,9 +29,9 @@ describe("overall reporting homepage", () => {
     expect(reportingOverviewQuickActions.managerFollowUp).toMatchObject({ title: "Manager follow-up", path: "/manager-checklists" });
   });
 
-  it("renders the branded reporting overview quick actions", () => {
+  it("renders the branded How to Use quick actions", () => {
     const html = renderToStaticMarkup(createElement(ReportingOverviewQuickActions, { onNavigate: () => undefined }));
-    expect(html).toContain("Reporting operations quick actions");
+    expect(html).toContain("How to use AptCorp Property Reports");
     expect(html).toContain("Request a report");
     expect(html).toContain("Review property reporting");
     expect(html).toContain("Manager follow-up");
