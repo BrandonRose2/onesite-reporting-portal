@@ -164,3 +164,4 @@
 - [x] Move OneSite report retrieval to the top of navigation as Pull Reports – OneSite and add an adjacent Pull Reports – Yardi placeholder without credentials or automation.
 - [x] Verify the complete approved OneSite report catalog and refine the selector with contained list scrolling plus outside-click dismissal.
 - [x] Add focused ready and unavailable-state regression coverage for Pull Reports – OneSite queue, sync, and reconnect messaging.
+- [x] Replace the top-left OneSite brand with ApartmentCorp and restructure portal navigation around a full multi-system reporting workflow.

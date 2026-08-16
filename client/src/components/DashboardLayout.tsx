@@ -22,24 +22,49 @@ import {
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, Landmark, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, Landmark, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" },
-  { icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" },
-  { icon: LayoutDashboard, label: "Home", path: "/" },
-  { icon: Building2, label: "Properties", path: "/properties" },
-  { icon: CalendarRange, label: "Period History", path: "/history" },
-  { icon: BarChart3, label: "Compare", path: "/compare" },
-  { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
-  { icon: RefreshCw, label: "Run Scraper", path: "/refresh" },
-  { icon: Settings2, label: "Automation", path: "/automation" },
-  { icon: ShieldCheck, label: "Portal Access", path: "/access", adminOnly: true },
+type NavigationItem = { icon: LucideIcon; label: string; path: string; adminOnly?: boolean; managerAllowed?: boolean };
+type NavigationGroup = { label: string; items: NavigationItem[] };
+
+const navigationGroups: NavigationGroup[] = [
+  {
+    label: "Pull reports",
+    items: [
+      { icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" },
+      { icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" },
+    ],
+  },
+  {
+    label: "Review reports",
+    items: [
+      { icon: LayoutDashboard, label: "Home", path: "/" },
+      { icon: CalendarRange, label: "Report Library", path: "/history" },
+      { icon: BarChart3, label: "Compare Periods", path: "/compare" },
+    ],
+  },
+  {
+    label: "Portfolio",
+    items: [
+      { icon: Building2, label: "Properties", path: "/properties" },
+      { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { icon: RefreshCw, label: "Import Data", path: "/refresh" },
+      { icon: Settings2, label: "Automation Settings", path: "/automation" },
+      { icon: ShieldCheck, label: "Portal Access", path: "/access", adminOnly: true },
+    ],
+  },
 ];
+
+const menuItems = navigationGroups.flatMap(group => group.items);
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
@@ -205,16 +230,19 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-semibold tracking-tight text-white">OneSite</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]">Reporting Hub</span>
+                  <span className="truncate text-sm font-semibold tracking-tight text-white">ApartmentCorp</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]">Property Reports</span>
                 </div>
               ) : null}
             </div>
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
-            <SidebarMenu className="px-2 py-1">
-              {menuItems.filter(item => (!item.adminOnly || user?.role === "admin") && (accessRole !== "manager" || item.managerAllowed)).map(item => {
+            {navigationGroups.map(group => {
+              const visibleItems = group.items.filter(item => (!item.adminOnly || user?.role === "admin") && (accessRole !== "manager" || item.managerAllowed));
+              if (!visibleItems.length) return null;
+              return <div key={group.label} className="px-2 pb-2 pt-3 first:pt-2"><p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7fb6c6] group-data-[collapsible=icon]:sr-only">{group.label}</p><SidebarMenu>
+              {visibleItems.map(item => {
                 const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/")) || (item.path === "/onesite-reports" && location.startsWith("/onesite-reports"));
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -233,7 +261,8 @@ function DashboardLayoutContent({
                   </SidebarMenuItem>
                 );
               })}
-            </SidebarMenu>
+              </SidebarMenu></div>;
+            })}
           </SidebarContent>
 
           <SidebarFooter className="border-t border-[#24466d] p-3">
