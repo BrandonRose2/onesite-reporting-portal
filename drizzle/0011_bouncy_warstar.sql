@@ -1,0 +1,1 @@
+ALTER TABLE `reportRequests` MODIFY COLUMN `requestType` enum('generate_all_properties','generate_property','sync_my_reports') NOT NULL;

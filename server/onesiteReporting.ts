@@ -151,6 +151,30 @@ export async function queueCatalogReportRequest(input: { catalogId: number; requ
   return { id: Number(inserted[0].insertId), reportName: catalogEntry.displayName, format: input.format ?? catalogEntry.defaultFormat, settings };
 }
 
+export async function queueCatalogPropertyReportRequest(input: { catalogId: number; propertyId: number; requestedByUserId: number; format?: ReportFormat; settings?: Partial<GenerateScheduleSettings> }) {
+  const { db, catalogEntry } = await requireCatalogEntry(input.catalogId);
+  const [property] = await db.select({ id: properties.id, name: properties.name, externalId: properties.externalId }).from(properties)
+    .where(and(eq(properties.id, input.propertyId), eq(properties.isActive, true))).limit(1);
+  if (!property) throw new Error("Choose an active portfolio property before queueing a property-specific report.");
+  const settings = normalizedSettings(input.settings);
+  const notificationRecipients = settings.notifyUserIds.length
+    ? await db.select({ id: users.id, name: users.name, email: users.email }).from(users).where(inArray(users.id, settings.notifyUserIds))
+    : [];
+  const format = input.format ?? catalogEntry.defaultFormat;
+  const inserted = await db.insert(reportRequests).values({
+    sourceSystem: "realpage",
+    requestType: "generate_property",
+    status: "queued",
+    reportCatalogId: catalogEntry.id,
+    requestedReportName: catalogEntry.exactReportName,
+    requestedFormat: format,
+    propertyScope: `property:${property.id}`,
+    requestedByUserId: input.requestedByUserId,
+    parameterJson: JSON.stringify({ searchTerm: catalogEntry.searchTerm, exactReportName: catalogEntry.exactReportName, reportArea: catalogEntry.reportArea, reportLevel: catalogEntry.reportLevel, product: catalogEntry.product, format, propertyScope: "specific_property", propertyId: property.id, propertyName: property.name, propertyExternalId: property.externalId, generationSettings: settings, notificationRecipients }),
+  });
+  return { id: Number(inserted[0].insertId), reportName: catalogEntry.displayName, propertyName: property.name, format, settings };
+}
+
 export async function queueCustomReportRequest(input: { exactReportName: string; format: ReportFormat; requestedByUserId: number }) {
   const db = await getDb();
   if (!db) throw new Error("The reporting database is unavailable.");

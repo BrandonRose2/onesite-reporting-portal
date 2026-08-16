@@ -105,7 +105,16 @@ export function registerOneSiteRunnerApi(app: Express) {
     await db.update(reportRequests).set({ status: "running", startedAt: new Date() }).where(eq(reportRequests.id, request.id));
     const activeProperties = await db.select({ id: properties.id, externalId: properties.externalId, name: properties.name })
       .from(properties).where(eq(properties.isActive, true)).orderBy(asc(properties.name));
-    res.status(200).json({ ok: true, request: { ...request, status: "running", parameters: safeParameters(request.parameterJson) }, properties: activeProperties });
+    const parameters = safeParameters(request.parameterJson);
+    const scopedPropertyId = parameters.propertyScope === "specific_property" ? Number(parameters.propertyId) : null;
+    const scopedProperties = scopedPropertyId && Number.isInteger(scopedPropertyId)
+      ? activeProperties.filter(property => property.id === scopedPropertyId)
+      : activeProperties;
+    if (!scopedProperties.length) {
+      await db.update(reportRequests).set({ status: "failed", errorMessage: "The requested specific property is no longer active in the portal.", completedAt: new Date() }).where(eq(reportRequests.id, request.id));
+      return res.status(409).json({ ok: false, error: "The requested property is no longer active." });
+    }
+    res.status(200).json({ ok: true, request: { ...request, status: "running", parameters }, properties: scopedProperties });
   });
 
   app.post("/api/onesite-runner/requests/:requestId/documents", async (req, res) => {

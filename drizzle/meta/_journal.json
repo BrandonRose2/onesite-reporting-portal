@@ -78,6 +78,13 @@
       "when": 1786739454700,
       "tag": "0010_thick_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1786905529631,
+      "tag": "0011_bouncy_warstar",
+      "breakpoints": true
     }
   ]
 }

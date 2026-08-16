@@ -58,4 +58,11 @@ describe("OneSite runner token", () => {
     expect(source).toContain("req.body?.requestId");
     expect(source).toContain("eq(reportRequests.id, requestedId)");
   });
+
+  it("returns only the selected property for a specific-property request", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain('parameters.propertyScope === "specific_property"');
+    expect(source).toContain("scopedProperties");
+    expect(source).toContain("property.id === scopedPropertyId");
+  });
 });

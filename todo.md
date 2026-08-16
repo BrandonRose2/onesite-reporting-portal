@@ -165,7 +165,7 @@
 - [x] Verify the complete approved OneSite report catalog and refine the selector with contained list scrolling plus outside-click dismissal.
 - [x] Add focused ready and unavailable-state regression coverage for Pull Reports – OneSite queue, sync, and reconnect messaging.
 - [x] Replace the top-left OneSite brand with ApartmentCorp and restructure portal navigation around a full multi-system reporting workflow.
-- [ ] Make Pull Reports – OneSite scope selection explicit for all properties versus a specific property before queueing a report.
+- [x] Make Pull Reports – OneSite scope selection explicit for all properties versus a specific property before queueing a report.
 - [x] Move the all-property OneSite Generate action directly beneath report selection and scope controls for clearer workflow guidance.
 - [x] Reorder Pull Reports – OneSite into Choose Report, Set Parameters, Choose Property Scope, and Generate steps.
 - [x] Format office contact numbers and show verified extensions under the OFFICE & EXT. label in Pull Reports – OneSite.

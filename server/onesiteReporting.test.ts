@@ -9,6 +9,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     const routers = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
     expect(routers).toContain("onesiteReporting: router");
     expect(routers).toContain("queueCatalogReport: adminProcedure");
+    expect(routers).toContain("queueCatalogPropertyReport: adminProcedure");
     expect(routers).toContain("syncMyReports: adminProcedure");
     expect(routers).toContain("format: z.enum");
     expect(routers).toContain("scheduledFor");
@@ -30,8 +31,11 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Type a title such as “rent roll” or “delinquency,”");
     expect(page).toContain("role=\"combobox\"");
     expect(page).toContain("selectReport");
-    expect(page).toContain("Generate report for all properties");
+    expect(page).toContain('`Generate report for ${propertyScope === "specific" ? "selected property" : "all properties"}`');
     expect(page).toContain("Generate for all mapped properties");
+    expect(page).toContain("Specific property");
+    expect(page).toContain("queueCatalogPropertyReport.useMutation");
+    expect(page).toContain('propertyScope === "specific"');
     expect(page).toContain("Step 1 · Choose Report");
     expect(page).toContain("Step 2 · Set Parameters");
     expect(page).toContain("Step 3 · Choose Property");
@@ -39,9 +43,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page.indexOf("Step 1 · Choose Report")).toBeLessThan(page.indexOf("Step 2 · Set Parameters"));
     expect(page.indexOf("Step 2 · Set Parameters")).toBeLessThan(page.indexOf("Step 3 · Choose Property"));
     expect(page.indexOf("Step 3 · Choose Property")).toBeLessThan(page.indexOf("Step 4 · Generate"));
-    expect(page).toContain("The selected property sets contact and delivery details.");
-    expect(page.indexOf("<PropertyContactAutofill")).toBeLessThan(page.indexOf("Generate for all mapped properties"));
-    expect(page).toContain("Schedule report for all properties");
+    expect(page).toContain("All mapped OneSite properties will be included.");
+    expect(page).toContain("This queues the selected report for the one chosen property.");
+    expect(page).toContain('`Schedule report for ${propertyScope === "specific" ? "selected property" : "all properties"}`');
     expect(page).toContain("Report-specific parameters");
     expect(page).toContain("Sync My Reports");
     expect(page).toContain("Delinquency + OneSite management");

@@ -264,7 +264,7 @@ export const reportRequests = mysqlTable(
   {
     id: int("id").autoincrement().primaryKey(),
     sourceSystem: mysqlEnum("sourceSystem", ["realpage", "yardi"]).notNull().default("realpage"),
-    requestType: mysqlEnum("requestType", ["generate_all_properties", "sync_my_reports"]).notNull(),
+    requestType: mysqlEnum("requestType", ["generate_all_properties", "generate_property", "sync_my_reports"]).notNull(),
     status: mysqlEnum("status", ["queued", "running", "completed", "completed_with_warnings", "failed"]).default("queued").notNull(),
     reportCatalogId: int("reportCatalogId"),
     requestedReportName: varchar("requestedReportName", { length: 255 }).notNull(),
