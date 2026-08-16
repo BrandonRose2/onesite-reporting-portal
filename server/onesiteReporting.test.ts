@@ -32,8 +32,15 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("selectReport");
     expect(page).toContain("Generate report for all properties");
     expect(page).toContain("Generate for all mapped properties");
-    expect(page).toContain("Property contact selection below only controls optional delivery details; it does not limit the report scope.");
-    expect(page.indexOf("Generate for all mapped properties")).toBeLessThan(page.indexOf("Property contact autofill"));
+    expect(page).toContain("Step 1 · Choose Report");
+    expect(page).toContain("Step 2 · Set Parameters");
+    expect(page).toContain("Step 3 · Choose Property");
+    expect(page).toContain("Step 4 · Generate");
+    expect(page.indexOf("Step 1 · Choose Report")).toBeLessThan(page.indexOf("Step 2 · Set Parameters"));
+    expect(page.indexOf("Step 2 · Set Parameters")).toBeLessThan(page.indexOf("Step 3 · Choose Property"));
+    expect(page.indexOf("Step 3 · Choose Property")).toBeLessThan(page.indexOf("Step 4 · Generate"));
+    expect(page).toContain("The selected property sets contact and delivery details.");
+    expect(page.indexOf("<PropertyContactAutofill")).toBeLessThan(page.indexOf("Generate for all mapped properties"));
     expect(page).toContain("Schedule report for all properties");
     expect(page).toContain("Report-specific parameters");
     expect(page).toContain("Sync My Reports");
