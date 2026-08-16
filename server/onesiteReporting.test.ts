@@ -42,7 +42,10 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("automatically fills its authorized Company Contacts email");
     expect(page).toContain("const suggestedCatalog = filteredCatalog;");
     expect(page).not.toContain("filteredCatalog.slice(0, 8)");
-    expect(page).toContain("matching {suggestedCatalog.length === 1 ? \"report\" : \"reports\"}");
+    expect(page).toContain("Showing all {suggestedCatalog.length} matching");
+    expect(page).toContain("overscroll-contain");
+    expect(page).toContain('document.addEventListener("pointerdown", closeOnOutsideInteraction)');
+    expect(page).toContain('catalogSelectorRef.current?.contains(event.target as Node)');
     expect(page).toContain("Completed My Reports documents");
     expect(page).toContain("Open workbook");
     expect(page).toContain("delinquency\")");
