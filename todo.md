@@ -160,3 +160,5 @@
 - [x] Rename Historical – Riverchase Homes to Riverchase across portal property records and reporting associations.
 - [x] Keep Granite Elmwood Indiana Homes and Granite Valencia Villas out of contact autofill and manager outreach until the user confirms their identity and ownership.
 - [x] Change the portal’s browser and visible application title to AptCorp Property Reports.
+- [ ] Remove the Reporting Overview presentation from the homepage while retaining How to Use guidance and adding accurate quick-look summaries of previously pulled reports.
+- [x] Move OneSite report retrieval to the top of navigation as Pull Reports – OneSite and add an adjacent Pull Reports – Yardi placeholder without credentials or automation.

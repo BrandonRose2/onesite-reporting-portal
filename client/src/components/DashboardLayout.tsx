@@ -22,19 +22,20 @@ import {
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, Landmark, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Reporting Overview", path: "/" },
+  { icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" },
+  { icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" },
+  { icon: LayoutDashboard, label: "Home", path: "/" },
   { icon: Building2, label: "Properties", path: "/properties" },
   { icon: CalendarRange, label: "Period History", path: "/history" },
   { icon: BarChart3, label: "Compare", path: "/compare" },
   { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
-  { icon: FileOutput, label: "OneSite Reporting Hub", path: "/onesite-reports" },
   { icon: RefreshCw, label: "Run Scraper", path: "/refresh" },
   { icon: Settings2, label: "Automation", path: "/automation" },
   { icon: ShieldCheck, label: "Portal Access", path: "/access", adminOnly: true },

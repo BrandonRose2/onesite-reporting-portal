@@ -16,6 +16,7 @@ import ManagerChecklists from "./pages/ManagerChecklists";
 import ManagerChecklistDetail from "./pages/ManagerChecklistDetail";
 import SourceDocumentPreview from "./pages/SourceDocumentPreview";
 import OneSiteReportingHub from "./pages/OneSiteReportingHub";
+import YardiReports from "./pages/YardiReports";
 import AccessManagement from "./pages/AccessManagement";
 
 function PortalRoute({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ function Router() {
       <Route path={"/manager-checklists/:propertyId"}><PortalRoute><ManagerChecklistDetail /></PortalRoute></Route>
       <Route path={"/source-documents/:sourceFileId"}><PortalRoute><SourceDocumentPreview /></PortalRoute></Route>
       <Route path={"/onesite-reports"}><PortalRoute><OneSiteReportingHub /></PortalRoute></Route>
+      <Route path={"/yardi-reports"}><PortalRoute><YardiReports /></PortalRoute></Route>
       <Route path={"/access"}><PortalRoute><AccessManagement /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

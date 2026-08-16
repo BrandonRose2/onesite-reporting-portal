@@ -21,7 +21,7 @@ describe("OneSite Reporting Hub request workflow", () => {
 
   it("renders a report-title selector and an all-properties queue action", () => {
     const page = readFileSync(new URL("../client/src/pages/OneSiteReportingHub.tsx", import.meta.url), "utf8");
-    expect(page).toContain("OneSite Reporting Hub");
+    expect(page).toContain("Pull Reports – OneSite");
     expect(page).toContain("Find a report");
     expect(page).toContain("Start typing to search");
     expect(page).toContain("Type a title such as “rent roll” or “delinquency,”");
@@ -52,7 +52,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     const app = readFileSync(new URL("../client/src/App.tsx", import.meta.url), "utf8");
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
     expect(app).toContain('<Route path={"/onesite-reports"}>');
-    expect(layout).toContain('{ icon: FileOutput, label: "OneSite Reporting Hub", path: "/onesite-reports" }');
+    expect(app).toContain('<Route path={"/yardi-reports"}>');
+    expect(layout).toContain('{ icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" }');
+    expect(layout).toContain('{ icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" }');
     expect(layout).toContain('setLocation(item.path)');
     expect(layout).toContain('location.startsWith("/onesite-reports")');
     expect(layout).toContain('aria-current={isActive ? "page" : undefined}');
