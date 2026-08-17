@@ -26,10 +26,6 @@ function safeStorageFilename(filename: string) {
   return safeFilename(filename).replace(/[^A-Za-z0-9._-]+/g, "_");
 }
 
-function catalogSlug(title: string) {
-  return `realpage-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "report"}`;
-}
-
 const ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"];
 
 export function registerOneSiteRunnerApi(app: Express) {
@@ -74,11 +70,13 @@ export function registerOneSiteRunnerApi(app: Express) {
   app.post("/api/onesite-runner/catalog/sync", async (req, res) => {
     if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
     const reports = Array.isArray(req.body?.reports) ? req.body.reports.slice(0, 400) : [];
-    const unique = new Map<string, { name: string; reportArea: string | null; reportLevel: string | null; product: string | null }>();
+    const unique = new Map<string, { catalogKey: string; name: string; reportArea: string | null; reportLevel: string | null; product: string | null }>();
     for (const entry of reports) {
+      const catalogKey = typeof entry?.catalogKey === "string" ? entry.catalogKey.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 120) : "";
       const name = typeof entry?.name === "string" ? entry.name.replace(/\s+/g, " ").trim().slice(0, 255) : "";
-      if (!name) continue;
-      unique.set(name.toLowerCase(), {
+      if (!catalogKey || !name) continue;
+      unique.set(catalogKey, {
+        catalogKey,
         name,
         reportArea: typeof entry?.reportArea === "string" ? entry.reportArea.replace(/\s+/g, " ").trim().slice(0, 160) || null : null,
         reportLevel: typeof entry?.reportLevel === "string" ? entry.reportLevel.replace(/\s+/g, " ").trim().slice(0, 80) || null : null,
@@ -92,13 +90,21 @@ export function registerOneSiteRunnerApi(app: Express) {
     let refreshed = 0;
     for (const entry of Array.from(unique.values())) {
       const [existing] = await db.select({ id: reportCatalog.id }).from(reportCatalog)
-        .where(and(eq(reportCatalog.sourceSystem, "realpage"), eq(reportCatalog.exactReportName, entry.name)))
+        .where(and(eq(reportCatalog.sourceSystem, "realpage"), eq(reportCatalog.slug, entry.catalogKey)))
         .limit(1);
       if (existing) {
         await db.update(reportCatalog).set({ displayName: entry.name, searchTerm: entry.name, reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isActive: true, isApproved: true }).where(eq(reportCatalog.id, existing.id));
         refreshed += 1;
       } else {
-        await db.insert(reportCatalog).values({ sourceSystem: "realpage", slug: catalogSlug(entry.name), displayName: entry.name, exactReportName: entry.name, searchTerm: entry.name, defaultFormat: "pdf", reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isVerified: false, isApproved: true, isActive: true });
+        const [legacy] = await db.select({ id: reportCatalog.id }).from(reportCatalog)
+          .where(and(eq(reportCatalog.sourceSystem, "realpage"), eq(reportCatalog.exactReportName, entry.name)))
+          .limit(1);
+        if (legacy && !entry.catalogKey.endsWith("-variant-2")) {
+          await db.update(reportCatalog).set({ slug: entry.catalogKey, displayName: entry.name, searchTerm: entry.name, reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isActive: true, isApproved: true }).where(eq(reportCatalog.id, legacy.id));
+          refreshed += 1;
+          continue;
+        }
+        await db.insert(reportCatalog).values({ sourceSystem: "realpage", slug: entry.catalogKey, displayName: entry.name, exactReportName: entry.name, searchTerm: entry.name, defaultFormat: "pdf", reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isVerified: false, isApproved: true, isActive: true });
         added += 1;
       }
     }

@@ -197,4 +197,5 @@
 - [ ] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
 - [ ] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.
 - [ ] Audit and expose all 309 available OneSite report titles in the portal selector, with clear verified versus settings-confirmation readiness labels.
+- [ ] Preserve all 309 OneSite catalog rows, including report-area variants that share the same display title.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
