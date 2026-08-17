@@ -5,7 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, portfolioProcedure, portalProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { canAccessProperty, getPortalAccessForUser } from "./portalAccess";
 import { listAccessAssignableProperties, listPortalAccessRules, savePortalAccessRule, setPortalAccessRuleActive } from "./accessAdmin";
-import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
+import { compareReportingPeriods, getDashboard, getManagerChecklistState, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods, saveManagerChecklistState } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
 import { getLiveEdgeRunnerStatus, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
 
@@ -47,6 +47,30 @@ export const appRouter = router({
     propertyDetail: portalProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input, ctx }) => {
       if (!canAccessProperty(ctx.portalAccess, input.propertyId)) throw new Error("You are not assigned to this property.");
       return getPropertyDetail(input);
+    }),
+    checklistState: portalProcedure.input(z.object({ reportingPeriodId: z.number().int(), propertyId: z.number().int() })).query(({ input, ctx }) => {
+      if (!canAccessProperty(ctx.portalAccess, input.propertyId)) throw new Error("You are not assigned to this property.");
+      return getManagerChecklistState(input);
+    }),
+    saveChecklistState: portalProcedure.input(z.object({
+      reportingPeriodId: z.number().int(),
+      propertyId: z.number().int(),
+      state: z.object({
+        managerName: z.string().max(255),
+        callDate: z.string().max(64),
+        callNotes: z.string().max(10000),
+        managerContactStatus: z.enum(["yes", "voicemail", "follow_up_required"]),
+        nextFollowUp: z.string().max(64),
+        availabilityReviewed: z.boolean(),
+        availabilityStatus: z.string().max(10000),
+        availabilityNotes: z.string().max(10000),
+        reviewedWithManager: z.boolean(),
+        escalationNotes: z.string().max(10000),
+        residentFollowUps: z.record(z.string(), z.object({ contacted: z.boolean(), arrangement: z.boolean(), escalate: z.boolean(), notes: z.string().max(2000) })),
+      }),
+    })).mutation(({ input, ctx }) => {
+      if (!canAccessProperty(ctx.portalAccess, input.propertyId)) throw new Error("You are not assigned to this property.");
+      return saveManagerChecklistState({ ...input, updatedByUserId: ctx.user.id });
     }),
     sourceDocumentPreview: portalProcedure.input(z.object({ sourceFileId: z.number().int().positive() })).query(({ input, ctx }) => getSourceDocumentPreview(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     compare: portfolioProcedure.input(z.object({ currentPeriodId: z.number().int(), priorPeriodId: z.number().int() })).query(({ input }) => compareReportingPeriods(input)),

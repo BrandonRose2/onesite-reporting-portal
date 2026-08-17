@@ -6,6 +6,7 @@ import {
   propertyPeriodSummaries,
   reportingPeriods,
   residentLedgerRows,
+  managerChecklistStates,
   sourceFiles,
 } from "../drizzle/schema";
 import type { DelinquencyMetrics, RegionName } from "../shared/delinquency";
@@ -19,6 +20,33 @@ export type ImportFileInput = {
   filename: string;
   dataBase64: string;
 };
+
+export async function getManagerChecklistState(input: { reportingPeriodId: number; propertyId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("The reporting database is unavailable.");
+  const [saved] = await db.select().from(managerChecklistStates)
+    .where(and(eq(managerChecklistStates.reportingPeriodId, input.reportingPeriodId), eq(managerChecklistStates.propertyId, input.propertyId)))
+    .limit(1);
+  if (!saved) return null;
+  try {
+    return { state: JSON.parse(saved.stateJson) as unknown, updatedAt: saved.updatedAt, updatedByUserId: saved.updatedByUserId };
+  } catch {
+    return null;
+  }
+}
+
+export async function saveManagerChecklistState(input: { reportingPeriodId: number; propertyId: number; state: unknown; updatedByUserId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("The reporting database is unavailable.");
+  const stateJson = JSON.stringify(input.state);
+  await db.insert(managerChecklistStates).values({
+    reportingPeriodId: input.reportingPeriodId,
+    propertyId: input.propertyId,
+    stateJson,
+    updatedByUserId: input.updatedByUserId,
+  }).onDuplicateKeyUpdate({ set: { stateJson, updatedByUserId: input.updatedByUserId, updatedAt: new Date() } });
+  return { saved: true };
+}
 
 export type ParsedLedgerRow = {
   residentKey: string;

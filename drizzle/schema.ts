@@ -301,6 +301,23 @@ export const reportDocuments = mysqlTable(
   table => [index("report_documents_request_idx").on(table.reportRequestId), index("report_documents_property_idx").on(table.propertyId)]
 );
 
+export const managerChecklistStates = mysqlTable(
+  "managerChecklistStates",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    reportingPeriodId: int("reportingPeriodId").notNull(),
+    propertyId: int("propertyId").notNull(),
+    stateJson: text("stateJson").notNull(),
+    updatedByUserId: int("updatedByUserId"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => [
+    uniqueIndex("manager_checklist_period_property_unique").on(table.reportingPeriodId, table.propertyId),
+    index("manager_checklist_property_idx").on(table.propertyId),
+  ]
+);
+
 export const runnerConnectionStatuses = mysqlTable(
   "runnerConnectionStatuses",
   {
