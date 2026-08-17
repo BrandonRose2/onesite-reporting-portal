@@ -176,7 +176,10 @@
 - [x] Add reusable reveal and section-progress treatments to key AptCorp reporting pages without obscuring operational content.
 - [x] Add a reduced-motion-safe scramble text reveal to the AptCorp reporting hero and a frosted-glass sticky mobile header.
 - [x] Ensure the hero scramble reveal settles promptly so operational page titles are not left garbled during normal use.
-- [ ] Diagnose and fix why a Generate for all properties request can queue without beginning live Edge execution.
-- [ ] Install the approved Mac-hosted live Edge runner and connect portal Generate actions to immediate report execution.
-- [ ] Diagnose and restore the live Edge AppleScript bridge when Edge reports that JavaScript from Apple Events is enabled but does not execute.
+- [x] Diagnose and fix why a Generate for all properties request can queue without beginning live Edge execution.
+- [x] Install the approved Mac-hosted live Edge runner and connect portal Generate actions to immediate report execution.
+- [x] Diagnose and restore the live Edge AppleScript bridge when Edge reports that JavaScript from Apple Events is enabled but does not execute.
+- [x] Correct the live Edge submission flow when the OneSite Generate Report sidebar remains open after the portal marks a request as running.
+- [x] Ensure live Edge selection explicitly commits Select All so OneSite enables Generate before a portal request is marked running.
+- [x] Distinguish OneSite startup latency from report-generation time and surface clear future-run expectations in the portal.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.

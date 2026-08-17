@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import { isLiveEdgeReady, LiveEdgeConnectionNotice, type LiveEdgeStatus } from "../client/src/pages/OneSiteReportingHub";
+import { isLiveEdgeReady, LiveEdgeConnectionNotice, requestStageHelper, requestStageLabel, type LiveEdgeStatus } from "../client/src/pages/OneSiteReportingHub";
 
 const checkedAt = new Date("2026-08-14T00:50:38.000Z");
 const lastReadyAt = new Date("2026-08-14T00:45:00.000Z");
@@ -24,5 +24,13 @@ describe("OneSite Reporting Hub live Edge connection UI", () => {
     expect(html).toContain("Last checked:");
     expect(html).toContain("Last ready:");
     expect(isLiveEdgeReady(status)).toBe(true);
+  });
+
+  it("distinguishes a waiting Mac handoff from OneSite generation", () => {
+    expect(requestStageLabel({ status: "queued" })).toBe("Waiting for Mac runner");
+    expect(requestStageHelper({ status: "queued" })).toContain("checks for new requests automatically");
+    const submitted = { status: "running", sourceRunReference: "Submitted in live Microsoft Edge for all selected properties; awaiting completed files." };
+    expect(requestStageLabel(submitted)).toBe("RealPage generating");
+    expect(requestStageHelper(submitted)).toContain("OneSite accepted the request");
   });
 });

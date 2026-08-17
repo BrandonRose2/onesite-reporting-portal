@@ -25,6 +25,22 @@ export const formatOfficePhone = (value: string | null | undefined) => {
   return value;
 };
 
+export const requestStageLabel = (request: { status: string; startedAt?: Date | string | null; sourceRunReference?: string | null }) => {
+  if (request.status === "queued") return "Waiting for Mac runner";
+  if (request.status === "running" && request.sourceRunReference?.includes("Submitted in live Microsoft Edge")) return "RealPage generating";
+  if (request.status === "running" || request.startedAt) return "Starting in Edge";
+  if (request.status === "failed") return "Needs attention";
+  if (request.status === "completed" || request.status === "completed_with_warnings") return "Filed";
+  return statusLabel(request.status);
+};
+
+export const requestStageHelper = (request: { status: string; startedAt?: Date | string | null; sourceRunReference?: string | null }) => {
+  if (request.status === "queued") return "The Mac runner checks for new requests automatically while Edge remains signed in.";
+  if (request.status === "running" && request.sourceRunReference?.includes("Submitted in live Microsoft Edge")) return "OneSite accepted the request and is generating the report. Larger all-property reports may take several minutes.";
+  if (request.status === "running" || request.startedAt) return "The runner is opening OneSite and applying the saved report settings.";
+  return request.sourceRunReference ?? null;
+};
+
 function parseSettingsSchema(raw?: string | null): SettingsField[] {
   try {
     const parsed = raw ? JSON.parse(raw) : null;
@@ -128,15 +144,15 @@ export default function OneSiteReportingHub() {
     utils.onesiteReporting.liveEdgeStatus.invalidate();
   };
   const queueCatalog = trpc.onesiteReporting.queueCatalogReport.useMutation({
-    onSuccess: result => { toast.success(`${result.reportName} queued with its Generate & Schedule settings.`); refreshHistory(); },
+    onSuccess: result => { toast.success(`${result.reportName} is queued. The Mac runner will open Edge and begin it automatically.`); refreshHistory(); },
     onError: error => toast.error(error.message),
   });
   const queueProperty = trpc.onesiteReporting.queueCatalogPropertyReport.useMutation({
-    onSuccess: result => { toast.success(`${result.reportName} queued for ${result.propertyName}.`); refreshHistory(); },
+    onSuccess: result => { toast.success(`${result.reportName} is queued for ${result.propertyName}. The Mac runner will begin it automatically.`); refreshHistory(); },
     onError: error => toast.error(error.message),
   });
   const queueCustom = trpc.onesiteReporting.queueCustomReport.useMutation({
-    onSuccess: result => { toast.success(`${result.reportName} queued for all properties.`); setCustomTitle(""); setShowCustom(false); refreshHistory(); },
+    onSuccess: result => { toast.success(`${result.reportName} is queued for all properties. The Mac runner will begin it automatically.`); setCustomTitle(""); setShowCustom(false); refreshHistory(); },
     onError: error => toast.error(error.message),
   });
   const syncMyReports = trpc.onesiteReporting.syncMyReports.useMutation({
@@ -201,7 +217,7 @@ export default function OneSiteReportingHub() {
       </div></Panel>
       <Panel eyebrow="My Reports" title="Retrieve reports you generated yourself"><div className="space-y-5 p-5 sm:p-6"><div className="rounded-xl border border-[#eed79d] bg-[#fffaf0] p-4 text-sm text-[#745116]"><p className="font-semibold">Synchronize the OneSite My Reports workspace</p><p className="mt-1 text-xs leading-5 text-slate-600">Use this after generating a report directly in OneSite. The runner will retrieve newly available outputs, associate them with properties, file the source documents, and begin summary generation.</p></div><Button onClick={() => syncMyReports.mutate()} disabled={!liveEdgeReady || syncMyReports.isPending} className="hunter-metal-button w-full"><RefreshCw className={`mr-2 h-4 w-4 ${syncMyReports.isPending ? "animate-spin" : ""}`} />{syncMyReports.isPending ? "Queueing synchronization…" : !liveEdgeReady ? "Open signed-in Edge to sync" : "Sync My Reports"}</Button><div className="flex gap-3 rounded-xl bg-slate-50 p-4"><Archive className="h-5 w-5 shrink-0 text-[#0c7469]" /><p className="text-xs leading-5 text-slate-600">The portal retains the original source output, filing metadata, property association, Markdown summary, and generated PDF once the runner processes the request.</p></div></div></Panel>
     </section>
-    <Panel eyebrow="My Reports activity" title="Report requests and retrieval status"><div className="divide-y divide-slate-100">{requestsQuery.data?.length ? requestsQuery.data.map(({ request, catalog }) => <div key={request.id} className="flex flex-wrap items-start justify-between gap-4 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(request.status)}</Badge><Badge variant="outline">{request.requestType === "sync_my_reports" ? "My Reports sync" : request.requestType === "generate_property" ? "Specific property" : "All properties"}</Badge><Badge variant="outline">{formatLabel(request.requestedFormat)}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{portalReportTitle(catalog?.displayName ?? request.requestedReportName)}</p><p className="mt-1 text-xs text-slate-500">Requested {new Date(request.requestedAt).toLocaleString()} · {request.documentCount} archived documents</p>{request.errorMessage ? <p className="mt-2 text-xs text-[#b44851]">{request.errorMessage}</p> : null}</div><History className="h-4 w-4 text-slate-400" /></div>) : <div className="p-7 text-center text-sm text-slate-500"><FileOutput className="mx-auto mb-3 h-6 w-6 text-slate-400" />No OneSite report requests yet. Select a title above to create the first report request.</div>}</div></Panel>
+    <Panel eyebrow="My Reports activity" title="Report requests and retrieval status"><div className="divide-y divide-slate-100">{requestsQuery.data?.length ? requestsQuery.data.map(({ request, catalog }) => <div key={request.id} className="flex flex-wrap items-start justify-between gap-4 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(request.status)}</Badge><Badge className={request.status === "queued" ? "bg-[#8a6d28] text-white hover:bg-[#8a6d28]" : request.status === "running" ? "bg-[#0c7469] text-white hover:bg-[#0c7469]" : "bg-slate-600 text-white hover:bg-slate-600"}>{requestStageLabel(request)}</Badge><Badge variant="outline">{request.requestType === "sync_my_reports" ? "My Reports sync" : request.requestType === "generate_property" ? "Specific property" : "All properties"}</Badge><Badge variant="outline">{formatLabel(request.requestedFormat)}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{portalReportTitle(catalog?.displayName ?? request.requestedReportName)}</p><p className="mt-1 text-xs text-slate-500">Requested {new Date(request.requestedAt).toLocaleString()} · {request.documentCount} archived documents</p>{requestStageHelper(request) ? <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-600">{requestStageHelper(request)}</p> : null}{request.errorMessage ? <p className="mt-2 text-xs text-[#b44851]">{request.errorMessage}</p> : null}</div><History className="h-4 w-4 text-slate-400" /></div>) : <div className="p-7 text-center text-sm text-slate-500"><FileOutput className="mx-auto mb-3 h-6 w-6 text-slate-400" />No OneSite report requests yet. Select a title above to create the first report request.</div>}</div></Panel>
     <Panel eyebrow="Filed property workbooks" title="Completed My Reports documents"><div className="divide-y divide-slate-100">{documentsQuery.data?.length ? documentsQuery.data.map(document => <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(document.requestStatus)}</Badge><Badge variant="outline">{document.region ?? "Portfolio property"}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{document.propertyName ?? "Portfolio report"}</p><p className="mt-1 truncate text-xs text-slate-500">{document.originalFilename.replace(/delinquent\s+and\s+prepaid/ig, "delinquency")} · {(document.fileSizeBytes / 1024).toFixed(0)} KB · filed {new Date(document.createdAt).toLocaleString()}</p></div><a href={document.storageUrl} target="_blank" rel="noreferrer" className="hunter-metal-button inline-flex h-9 items-center rounded-lg px-3 text-xs font-semibold text-white">Open workbook</a></div>) : <div className="p-7 text-center text-sm text-slate-500"><Archive className="mx-auto mb-3 h-6 w-6 text-slate-400" />No filed OneSite workbooks are available yet.</div>}</div></Panel>
   </div>;
 }
