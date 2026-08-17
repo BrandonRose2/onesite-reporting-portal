@@ -182,4 +182,8 @@
 - [x] Correct the live Edge submission flow when the OneSite Generate Report sidebar remains open after the portal marks a request as running.
 - [x] Ensure live Edge selection explicitly commits Select All so OneSite enables Generate before a portal request is marked running.
 - [x] Distinguish OneSite startup latency from report-generation time and surface clear future-run expectations in the portal.
+- [x] Retrieve the completed all-properties OneSite output from My Reports and file it under request 120001 in the portal.
+- [ ] Download and file all 35 completed All Units (Excel) workbooks, not only the first My Reports page.
+- [x] File all 33 completed All Units (Excel) workbooks with property-specific names and record the two OneSite errored properties separately.
+- [x] Correct the My Reports automated download interaction so it matches the confirmed manual Download action on subsequent pages.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
