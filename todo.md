@@ -195,7 +195,8 @@
 - [x] Generate AptCorp-formatted workbooks from downloaded OneSite XLS source files and surface those generated workbooks as the primary report output.
 - [x] Create live, real-time-saving manager verification checklists from generated AptCorp report workbooks using the supplied PDF workflow as the reference.
 - [ ] Prepare controlled email-ready delivery outputs for generated reports and completed manager checklists without sending automated emails.
-- [ ] Make each property manager’s OFFICE & EXT. number explicit and consistently visible in manager checklist contact views.
+- [x] Make each property manager’s OFFICE & EXT. number explicit and consistently visible in manager checklist contact views.
+- [x] Import the supplied Company Contacts workbook and reconcile verified manager office numbers and extensions to active properties.
 - [x] Present AptCorp-generated property reports in a polished HTML-first format with print-ready sharing support.
 - [x] Add an administrator-only Report Catalog Manager to add, edit, deactivate, and restore report entries without deleting report history.
 - [x] Add a Property Folders sidebar workspace with one active-property folder and timestamped report histories for generated outputs and retained source evidence.
