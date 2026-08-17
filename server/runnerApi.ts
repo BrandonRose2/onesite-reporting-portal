@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { properties, propertyContacts, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
@@ -99,7 +99,7 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (requestedId !== null && !Number.isInteger(requestedId)) return res.status(400).json({ ok: false, error: "A valid request ID is required" });
     const [request] = await db.select().from(reportRequests)
       .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)])))
-      .orderBy(asc(reportRequests.requestedAt))
+      .orderBy(desc(reportRequests.requestedAt))
       .limit(1);
     if (!request) return res.status(200).json({ ok: true, request: null });
     await db.update(reportRequests).set({ status: "running", startedAt: new Date() }).where(eq(reportRequests.id, request.id));
@@ -115,6 +115,19 @@ export function registerOneSiteRunnerApi(app: Express) {
       return res.status(409).json({ ok: false, error: "The requested property is no longer active." });
     }
     res.status(200).json({ ok: true, request: { ...request, status: "running", parameters }, properties: scopedProperties });
+  });
+
+  app.post("/api/onesite-runner/requests/:requestId/progress", async (req, res) => {
+    if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
+    const requestId = Number(req.params.requestId);
+    const sourceRunReference = typeof req.body?.sourceRunReference === "string" ? req.body.sourceRunReference.slice(0, 160) : "";
+    if (!Number.isInteger(requestId) || !sourceRunReference) return res.status(400).json({ ok: false, error: "A request ID and progress reference are required" });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
+    const [request] = await db.select({ id: reportRequests.id, status: reportRequests.status }).from(reportRequests).where(eq(reportRequests.id, requestId)).limit(1);
+    if (!request || request.status !== "running") return res.status(409).json({ ok: false, error: "Only a running report request can receive progress updates" });
+    await db.update(reportRequests).set({ sourceRunReference }).where(eq(reportRequests.id, requestId));
+    res.status(200).json({ ok: true });
   });
 
   app.post("/api/onesite-runner/requests/:requestId/documents", async (req, res) => {
