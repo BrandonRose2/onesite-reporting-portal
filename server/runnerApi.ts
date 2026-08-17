@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { properties, propertyContacts, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
@@ -97,8 +97,10 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
     const requestedId = req.body?.requestId === undefined ? null : Number(req.body.requestId);
     if (requestedId !== null && !Number.isInteger(requestedId)) return res.status(400).json({ ok: false, error: "A valid request ID is required" });
+    const minimumRequestId = req.body?.minimumRequestId === undefined ? null : Number(req.body.minimumRequestId);
+    if (minimumRequestId !== null && (!Number.isInteger(minimumRequestId) || minimumRequestId < 1)) return res.status(400).json({ ok: false, error: "A valid minimum request ID is required" });
     const [request] = await db.select().from(reportRequests)
-      .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)])))
+      .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)]), ...(minimumRequestId === null ? [] : [gte(reportRequests.id, minimumRequestId)])))
       .orderBy(desc(reportRequests.requestedAt))
       .limit(1);
     if (!request) return res.status(200).json({ ok: true, request: null });

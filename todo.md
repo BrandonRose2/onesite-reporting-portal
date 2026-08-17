@@ -178,4 +178,5 @@
 - [x] Ensure the hero scramble reveal settles promptly so operational page titles are not left garbled during normal use.
 - [ ] Diagnose and fix why a Generate for all properties request can queue without beginning live Edge execution.
 - [ ] Install the approved Mac-hosted live Edge runner and connect portal Generate actions to immediate report execution.
+- [ ] Diagnose and restore the live Edge AppleScript bridge when Edge reports that JavaScript from Apple Events is enabled but does not execute.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
