@@ -16,6 +16,8 @@ describe("Property Reports Library workflow", () => {
     const reportView = readFileSync(new URL("../client/src/pages/PropertyReportView.tsx", import.meta.url), "utf8");
     expect(reportView).toContain("AptCorp Property Report");
     expect(reportView).toContain("Print / save PDF");
+    expect(reportView).toContain("Prepare email");
+    expect(reportView).toContain("mailto:");
     expect(reportView).toContain("Office & ext.");
     expect(reportView).toContain("extension not on file");
   });
