@@ -86,5 +86,6 @@ describe("OneSite runner token", () => {
     expect(source).toContain("isVerified: false");
     expect(source).toContain("eq(reportCatalog.slug, entry.catalogKey)");
     expect(source).toContain("entry.catalogKey.endsWith(\"-variant-2\")");
+    expect(source).toContain("notInArray(reportCatalog.slug, activeCatalogKeys)");
   });
 });

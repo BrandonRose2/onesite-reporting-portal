@@ -108,6 +108,9 @@ export function registerOneSiteRunnerApi(app: Express) {
         added += 1;
       }
     }
+    const activeCatalogKeys = Array.from(unique.keys());
+    await db.update(reportCatalog).set({ isActive: false })
+      .where(and(eq(reportCatalog.sourceSystem, "realpage"), notInArray(reportCatalog.slug, activeCatalogKeys)));
     res.status(200).json({ ok: true, total: unique.size, added, refreshed });
   });
 
