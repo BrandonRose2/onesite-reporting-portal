@@ -68,6 +68,8 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("Open workbook");
     expect(page).toContain("documentUrl.useMutation");
     expect(page).toContain("openWorkbook(document.id)");
+    expect(page).toContain('window.open("", "_blank")');
+    expect(page).toContain("target.opener = null");
     expect(page).not.toContain("href={document.storageUrl}");
     expect(page).toContain("delinquency\")");
   });

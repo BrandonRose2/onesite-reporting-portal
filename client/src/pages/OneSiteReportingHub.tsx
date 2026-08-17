@@ -75,10 +75,11 @@ export default function OneSiteReportingHub() {
   const [notifyUserIds, setNotifyUserIds] = useState<number[]>([]);
   const [cloudService, setCloudService] = useState("");
   const openWorkbook = (documentId: number) => {
-    const target = window.open("about:blank", "_blank", "noopener,noreferrer");
+    const target = window.open("", "_blank");
+    if (target) target.opener = null;
     documentUrlMutation.mutate({ documentId }, {
       onSuccess: ({ url }) => {
-        if (target) target.location.href = url;
+        if (target) target.location.replace(url);
         else window.location.assign(url);
       },
       onError: error => {

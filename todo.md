@@ -189,4 +189,5 @@
 - [x] Exclude Granite Elmwood Indiana Homes and Granite Valencia Villas from every future OneSite all-properties queue and live Edge selection scope.
 - [x] Hide Granite Elmwood Indiana Homes and Granite Valencia Villas from Portfolio and manager-checklist selections while preserving historical records.
 - [x] Fix report viewing so filed workbooks use fresh authorized download URLs instead of restricted direct-storage links.
+- [x] Ensure the authorized workbook opener retains the user-initiated new-tab reference while resolving the fresh URL.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
