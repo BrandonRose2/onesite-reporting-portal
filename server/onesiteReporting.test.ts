@@ -48,7 +48,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("This queues the selected report for the one chosen property.");
     expect(page).toContain('`Schedule report for ${propertyScope === "specific" ? "selected property" : "all properties"}`');
     expect(page).toContain("Report-specific parameters");
-    expect(page).toContain("Sync My Reports");
+    expect(page).toContain("Find manually generated reports");
     expect(page).toContain("Delinquency + OneSite management");
     expect(page).toContain("Approved OneSite report");
     expect(page).toContain("Live Edge ready");
@@ -64,7 +64,11 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("overscroll-contain");
     expect(page).toContain('document.addEventListener("pointerdown", closeOnOutsideInteraction)');
     expect(page).toContain('catalogSelectorRef.current?.contains(event.target as Node)');
-    expect(page).toContain("Completed My Reports documents");
+    expect(page).toContain("All filed property workbooks");
+    expect(page).toContain("Run a report, then open its workbooks here");
+    expect(page).toContain("Ready to open");
+    expect(page).toContain("Open workbooks");
+    expect(page).toContain("showRequestResults");
     expect(page).toContain("Open workbook");
     expect(page).toContain("documentUrl.useMutation");
     expect(page).toContain("openWorkbook(document.id)");

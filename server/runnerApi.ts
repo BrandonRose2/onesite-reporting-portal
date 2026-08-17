@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
 import { and, asc, desc, eq, gte, notInArray } from "drizzle-orm";
-import { properties, propertyContacts, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
+import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
 
@@ -20,6 +20,14 @@ function safeParameters(value: string | null) {
 
 function safeFilename(filename: string) {
   return filename.replace(/[\\/\0]/g, "_").slice(-512) || "onesite-report.bin";
+}
+
+function safeStorageFilename(filename: string) {
+  return safeFilename(filename).replace(/[^A-Za-z0-9._-]+/g, "_");
+}
+
+function catalogSlug(title: string) {
+  return `realpage-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "report"}`;
 }
 
 const ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"];
@@ -61,6 +69,40 @@ export function registerOneSiteRunnerApi(app: Express) {
       });
     }
     res.status(200).json({ ok: true, status });
+  });
+
+  app.post("/api/onesite-runner/catalog/sync", async (req, res) => {
+    if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
+    const reports = Array.isArray(req.body?.reports) ? req.body.reports.slice(0, 400) : [];
+    const unique = new Map<string, { name: string; reportArea: string | null; reportLevel: string | null; product: string | null }>();
+    for (const entry of reports) {
+      const name = typeof entry?.name === "string" ? entry.name.replace(/\s+/g, " ").trim().slice(0, 255) : "";
+      if (!name) continue;
+      unique.set(name.toLowerCase(), {
+        name,
+        reportArea: typeof entry?.reportArea === "string" ? entry.reportArea.replace(/\s+/g, " ").trim().slice(0, 160) || null : null,
+        reportLevel: typeof entry?.reportLevel === "string" ? entry.reportLevel.replace(/\s+/g, " ").trim().slice(0, 80) || null : null,
+        product: typeof entry?.product === "string" ? entry.product.replace(/\s+/g, " ").trim().slice(0, 160) || null : null,
+      });
+    }
+    if (unique.size < 250) return res.status(400).json({ ok: false, error: "The live catalog appears incomplete; expected at least 250 report titles." });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
+    let added = 0;
+    let refreshed = 0;
+    for (const entry of Array.from(unique.values())) {
+      const [existing] = await db.select({ id: reportCatalog.id }).from(reportCatalog)
+        .where(and(eq(reportCatalog.sourceSystem, "realpage"), eq(reportCatalog.exactReportName, entry.name)))
+        .limit(1);
+      if (existing) {
+        await db.update(reportCatalog).set({ displayName: entry.name, searchTerm: entry.name, reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isActive: true, isApproved: true }).where(eq(reportCatalog.id, existing.id));
+        refreshed += 1;
+      } else {
+        await db.insert(reportCatalog).values({ sourceSystem: "realpage", slug: catalogSlug(entry.name), displayName: entry.name, exactReportName: entry.name, searchTerm: entry.name, defaultFormat: "pdf", reportArea: entry.reportArea, reportLevel: entry.reportLevel, product: entry.product, isVerified: false, isApproved: true, isActive: true });
+        added += 1;
+      }
+    }
+    res.status(200).json({ ok: true, total: unique.size, added, refreshed });
   });
 
   app.post("/api/onesite-runner/property-contacts/sync", async (req, res) => {
@@ -150,10 +192,18 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!request || request.sourceSystem !== "realpage") return res.status(404).json({ ok: false, error: "Report request not found" });
     const [property] = await db.select().from(properties).where(eq(properties.name, propertyName));
     if (!property) return res.status(400).json({ ok: false, error: `No active portal property matches ${propertyName}` });
-    const stored = await storagePut(`onesite-reports/${requestId}/${property.externalId}/${originalFilename}`, data, mimeType);
+    const stored = await storagePut(`onesite-reports/${requestId}/${property.externalId}/${safeStorageFilename(originalFilename)}`, data, mimeType);
+    const [existingDocument] = await db.select({ id: reportDocuments.id }).from(reportDocuments)
+      .where(and(eq(reportDocuments.reportRequestId, requestId), eq(reportDocuments.propertyId, property.id), eq(reportDocuments.originalFilename, originalFilename)))
+      .limit(1);
+    if (existingDocument) {
+      await db.update(reportDocuments).set({ storageKey: stored.key, storageUrl: stored.url, mimeType, fileSizeBytes: data.length }).where(eq(reportDocuments.id, existingDocument.id));
+      res.status(200).json({ ok: true, documentId: existingDocument.id, propertyId: property.id, refreshed: true });
+      return;
+    }
     const inserted = await db.insert(reportDocuments).values({ reportRequestId: requestId, propertyId: property.id, documentKind: "source_report", originalFilename, storageKey: stored.key, storageUrl: stored.url, mimeType, fileSizeBytes: data.length });
     await db.update(reportRequests).set({ documentCount: request.documentCount + 1 }).where(eq(reportRequests.id, requestId));
-    res.status(201).json({ ok: true, documentId: Number(inserted[0].insertId), propertyId: property.id });
+    res.status(201).json({ ok: true, documentId: Number(inserted[0].insertId), propertyId: property.id, refreshed: false });
   });
 
   app.post("/api/onesite-runner/requests/:requestId/complete", async (req, res) => {

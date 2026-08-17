@@ -71,4 +71,19 @@ describe("OneSite runner token", () => {
     expect(source).toContain('ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"]');
     expect(source).toContain("notInArray(properties.externalId, ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS)");
   });
+
+  it("uses whitespace-safe storage keys and refreshes an existing workbook rather than duplicating it", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain("safeStorageFilename(originalFilename)");
+    expect(source).toContain("existingDocument");
+    expect(source).toContain("refreshed: true");
+  });
+
+  it("accepts a complete live OneSite catalog while retaining existing verified report configurations", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain("/api/onesite-runner/catalog/sync");
+    expect(source).toContain("unique.size < 250");
+    expect(source).toContain("isVerified: false");
+    expect(source).toContain("eq(reportCatalog.exactReportName, entry.name)");
+  });
 });

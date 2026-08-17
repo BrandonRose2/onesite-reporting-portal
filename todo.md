@@ -190,4 +190,11 @@
 - [x] Hide Granite Elmwood Indiana Homes and Granite Valencia Villas from Portfolio and manager-checklist selections while preserving historical records.
 - [x] Fix report viewing so filed workbooks use fresh authorized download URLs instead of restricted direct-storage links.
 - [x] Ensure the authorized workbook opener retains the user-initiated new-tab reference while resolving the fresh URL.
+- [ ] Diagnose the persistent workbook AccessDenied failure by validating the filed document storage references and actual retrieval path.
+- [ ] Refile the completed All Units workbooks under whitespace-safe storage keys and verify a real authorized workbook download.
+- [ ] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
+- [ ] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
+- [ ] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
+- [ ] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.
+- [ ] Audit and expose all 309 available OneSite report titles in the portal selector, with clear verified versus settings-confirmation readiness labels.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
