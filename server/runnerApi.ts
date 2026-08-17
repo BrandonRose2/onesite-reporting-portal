@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
-import { and, asc, desc, eq, gte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, notInArray } from "drizzle-orm";
 import { properties, propertyContacts, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
@@ -21,6 +21,8 @@ function safeParameters(value: string | null) {
 function safeFilename(filename: string) {
   return filename.replace(/[\\/\0]/g, "_").slice(-512) || "onesite-report.bin";
 }
+
+const ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"];
 
 export function registerOneSiteRunnerApi(app: Express) {
   app.get("/api/onesite-runner/health", (req, res) => {
@@ -106,7 +108,7 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!request) return res.status(200).json({ ok: true, request: null });
     await db.update(reportRequests).set({ status: "running", startedAt: new Date() }).where(eq(reportRequests.id, request.id));
     const activeProperties = await db.select({ id: properties.id, externalId: properties.externalId, name: properties.name })
-      .from(properties).where(eq(properties.isActive, true)).orderBy(asc(properties.name));
+      .from(properties).where(and(eq(properties.isActive, true), notInArray(properties.externalId, ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS))).orderBy(asc(properties.name));
     const parameters = safeParameters(request.parameterJson);
     const scopedPropertyId = parameters.propertyScope === "specific_property" ? Number(parameters.propertyId) : null;
     const scopedProperties = scopedPropertyId && Number.isInteger(scopedPropertyId)

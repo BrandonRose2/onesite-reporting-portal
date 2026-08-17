@@ -65,4 +65,10 @@ describe("OneSite runner token", () => {
     expect(source).toContain("scopedProperties");
     expect(source).toContain("property.id === scopedPropertyId");
   });
+
+  it("excludes the two unrecognized Granite properties from future OneSite execution claims", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain('ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS = ["5083727", "5159418"]');
+    expect(source).toContain("notInArray(properties.externalId, ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS)");
+  });
 });
