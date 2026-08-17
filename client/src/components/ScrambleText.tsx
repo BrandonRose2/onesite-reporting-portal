@@ -20,7 +20,7 @@ export function ScrambleText({ text, className = "" }: { text: string; className
   useEffect(() => {
     if (!hasStarted || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let frame = 0;
-    const totalFrames = Math.max(16, text.length * 3);
+    const totalFrames = Math.max(10, text.length);
     const interval = window.setInterval(() => {
       frame += 1;
       const settled = Math.min(text.length, Math.floor((frame / totalFrames) * text.length));
@@ -32,7 +32,7 @@ export function ScrambleText({ text, className = "" }: { text: string; className
         window.clearInterval(interval);
         setDisplay(text);
       }
-    }, 32);
+    }, 24);
     return () => window.clearInterval(interval);
   }, [hasStarted, text]);
 

@@ -175,4 +175,5 @@
 - [x] Add a restrained atmospheric background, status motion, and reporting-focused micro-interactions while respecting reduced-motion preferences.
 - [x] Add reusable reveal and section-progress treatments to key AptCorp reporting pages without obscuring operational content.
 - [x] Add a reduced-motion-safe scramble text reveal to the AptCorp reporting hero and a frosted-glass sticky mobile header.
+- [x] Ensure the hero scramble reveal settles promptly so operational page titles are not left garbled during normal use.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
