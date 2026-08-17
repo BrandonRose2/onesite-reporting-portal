@@ -290,7 +290,7 @@ export const reportDocuments = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     reportRequestId: int("reportRequestId").notNull(),
     propertyId: int("propertyId"),
-    documentKind: mysqlEnum("documentKind", ["source_report", "property_markdown", "property_pdf", "portfolio_markdown", "portfolio_pdf"]).notNull(),
+    documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook", "property_markdown", "property_pdf", "portfolio_markdown", "portfolio_pdf"]).notNull(),
     originalFilename: varchar("originalFilename", { length: 512 }).notNull(),
     storageKey: varchar("storageKey", { length: 512 }).notNull(),
     storageUrl: varchar("storageUrl", { length: 1024 }).notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE `reportDocuments` MODIFY COLUMN `documentKind` enum('source_report','property_workbook','property_markdown','property_pdf','portfolio_markdown','portfolio_pdf') NOT NULL;

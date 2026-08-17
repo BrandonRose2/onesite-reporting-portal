@@ -108,9 +108,6 @@ export function registerOneSiteRunnerApi(app: Express) {
         added += 1;
       }
     }
-    const activeCatalogKeys = Array.from(unique.keys());
-    await db.update(reportCatalog).set({ isActive: false })
-      .where(and(eq(reportCatalog.sourceSystem, "realpage"), notInArray(reportCatalog.slug, activeCatalogKeys)));
     res.status(200).json({ ok: true, total: unique.size, added, refreshed });
   });
 
@@ -189,6 +186,7 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
     const requestId = Number(req.params.requestId);
     const propertyName = typeof req.body?.propertyName === "string" ? req.body.propertyName.trim() : "";
+    const documentKind = req.body?.documentKind === "property_workbook" ? "property_workbook" : "source_report";
     const originalFilename = typeof req.body?.originalFilename === "string" ? safeFilename(req.body.originalFilename) : "";
     const mimeType = typeof req.body?.mimeType === "string" ? req.body.mimeType.slice(0, 120) : "application/octet-stream";
     const dataBase64 = typeof req.body?.dataBase64 === "string" ? req.body.dataBase64 : "";
@@ -203,14 +201,14 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (!property) return res.status(400).json({ ok: false, error: `No active portal property matches ${propertyName}` });
     const stored = await storagePut(`onesite-reports/${requestId}/${property.externalId}/${safeStorageFilename(originalFilename)}`, data, mimeType);
     const [existingDocument] = await db.select({ id: reportDocuments.id }).from(reportDocuments)
-      .where(and(eq(reportDocuments.reportRequestId, requestId), eq(reportDocuments.propertyId, property.id), eq(reportDocuments.originalFilename, originalFilename)))
+      .where(and(eq(reportDocuments.reportRequestId, requestId), eq(reportDocuments.propertyId, property.id), eq(reportDocuments.originalFilename, originalFilename), eq(reportDocuments.documentKind, documentKind)))
       .limit(1);
     if (existingDocument) {
       await db.update(reportDocuments).set({ storageKey: stored.key, storageUrl: stored.url, mimeType, fileSizeBytes: data.length }).where(eq(reportDocuments.id, existingDocument.id));
       res.status(200).json({ ok: true, documentId: existingDocument.id, propertyId: property.id, refreshed: true });
       return;
     }
-    const inserted = await db.insert(reportDocuments).values({ reportRequestId: requestId, propertyId: property.id, documentKind: "source_report", originalFilename, storageKey: stored.key, storageUrl: stored.url, mimeType, fileSizeBytes: data.length });
+    const inserted = await db.insert(reportDocuments).values({ reportRequestId: requestId, propertyId: property.id, documentKind, originalFilename, storageKey: stored.key, storageUrl: stored.url, mimeType, fileSizeBytes: data.length });
     await db.update(reportRequests).set({ documentCount: request.documentCount + 1 }).where(eq(reportRequests.id, requestId));
     res.status(201).json({ ok: true, documentId: Number(inserted[0].insertId), propertyId: property.id, refreshed: false });
   });

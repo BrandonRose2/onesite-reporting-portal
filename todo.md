@@ -192,6 +192,9 @@
 - [x] Ensure the authorized workbook opener retains the user-initiated new-tab reference while resolving the fresh URL.
 - [ ] Diagnose the persistent workbook AccessDenied failure by validating the filed document storage references and actual retrieval path.
 - [ ] Refile the completed All Units workbooks under whitespace-safe storage keys and verify a real authorized workbook download.
+- [ ] Generate AptCorp-formatted workbooks from downloaded OneSite XLS source files and surface those generated workbooks as the primary report output.
+- [ ] Create live, real-time-saving manager verification checklists from generated AptCorp report workbooks using the supplied PDF workflow as the reference.
+- [ ] Prepare controlled email-ready delivery outputs for generated reports and completed manager checklists without sending automated emails.
 - [ ] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
 - [ ] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [ ] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.

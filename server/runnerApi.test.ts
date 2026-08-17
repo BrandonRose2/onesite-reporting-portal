@@ -77,6 +77,7 @@ describe("OneSite runner token", () => {
     expect(source).toContain("safeStorageFilename(originalFilename)");
     expect(source).toContain("existingDocument");
     expect(source).toContain("refreshed: true");
+    expect(source).toContain('req.body?.documentKind === "property_workbook"');
   });
 
   it("accepts a complete live OneSite catalog while retaining existing verified report configurations", () => {
@@ -86,6 +87,6 @@ describe("OneSite runner token", () => {
     expect(source).toContain("isVerified: false");
     expect(source).toContain("eq(reportCatalog.slug, entry.catalogKey)");
     expect(source).toContain("entry.catalogKey.endsWith(\"-variant-2\")");
-    expect(source).toContain("notInArray(reportCatalog.slug, activeCatalogKeys)");
+    expect(source).not.toContain("notInArray(reportCatalog.slug, activeCatalogKeys)");
   });
 });

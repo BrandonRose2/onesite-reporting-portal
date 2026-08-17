@@ -85,6 +85,13 @@
       "when": 1786905529631,
       "tag": "0011_bouncy_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1787005716011,
+      "tag": "0012_striped_blink",
+      "breakpoints": true
     }
   ]
 }
