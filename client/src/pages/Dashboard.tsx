@@ -1,5 +1,6 @@
 import { Panel } from "@/components/delinquency-ui";
 import { ReportingOverviewQuickActions } from "@/components/ReportingOverviewQuickActions";
+import { ScrambleText } from "@/components/ScrambleText";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,7 +38,7 @@ export default function Dashboard() {
   return <div className="mx-auto max-w-6xl space-y-8">
     <section className="portal-hero overflow-hidden rounded-[1.5rem] bg-[#122b4b] px-5 py-7 text-white shadow-[0_18px_50px_rgba(16,37,63,0.18)] sm:px-7 sm:py-8">
       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a9d8d1]">Apartment Corp</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em]">AptCorp Property Reports</h1>
+      <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em]"><ScrambleText text="AptCorp Property Reports" /></h1>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">Request, file, review, and follow up on property reporting in one secure workspace.</p>
       <div className="portal-marquee mt-6" aria-hidden="true"><div><span>WORKBOOKS FILED</span><span>AUDIT TRAIL</span><span>PROPERTY SCOPE</span><span>REPORT READY</span><span>WORKBOOKS FILED</span><span>AUDIT TRAIL</span><span>PROPERTY SCOPE</span><span>REPORT READY</span></div></div>
     </section>

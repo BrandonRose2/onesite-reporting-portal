@@ -45,6 +45,16 @@ describe("overall reporting homepage", () => {
     expect(dashboard).toContain("portal-report-card");
   });
 
+  it("keeps text reveal and sticky navigation accessible for reduced-motion users", () => {
+    const dashboard = readFileSync(new URL("../client/src/pages/Dashboard.tsx", import.meta.url), "utf8");
+    const scramble = readFileSync(new URL("../client/src/components/ScrambleText.tsx", import.meta.url), "utf8");
+    const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
+    expect(dashboard).toContain("<ScrambleText");
+    expect(scramble).toContain("IntersectionObserver");
+    expect(scramble).toContain("prefers-reduced-motion: reduce");
+    expect(layout).toContain("backdrop-blur-xl");
+  });
+
   it("maps each overview quick action to its intended portal route", () => {
     expect(reportingOverviewQuickActions.requestReport).toMatchObject({ title: "Request a report", path: "/onesite-reports" });
     expect(reportingOverviewQuickActions.reviewProperties).toMatchObject({ title: "Review property reporting", path: "/properties" });
