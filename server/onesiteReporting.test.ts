@@ -64,7 +64,9 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain("overscroll-contain");
     expect(page).toContain('document.addEventListener("pointerdown", closeOnOutsideInteraction)');
     expect(page).toContain('catalogSelectorRef.current?.contains(event.target as Node)');
-    expect(page).toContain("All filed property workbooks");
+    expect(page).toContain("All AptCorp property workbooks");
+    expect(page).toContain("AptCorp workbook");
+    expect(page).toContain("View retained raw OneSite source evidence");
     expect(page).toContain("Run a report, then open its workbooks here");
     expect(page).toContain("Ready to open");
     expect(page).toContain("Open workbooks");
@@ -75,7 +77,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain('window.open("", "_blank")');
     expect(page).toContain("target.opener = null");
     expect(page).not.toContain("href={document.storageUrl}");
-    expect(page).toContain("delinquency\")");
+    expect(page).toContain("portalReportTitle");
   });
 
   it("resolves filed workbook URLs through the authenticated storage route", () => {

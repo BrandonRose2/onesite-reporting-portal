@@ -71,6 +71,7 @@ export async function listOneSiteReportDocuments(propertyIds?: number[]) {
   return db.select({
     id: reportDocuments.id,
     reportRequestId: reportDocuments.reportRequestId,
+    documentKind: reportDocuments.documentKind,
     originalFilename: reportDocuments.originalFilename,
     storageUrl: reportDocuments.storageUrl,
     mimeType: reportDocuments.mimeType,
