@@ -372,7 +372,7 @@ export async function getDashboard(reportingPeriodId?: number, propertyIds?: num
   }).from(propertyPeriodSummaries)
     .innerJoin(properties, eq(propertyPeriodSummaries.propertyId, properties.id))
     .leftJoin(sourceFiles, eq(propertyPeriodSummaries.sourceFileId, sourceFiles.id))
-    .where(propertyScope ? and(eq(propertyPeriodSummaries.reportingPeriodId, period.id), inArray(propertyPeriodSummaries.propertyId, propertyScope)) : eq(propertyPeriodSummaries.reportingPeriodId, period.id));
+    .where(propertyScope ? and(eq(propertyPeriodSummaries.reportingPeriodId, period.id), eq(properties.isActive, true), inArray(propertyPeriodSummaries.propertyId, propertyScope)) : and(eq(propertyPeriodSummaries.reportingPeriodId, period.id), eq(properties.isActive, true)));
 
   const currentResidentLedgerRows = propertyScope?.length === 0 ? [] : await db.select().from(residentLedgerRows)
     .where(propertyScope ? and(eq(residentLedgerRows.reportingPeriodId, period.id), eq(residentLedgerRows.residentStatus, "Current resident"), inArray(residentLedgerRows.propertyId, propertyScope)) : and(eq(residentLedgerRows.reportingPeriodId, period.id), eq(residentLedgerRows.residentStatus, "Current resident")));

@@ -37,8 +37,6 @@ export const availabilityReportByExternalId: Record<string, string> = {
   "4679872": "4679872_Grove Park Terrace_Availability_1954079.pdf",
   "4859069": "4859069_Coral Village_Availability_1954080.pdf",
   "4992471": "4992471_North Pointe_Availability_1954081.pdf",
-  "5083727": "5083727_Granite Elmwood Indiana Homes_Availability_1954082.pdf",
-  "5159418": "5159418_Granite Valencia Villas_Availability_1954083.pdf",
   "5204960": "5204960_Bayou Pointe_Availability_1954084.pdf",
   "5313974": "5313974_Howell Place_Availability_1954085.pdf",
   "5313976": "5313976_Pelican Bay_Availability_1954086.pdf",

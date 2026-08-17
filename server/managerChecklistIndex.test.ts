@@ -5,14 +5,16 @@ const readmePropertyIds = [
   "1181003", "1181004", "1181005", "1181006", "1482145", "2312055", "2432257", "2836023", "2934332",
   "3073874", "3156041", "3835626", "3927823", "3927824", "3990059", "3990061", "4022593", "4160082",
   "4233753", "4233754", "4276597", "4304099", "4371422", "4573141", "4679872", "4859069", "4992471",
-  "5083727", "5159418", "5204960", "5313974", "5313976", "5313977", "5414947", "5661023",
+  "5204960", "5313974", "5313976", "5313977", "5414947", "5661023",
 ].sort();
 
 describe("manager checklist README index", () => {
-  it("contains every one of the 35 README properties with its availability source filename", () => {
+  it("contains the approved 33-property manager-checklist set with availability source filenames", () => {
     const configuredIds = Object.keys(managerChecklistPackageByExternalId).sort();
     expect(configuredIds).toEqual(readmePropertyIds);
-    expect(configuredIds).toHaveLength(35);
+    expect(configuredIds).toHaveLength(33);
+    expect(configuredIds).not.toContain("5083727");
+    expect(configuredIds).not.toContain("5159418");
 
     configuredIds.forEach(externalId => {
       const packageEntry = managerChecklistPackageByExternalId[externalId];
