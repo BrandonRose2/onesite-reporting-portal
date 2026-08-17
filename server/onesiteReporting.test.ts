@@ -86,13 +86,13 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(service).toContain("storageGet(document.storageKey)");
   });
 
-  it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {
+  it("registers the OneSite and Yardi routes while keeping the primary sidebar focused on running a report", () => {
     const app = readFileSync(new URL("../client/src/App.tsx", import.meta.url), "utf8");
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
     expect(app).toContain('<Route path={"/onesite-reports"}>');
     expect(app).toContain('<Route path={"/yardi-reports"}>');
-    expect(layout).toContain('{ icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" }');
-    expect(layout).toContain('{ icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" }');
+    expect(layout).toContain('{ icon: FileOutput, label: "Run a report", path: "/onesite-reports" }');
+    expect(layout).not.toContain('label: "Pull Reports – Yardi"');
     expect(layout).toContain('setLocation(item.path)');
     expect(layout).toContain('location.startsWith("/onesite-reports")');
     expect(layout).toContain('aria-current={isActive ? "page" : undefined}');

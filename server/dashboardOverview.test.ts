@@ -16,15 +16,15 @@ describe("overall reporting homepage", () => {
     expect(dashboard).not.toContain("Delinquency reporting module");
   });
 
-  it("organizes the sidebar around full reporting-system workflows", () => {
+  it("organizes the sidebar around the essential reporting journey", () => {
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
-    expect(layout).toContain('label: "Pull reports"');
-    expect(layout).toContain('label: "Review reports"');
+    expect(layout).toContain('label: "Report workspace"');
     expect(layout).toContain('label: "Portfolio"');
-    expect(layout).toContain('label: "Operations"');
+    expect(layout).toContain('label: "Administration"');
     expect(layout).toContain('label: "Property Reports Library"');
-    expect(layout).toContain('label: "Compare Periods"');
-    expect(layout).toContain('label: "Import Data"');
+    expect(layout).toContain('label: "Run a report"');
+    expect(layout).not.toContain('label: "Compare Periods"');
+    expect(layout).not.toContain('label: "Import Data"');
     expect(layout).toContain("ApartmentCorp");
     expect(layout).toContain("Property Reports");
   });

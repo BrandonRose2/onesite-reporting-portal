@@ -204,7 +204,8 @@
 - [x] Rename Report Library to Property Reports Library and use it as the single active-property folder workspace.
 - [x] Add report-type subfolders inside each property folder for every available OneSite report, filing timestamped outputs into the matching subfolder.
 - [x] Identify the table as Current Residents in the AptCorp Delinquency HTML report title while keeping the resident-detail columns compact.
-- [ ] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
+- [x] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
+- [x] Consolidate the sidebar into essential request, property-report library, manager checklist, and access paths while moving advanced controls out of the primary journey.
 - [x] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [x] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
 - [x] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.

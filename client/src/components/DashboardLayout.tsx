@@ -22,7 +22,7 @@ import {
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { trpc } from "@/lib/trpc";
-import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, Landmark, LayoutDashboard, LogOut, PanelLeft, RefreshCw, Settings2, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Building2, CalendarRange, ClipboardCheck, FileOutput, LayoutDashboard, LogOut, PanelLeft, Settings2, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -34,33 +34,24 @@ type NavigationGroup = { label: string; items: NavigationItem[] };
 
 const navigationGroups: NavigationGroup[] = [
   {
-    label: "Pull reports",
-    items: [
-      { icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" },
-      { icon: Settings2, label: "Manage Reports", path: "/report-catalog", adminOnly: true },
-      { icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" },
-    ],
-  },
-  {
-    label: "Review reports",
+    label: "Report workspace",
     items: [
       { icon: LayoutDashboard, label: "Home", path: "/" },
+      { icon: FileOutput, label: "Run a report", path: "/onesite-reports" },
       { icon: CalendarRange, label: "Property Reports Library", path: "/history" },
-      { icon: BarChart3, label: "Compare Periods", path: "/compare" },
+      { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
     ],
   },
   {
     label: "Portfolio",
     items: [
       { icon: Building2, label: "Properties", path: "/properties" },
-      { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
     ],
   },
   {
-    label: "Operations",
+    label: "Administration",
     items: [
-      { icon: RefreshCw, label: "Import Data", path: "/refresh" },
-      { icon: Settings2, label: "Automation Settings", path: "/automation" },
+      { icon: Settings2, label: "Manage Reports", path: "/report-catalog", adminOnly: true },
       { icon: ShieldCheck, label: "Portal Access", path: "/access", adminOnly: true },
     ],
   },
