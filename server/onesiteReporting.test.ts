@@ -19,6 +19,7 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(routers).toContain("catalog: portfolioProcedure");
     expect(routers).toContain("propertyContacts: portalProcedure");
     expect(routers).toContain("documents: portalProcedure");
+    expect(routers).toContain("documentUrl: portalProcedure");
     expect(readFileSync(new URL("./onesiteReporting.ts", import.meta.url), "utf8")).toContain("CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS");
     expect(readFileSync(new URL("./onesiteReporting.ts", import.meta.url), "utf8")).toContain('notInArray(properties.externalId, CONTACT_AUTOFILL_EXCLUDED_EXTERNAL_IDS)');
   });
@@ -65,7 +66,16 @@ describe("OneSite Reporting Hub request workflow", () => {
     expect(page).toContain('catalogSelectorRef.current?.contains(event.target as Node)');
     expect(page).toContain("Completed My Reports documents");
     expect(page).toContain("Open workbook");
+    expect(page).toContain("documentUrl.useMutation");
+    expect(page).toContain("openWorkbook(document.id)");
+    expect(page).not.toContain("href={document.storageUrl}");
     expect(page).toContain("delinquency\")");
+  });
+
+  it("resolves filed workbook URLs through the authenticated storage route", () => {
+    const service = readFileSync(new URL("./onesiteReporting.ts", import.meta.url), "utf8");
+    expect(service).toContain("getOneSiteReportDocumentUrl");
+    expect(service).toContain("storageGet(document.storageKey)");
   });
 
   it("registers and navigates the OneSite Reporting Hub at the same sidebar route", () => {

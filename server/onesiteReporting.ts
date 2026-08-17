@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
+import { storageGet } from "./storage";
 
 export type ReportFormat = "excel" | "pdf" | "csv";
 export type GenerateScheduleSettings = {
@@ -88,6 +89,27 @@ export async function listOneSiteReportDocuments(propertyIds?: number[]) {
       : eq(reportRequests.sourceSystem, "realpage"))
     .orderBy(desc(reportDocuments.createdAt), asc(properties.name))
     .limit(500);
+}
+
+export async function getOneSiteReportDocumentUrl(input: { documentId: number }, propertyIds?: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("The reporting database is unavailable.");
+  const propertyScope = propertyIds ? Array.from(new Set(propertyIds.filter(id => Number.isInteger(id) && id > 0))) : null;
+  if (propertyScope?.length === 0) throw new Error("You are not assigned to this workbook.");
+  const [document] = await db.select({
+    id: reportDocuments.id,
+    storageKey: reportDocuments.storageKey,
+    originalFilename: reportDocuments.originalFilename,
+    propertyId: reportDocuments.propertyId,
+  }).from(reportDocuments)
+    .innerJoin(reportRequests, eq(reportDocuments.reportRequestId, reportRequests.id))
+    .where(propertyScope
+      ? and(eq(reportDocuments.id, input.documentId), eq(reportRequests.sourceSystem, "realpage"), inArray(reportDocuments.propertyId, propertyScope))
+      : and(eq(reportDocuments.id, input.documentId), eq(reportRequests.sourceSystem, "realpage")))
+    .limit(1);
+  if (!document) throw new Error("That workbook is unavailable or you do not have access to it.");
+  const { url } = await storageGet(document.storageKey);
+  return { url, originalFilename: document.originalFilename };
 }
 
 export async function listOneSiteInternalNotificationUsers() {

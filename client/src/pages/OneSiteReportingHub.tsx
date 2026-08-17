@@ -56,6 +56,7 @@ export default function OneSiteReportingHub() {
   const catalogQuery = trpc.onesiteReporting.catalog.useQuery();
   const requestsQuery = trpc.onesiteReporting.requests.useQuery();
   const documentsQuery = trpc.onesiteReporting.documents.useQuery();
+  const documentUrlMutation = trpc.onesiteReporting.documentUrl.useMutation();
   const liveEdgeStatusQuery = trpc.onesiteReporting.liveEdgeStatus.useQuery(undefined, { refetchInterval: 30_000 });
   const propertyContactsQuery = trpc.onesiteReporting.propertyContacts.useQuery();
   const internalUsersQuery = trpc.onesiteReporting.internalNotificationUsers.useQuery();
@@ -73,6 +74,19 @@ export default function OneSiteReportingHub() {
   const [propertyScope, setPropertyScope] = useState<"all" | "specific">("all");
   const [notifyUserIds, setNotifyUserIds] = useState<number[]>([]);
   const [cloudService, setCloudService] = useState("");
+  const openWorkbook = (documentId: number) => {
+    const target = window.open("about:blank", "_blank", "noopener,noreferrer");
+    documentUrlMutation.mutate({ documentId }, {
+      onSuccess: ({ url }) => {
+        if (target) target.location.href = url;
+        else window.location.assign(url);
+      },
+      onError: error => {
+        target?.close();
+        toast.error(error.message || "Unable to open this workbook.");
+      },
+    });
+  };
   const [reportParameters, setReportParameters] = useState<Record<string, string | boolean>>({});
   const [showCustom, setShowCustom] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
@@ -218,7 +232,7 @@ export default function OneSiteReportingHub() {
       <Panel eyebrow="My Reports" title="Retrieve reports you generated yourself"><div className="space-y-5 p-5 sm:p-6"><div className="rounded-xl border border-[#eed79d] bg-[#fffaf0] p-4 text-sm text-[#745116]"><p className="font-semibold">Synchronize the OneSite My Reports workspace</p><p className="mt-1 text-xs leading-5 text-slate-600">Use this after generating a report directly in OneSite. The runner will retrieve newly available outputs, associate them with properties, file the source documents, and begin summary generation.</p></div><Button onClick={() => syncMyReports.mutate()} disabled={!liveEdgeReady || syncMyReports.isPending} className="hunter-metal-button w-full"><RefreshCw className={`mr-2 h-4 w-4 ${syncMyReports.isPending ? "animate-spin" : ""}`} />{syncMyReports.isPending ? "Queueing synchronization…" : !liveEdgeReady ? "Open signed-in Edge to sync" : "Sync My Reports"}</Button><div className="flex gap-3 rounded-xl bg-slate-50 p-4"><Archive className="h-5 w-5 shrink-0 text-[#0c7469]" /><p className="text-xs leading-5 text-slate-600">The portal retains the original source output, filing metadata, property association, Markdown summary, and generated PDF once the runner processes the request.</p></div></div></Panel>
     </section>
     <Panel eyebrow="My Reports activity" title="Report requests and retrieval status"><div className="divide-y divide-slate-100">{requestsQuery.data?.length ? requestsQuery.data.map(({ request, catalog }) => <div key={request.id} className="flex flex-wrap items-start justify-between gap-4 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(request.status)}</Badge><Badge className={request.status === "queued" ? "bg-[#8a6d28] text-white hover:bg-[#8a6d28]" : request.status === "running" ? "bg-[#0c7469] text-white hover:bg-[#0c7469]" : "bg-slate-600 text-white hover:bg-slate-600"}>{requestStageLabel(request)}</Badge><Badge variant="outline">{request.requestType === "sync_my_reports" ? "My Reports sync" : request.requestType === "generate_property" ? "Specific property" : "All properties"}</Badge><Badge variant="outline">{formatLabel(request.requestedFormat)}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{portalReportTitle(catalog?.displayName ?? request.requestedReportName)}</p><p className="mt-1 text-xs text-slate-500">Requested {new Date(request.requestedAt).toLocaleString()} · {request.documentCount} archived documents</p>{requestStageHelper(request) ? <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-600">{requestStageHelper(request)}</p> : null}{request.errorMessage ? <p className="mt-2 text-xs text-[#b44851]">{request.errorMessage}</p> : null}</div><History className="h-4 w-4 text-slate-400" /></div>) : <div className="p-7 text-center text-sm text-slate-500"><FileOutput className="mx-auto mb-3 h-6 w-6 text-slate-400" />No OneSite report requests yet. Select a title above to create the first report request.</div>}</div></Panel>
-    <Panel eyebrow="Filed property workbooks" title="Completed My Reports documents"><div className="divide-y divide-slate-100">{documentsQuery.data?.length ? documentsQuery.data.map(document => <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(document.requestStatus)}</Badge><Badge variant="outline">{document.region ?? "Portfolio property"}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{document.propertyName ?? "Portfolio report"}</p><p className="mt-1 truncate text-xs text-slate-500">{document.originalFilename.replace(/delinquent\s+and\s+prepaid/ig, "delinquency")} · {(document.fileSizeBytes / 1024).toFixed(0)} KB · filed {new Date(document.createdAt).toLocaleString()}</p></div><a href={document.storageUrl} target="_blank" rel="noreferrer" className="hunter-metal-button inline-flex h-9 items-center rounded-lg px-3 text-xs font-semibold text-white">Open workbook</a></div>) : <div className="p-7 text-center text-sm text-slate-500"><Archive className="mx-auto mb-3 h-6 w-6 text-slate-400" />No filed OneSite workbooks are available yet.</div>}</div></Panel>
+    <Panel eyebrow="Filed property workbooks" title="Completed My Reports documents"><div className="divide-y divide-slate-100">{documentsQuery.data?.length ? documentsQuery.data.map(document => <div key={document.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className="capitalize">{statusLabel(document.requestStatus)}</Badge><Badge variant="outline">{document.region ?? "Portfolio property"}</Badge></div><p className="mt-2 truncate text-sm font-semibold text-[#122b4b]">{document.propertyName ?? "Portfolio report"}</p><p className="mt-1 truncate text-xs text-slate-500">{document.originalFilename.replace(/delinquent\s+and\s+prepaid/ig, "delinquency")} · {(document.fileSizeBytes / 1024).toFixed(0)} KB · filed {new Date(document.createdAt).toLocaleString()}</p></div><Button type="button" onClick={() => openWorkbook(document.id)} disabled={documentUrlMutation.isPending} className="hunter-metal-button h-9 px-3 text-xs font-semibold text-white">Open workbook</Button></div>) : <div className="p-7 text-center text-sm text-slate-500"><Archive className="mx-auto mb-3 h-6 w-6 text-slate-400" />No filed OneSite workbooks are available yet.</div>}</div></Panel>
   </div>;
 }
 

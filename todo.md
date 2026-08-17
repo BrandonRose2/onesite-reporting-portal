@@ -188,4 +188,5 @@
 - [x] Correct the My Reports automated download interaction so it matches the confirmed manual Download action on subsequent pages.
 - [x] Exclude Granite Elmwood Indiana Homes and Granite Valencia Villas from every future OneSite all-properties queue and live Edge selection scope.
 - [x] Hide Granite Elmwood Indiana Homes and Granite Valencia Villas from Portfolio and manager-checklist selections while preserving historical records.
+- [x] Fix report viewing so filed workbooks use fresh authorized download URLs instead of restricted direct-storage links.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.

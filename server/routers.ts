@@ -7,7 +7,7 @@ import { canAccessProperty, getPortalAccessForUser } from "./portalAccess";
 import { listAccessAssignableProperties, listPortalAccessRules, savePortalAccessRule, setPortalAccessRuleActive } from "./accessAdmin";
 import { compareReportingPeriods, getDashboard, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
-import { getLiveEdgeRunnerStatus, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
+import { getLiveEdgeRunnerStatus, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -81,6 +81,7 @@ export const appRouter = router({
     catalog: portfolioProcedure.query(() => listOneSiteReportCatalog()),
     requests: portfolioProcedure.query(() => listOneSiteReportRequests()),
     documents: portalProcedure.query(({ ctx }) => listOneSiteReportDocuments(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
+    documentUrl: portalProcedure.input(z.object({ documentId: z.number().int().positive() })).mutation(({ input, ctx }) => getOneSiteReportDocumentUrl(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     liveEdgeStatus: portfolioProcedure.query(() => getLiveEdgeRunnerStatus()),
     propertyContacts: portalProcedure.query(({ ctx }) => listOneSitePropertyContacts(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     internalNotificationUsers: portfolioProcedure.query(() => listOneSiteInternalNotificationUsers()),
