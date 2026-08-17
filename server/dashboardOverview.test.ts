@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -28,6 +27,22 @@ describe("overall reporting homepage", () => {
     expect(layout).toContain('label: "Import Data"');
     expect(layout).toContain("ApartmentCorp");
     expect(layout).toContain("Property Reports");
+  });
+
+  it("layers a reduced-motion-safe AptCorp atmosphere behind reporting content", () => {
+    const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
+    const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
+    expect(layout).toContain("<PortalAtmosphere />");
+    expect(layout).toContain("portal-live-dot");
+    expect(styles).toContain(".portal-atmosphere");
+    expect(styles).toContain("@media (prefers-reduced-motion: reduce)");
+  });
+
+  it("uses reporting-focused hero and status motion rather than generic marketing content", () => {
+    const dashboard = readFileSync(new URL("../client/src/pages/Dashboard.tsx", import.meta.url), "utf8");
+    expect(dashboard).toContain("portal-hero");
+    expect(dashboard).toContain("WORKBOOKS FILED");
+    expect(dashboard).toContain("portal-report-card");
   });
 
   it("maps each overview quick action to its intended portal route", () => {

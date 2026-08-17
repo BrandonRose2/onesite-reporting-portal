@@ -171,4 +171,6 @@
 - [x] Format office contact numbers and show verified extensions under the OFFICE & EXT. label in Pull Reports – OneSite.
 - [ ] Compare Run Scraper directly against the reference dashboard workflow and implement any remaining same-entry interaction patterns.
 - [x] Add a real post-import completion summary and history block to Run Scraper using actual import-run data.
+- [x] Add a restrained atmospheric background, status motion, and reporting-focused micro-interactions while respecting reduced-motion preferences.
+- [x] Add reusable reveal and section-progress treatments to key AptCorp reporting pages without obscuring operational content.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.

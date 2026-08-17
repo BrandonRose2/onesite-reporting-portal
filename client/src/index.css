@@ -253,6 +253,79 @@
   opacity: 0.82;
 }
 
+/* AptCorp atmosphere: visual depth without competing with operational data. */
+.portal-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 78% 12%, rgba(41, 143, 131, 0.09), transparent 28rem),
+    radial-gradient(circle at 12% 72%, rgba(41, 95, 145, 0.045), transparent 24rem);
+}
+
+.portal-atmosphere canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.portal-content > * {
+  animation: portal-reveal 460ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.portal-content > *:nth-child(2) { animation-delay: 45ms; }
+.portal-content > *:nth-child(3) { animation-delay: 90ms; }
+.portal-live-dot {
+  display: inline-block;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 999px;
+  background: #69d5c1;
+  box-shadow: 0 0 0 0 rgba(105, 213, 193, 0.5);
+  animation: portal-live-pulse 2.4s ease-out infinite;
+}
+
+.portal-hero { position: relative; isolation: isolate; }
+.portal-hero::before { position: absolute; inset: -30% -8% auto auto; z-index: -1; width: 25rem; height: 25rem; border: 1px solid rgba(169, 216, 209, 0.17); border-radius: 50%; box-shadow: 0 0 0 4rem rgba(62, 153, 142, 0.03), 0 0 0 8rem rgba(62, 153, 142, 0.018); content: ""; animation: portal-orbit 16s linear infinite; }
+.portal-marquee { overflow: hidden; border-top: 1px solid rgba(169, 216, 209, 0.18); padding-top: 0.8rem; }
+.portal-marquee > div { display: flex; width: max-content; animation: portal-marquee 24s linear infinite; }
+.portal-marquee span { padding-right: 2.3rem; color: rgba(211, 243, 237, 0.76); font-size: 0.61rem; font-weight: 700; letter-spacing: 0.17em; }
+.portal-section-label { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; }
+.portal-section-label::after { width: 1.8rem; height: 1px; background: currentColor; content: ""; transform-origin: left; animation: portal-rule 850ms cubic-bezier(0.23, 1, 0.32, 1) both 160ms; }
+.portal-action-card, .portal-report-card { position: relative; overflow: hidden; }
+.portal-action-card::after, .portal-report-card::after { position: absolute; inset: auto 1.25rem 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(12, 116, 105, 0.72), transparent); content: ""; opacity: 0; transform: scaleX(0.35); transition: opacity 180ms ease, transform 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+.portal-action-card:hover::after, .portal-report-card:hover::after { opacity: 1; transform: scaleX(1); }
+
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+button:not(:disabled):active, [role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.98);
+}
+
+@keyframes portal-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes portal-live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(105, 213, 193, 0.46); }
+  70%, 100% { box-shadow: 0 0 0 0.48rem rgba(105, 213, 193, 0); }
+}
+
+@keyframes portal-orbit { to { transform: rotate(1turn); } }
+@keyframes portal-marquee { to { transform: translateX(-50%); } }
+@keyframes portal-rule { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-atmosphere { opacity: 0.55; }
+  .portal-content > *, .portal-live-dot, .portal-hero::before, .portal-marquee > div, .portal-section-label::after, button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { animation: none !important; transition: none !important; }
+}
+
 @media print {
   @page { size: letter landscape; margin: 0.35in; }
   aside, [data-sidebar], .print-exclude, button, [role="button"] { display: none !important; }

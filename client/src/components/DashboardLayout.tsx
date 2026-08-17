@@ -26,6 +26,7 @@ import { BarChart3, Building2, CalendarRange, ClipboardCheck, FileOutput, Landma
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { PortalAtmosphere } from "./PortalAtmosphere";
 import { Button } from "./ui/button";
 
 type NavigationItem = { icon: LucideIcon; label: string; path: string; adminOnly?: boolean; managerAllowed?: boolean };
@@ -213,6 +214,7 @@ function DashboardLayoutContent({
 
   return (
     <>
+      <PortalAtmosphere />
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
@@ -231,7 +233,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate text-sm font-semibold tracking-tight text-white">ApartmentCorp</span>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]">Property Reports</span>
+                  <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d8d1]"><i className="portal-live-dot" />Property Reports</span>
                 </div>
               ) : null}
             </div>
@@ -321,7 +323,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 bg-[#f6f8fb] p-4 sm:p-6 lg:p-8">{managerNeedsRedirect ? <div className="grid min-h-[50vh] place-items-center text-sm text-slate-500">Opening your assigned manager checklists…</div> : children}</main>
+        <main className="portal-content relative z-10 flex-1 bg-[#f6f8fb]/92 p-4 sm:p-6 lg:p-8">{managerNeedsRedirect ? <div className="grid min-h-[50vh] place-items-center text-sm text-slate-500">Opening your assigned manager checklists…</div> : children}</main>
       </SidebarInset>
     </>
   );
