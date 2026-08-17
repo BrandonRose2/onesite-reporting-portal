@@ -37,6 +37,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "Pull reports",
     items: [
       { icon: FileOutput, label: "Pull Reports – OneSite", path: "/onesite-reports" },
+      { icon: Settings2, label: "Manage Reports", path: "/report-catalog", adminOnly: true },
       { icon: Landmark, label: "Pull Reports – Yardi", path: "/yardi-reports" },
     ],
   },
@@ -44,7 +45,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "Review reports",
     items: [
       { icon: LayoutDashboard, label: "Home", path: "/" },
-      { icon: CalendarRange, label: "Report Library", path: "/history" },
+      { icon: CalendarRange, label: "Property Reports Library", path: "/history" },
       { icon: BarChart3, label: "Compare Periods", path: "/compare" },
     ],
   },

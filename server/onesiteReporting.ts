@@ -47,9 +47,89 @@ async function requireCatalogEntry(catalogId: number) {
 export async function listOneSiteReportCatalog() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(reportCatalog)
+  const rows = await db.select().from(reportCatalog)
     .where(and(eq(reportCatalog.sourceSystem, "realpage"), eq(reportCatalog.isActive, true), eq(reportCatalog.isApproved, true)))
     .orderBy(desc(reportCatalog.isVerified), asc(reportCatalog.displayName));
+  const canonical = new Map<string, typeof rows[number]>();
+  for (const row of rows) {
+    const isLiveRow = row.slug.startsWith("realpage-");
+    const isManualRow = row.slug.startsWith("manual-");
+    if (!isLiveRow && !isManualRow) continue;
+    const identity = isLiveRow ? [row.exactReportName, row.reportArea ?? "", row.reportLevel ?? "", row.product ?? ""].join("\u0000") : `manual:${row.id}`;
+    const existing = canonical.get(identity);
+    if (!existing || (row.isVerified && !existing.isVerified)) canonical.set(identity, row);
+  }
+  return Array.from(canonical.values())
+    .map(row => ({ ...row, displayName: /delinquent\s+and\s+prepaid/i.test(row.displayName) ? "Delinquency" : row.displayName }))
+    .sort((left, right) => Number(right.isVerified) - Number(left.isVerified) || left.displayName.localeCompare(right.displayName));
+}
+
+export async function listOneSiteReportCatalogAdmin() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(reportCatalog)
+    .where(eq(reportCatalog.sourceSystem, "realpage"))
+    .orderBy(desc(reportCatalog.isActive), desc(reportCatalog.isApproved), desc(reportCatalog.isVerified), asc(reportCatalog.displayName));
+}
+
+type EditableCatalogEntry = {
+  id?: number;
+  displayName: string;
+  exactReportName: string;
+  defaultFormat: ReportFormat;
+  reportArea?: string | null;
+  reportLevel?: string | null;
+  product?: string | null;
+  description?: string | null;
+  settingsSchemaJson?: string | null;
+  isVerified: boolean;
+  isApproved: boolean;
+  isActive: boolean;
+};
+
+function catalogText(value?: string | null, max = 255) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+function catalogSlug(title: string, area?: string | null) {
+  const base = `${title}-${area ?? "report"}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90) || "onesite-report";
+  return `manual-${base}-${Date.now().toString(36)}`.slice(0, 120);
+}
+
+export async function saveOneSiteReportCatalogEntry(input: EditableCatalogEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("The reporting database is unavailable.");
+  const displayName = input.displayName.trim().slice(0, 255);
+  const exactReportName = input.exactReportName.trim().slice(0, 255);
+  const reportArea = catalogText(input.reportArea, 160);
+  const reportLevel = catalogText(input.reportLevel, 80);
+  const product = catalogText(input.product, 160);
+  const description = catalogText(input.description, 10_000);
+  const settingsSchemaJson = catalogText(input.settingsSchemaJson, 60_000);
+  const values = {
+    displayName,
+    exactReportName,
+    searchTerm: [displayName, exactReportName, reportArea, product].filter(Boolean).join(" ").slice(0, 160),
+    defaultFormat: input.defaultFormat,
+    reportArea,
+    reportLevel,
+    product,
+    description,
+    settingsSchemaJson,
+    isVerified: input.isVerified,
+    isApproved: input.isApproved,
+    isActive: input.isActive,
+  };
+  if (input.id) {
+    const [existing] = await db.select({ id: reportCatalog.id }).from(reportCatalog)
+      .where(and(eq(reportCatalog.id, input.id), eq(reportCatalog.sourceSystem, "realpage"))).limit(1);
+    if (!existing) throw new Error("That report catalog entry no longer exists.");
+    await db.update(reportCatalog).set(values).where(eq(reportCatalog.id, existing.id));
+    return { id: existing.id, created: false };
+  }
+  const inserted = await db.insert(reportCatalog).values({ sourceSystem: "realpage", slug: catalogSlug(displayName, reportArea), ...values });
+  return { id: Number(inserted[0].insertId), created: true };
 }
 
 export async function listOneSiteReportRequests() {
@@ -71,6 +151,11 @@ export async function listOneSiteReportDocuments(propertyIds?: number[]) {
   return db.select({
     id: reportDocuments.id,
     reportRequestId: reportDocuments.reportRequestId,
+    reportCatalogId: reportRequests.reportCatalogId,
+    catalogExactReportName: reportCatalog.exactReportName,
+    catalogReportArea: reportCatalog.reportArea,
+    catalogReportLevel: reportCatalog.reportLevel,
+    catalogProduct: reportCatalog.product,
     documentKind: reportDocuments.documentKind,
     originalFilename: reportDocuments.originalFilename,
     storageUrl: reportDocuments.storageUrl,
@@ -84,6 +169,7 @@ export async function listOneSiteReportDocuments(propertyIds?: number[]) {
     requestedReportName: reportRequests.requestedReportName,
   }).from(reportDocuments)
     .innerJoin(reportRequests, eq(reportDocuments.reportRequestId, reportRequests.id))
+    .leftJoin(reportCatalog, eq(reportRequests.reportCatalogId, reportCatalog.id))
     .leftJoin(properties, eq(reportDocuments.propertyId, properties.id))
     .where(propertyScope
       ? and(eq(reportRequests.sourceSystem, "realpage"), inArray(reportDocuments.propertyId, propertyScope))

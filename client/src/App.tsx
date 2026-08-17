@@ -7,7 +7,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
 import Compare from "./pages/Compare";
-import History from "./pages/History";
+import PropertyReportsLibrary from "./pages/PropertyReportsLibrary";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import Refresh from "./pages/Refresh";
@@ -18,6 +18,8 @@ import SourceDocumentPreview from "./pages/SourceDocumentPreview";
 import OneSiteReportingHub from "./pages/OneSiteReportingHub";
 import YardiReports from "./pages/YardiReports";
 import AccessManagement from "./pages/AccessManagement";
+import PropertyReportView from "./pages/PropertyReportView";
+import ReportCatalogManager from "./pages/ReportCatalogManager";
 
 function PortalRoute({ children }: { children: React.ReactNode }) {
   return <DashboardLayout>{children}</DashboardLayout>;
@@ -30,7 +32,8 @@ function Router() {
       <Route path={"/"}><PortalRoute><Dashboard /></PortalRoute></Route>
       <Route path={"/properties"}><PortalRoute><Properties /></PortalRoute></Route>
       <Route path={"/properties/:propertyId"}><PortalRoute><PropertyDetail /></PortalRoute></Route>
-      <Route path={"/history"}><PortalRoute><History /></PortalRoute></Route>
+      <Route path={"/history"}><PortalRoute><PropertyReportsLibrary /></PortalRoute></Route>
+      <Route path={"/property-reports/:propertyId"}><PortalRoute><PropertyReportView /></PortalRoute></Route>
       <Route path={"/compare"}><PortalRoute><Compare /></PortalRoute></Route>
       <Route path={"/refresh"}><PortalRoute><Refresh /></PortalRoute></Route>
       <Route path={"/automation"}><PortalRoute><AutomationSettings /></PortalRoute></Route>
@@ -38,6 +41,7 @@ function Router() {
       <Route path={"/manager-checklists/:propertyId"}><PortalRoute><ManagerChecklistDetail /></PortalRoute></Route>
       <Route path={"/source-documents/:sourceFileId"}><PortalRoute><SourceDocumentPreview /></PortalRoute></Route>
       <Route path={"/onesite-reports"}><PortalRoute><OneSiteReportingHub /></PortalRoute></Route>
+      <Route path={"/report-catalog"}><PortalRoute><ReportCatalogManager /></PortalRoute></Route>
       <Route path={"/yardi-reports"}><PortalRoute><YardiReports /></PortalRoute></Route>
       <Route path={"/access"}><PortalRoute><AccessManagement /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />

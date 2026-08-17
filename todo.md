@@ -195,10 +195,17 @@
 - [x] Generate AptCorp-formatted workbooks from downloaded OneSite XLS source files and surface those generated workbooks as the primary report output.
 - [x] Create live, real-time-saving manager verification checklists from generated AptCorp report workbooks using the supplied PDF workflow as the reference.
 - [ ] Prepare controlled email-ready delivery outputs for generated reports and completed manager checklists without sending automated emails.
+- [ ] Make each property manager’s OFFICE & EXT. number explicit and consistently visible in manager checklist contact views.
+- [x] Present AptCorp-generated property reports in a polished HTML-first format with print-ready sharing support.
+- [x] Add an administrator-only Report Catalog Manager to add, edit, deactivate, and restore report entries without deleting report history.
+- [x] Add a Property Folders sidebar workspace with one active-property folder and timestamped report histories for generated outputs and retained source evidence.
+- [x] Rename Report Library to Property Reports Library and use it as the single active-property folder workspace.
+- [x] Add report-type subfolders inside each property folder for every available OneSite report, filing timestamped outputs into the matching subfolder.
+- [x] Identify the table as Current Residents in the AptCorp Delinquency HTML report title while keeping the resident-detail columns compact.
 - [ ] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
 - [x] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [x] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
 - [x] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.
-- [ ] Audit and expose all 309 available OneSite report titles in the portal selector, with clear verified versus settings-confirmation readiness labels.
-- [ ] Preserve all 309 OneSite catalog rows, including report-area variants that share the same display title.
+- [x] Audit and expose all 309 available OneSite report titles in the portal selector, with clear verified versus settings-confirmation readiness labels.
+- [x] Preserve all 309 OneSite catalog rows, including report-area variants that share the same display title.
 - [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.

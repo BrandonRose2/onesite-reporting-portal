@@ -7,7 +7,7 @@ import { canAccessProperty, getPortalAccessForUser } from "./portalAccess";
 import { listAccessAssignableProperties, listPortalAccessRules, savePortalAccessRule, setPortalAccessRuleActive } from "./accessAdmin";
 import { compareReportingPeriods, getDashboard, getManagerChecklistState, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods, saveManagerChecklistState } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
-import { getLiveEdgeRunnerStatus, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization } from "./onesiteReporting";
+import { getLiveEdgeRunnerStatus, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportCatalogAdmin, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization, saveOneSiteReportCatalogEntry } from "./onesiteReporting";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -103,6 +103,21 @@ export const appRouter = router({
 
   onesiteReporting: router({
     catalog: portfolioProcedure.query(() => listOneSiteReportCatalog()),
+    catalogAdmin: adminProcedure.query(() => listOneSiteReportCatalogAdmin()),
+    saveCatalogEntry: adminProcedure.input(z.object({
+      id: z.number().int().positive().optional(),
+      displayName: z.string().trim().min(2).max(255),
+      exactReportName: z.string().trim().min(2).max(255),
+      defaultFormat: z.enum(["excel", "pdf", "csv"]),
+      reportArea: z.string().trim().max(160).nullable().optional(),
+      reportLevel: z.string().trim().max(80).nullable().optional(),
+      product: z.string().trim().max(160).nullable().optional(),
+      description: z.string().trim().max(10_000).nullable().optional(),
+      settingsSchemaJson: z.string().trim().max(60_000).nullable().optional(),
+      isVerified: z.boolean(),
+      isApproved: z.boolean(),
+      isActive: z.boolean(),
+    })).mutation(({ input }) => saveOneSiteReportCatalogEntry(input)),
     requests: portfolioProcedure.query(() => listOneSiteReportRequests()),
     documents: portalProcedure.query(({ ctx }) => listOneSiteReportDocuments(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     documentUrl: portalProcedure.input(z.object({ documentId: z.number().int().positive() })).mutation(({ input, ctx }) => getOneSiteReportDocumentUrl(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),

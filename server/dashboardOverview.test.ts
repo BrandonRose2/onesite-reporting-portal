@@ -22,7 +22,7 @@ describe("overall reporting homepage", () => {
     expect(layout).toContain('label: "Review reports"');
     expect(layout).toContain('label: "Portfolio"');
     expect(layout).toContain('label: "Operations"');
-    expect(layout).toContain('label: "Report Library"');
+    expect(layout).toContain('label: "Property Reports Library"');
     expect(layout).toContain('label: "Compare Periods"');
     expect(layout).toContain('label: "Import Data"');
     expect(layout).toContain("ApartmentCorp");
