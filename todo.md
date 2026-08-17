@@ -169,3 +169,6 @@
 - [x] Move the all-property OneSite Generate action directly beneath report selection and scope controls for clearer workflow guidance.
 - [x] Reorder Pull Reports – OneSite into Choose Report, Set Parameters, Choose Property Scope, and Generate steps.
 - [x] Format office contact numbers and show verified extensions under the OFFICE & EXT. label in Pull Reports – OneSite.
+- [ ] Compare Run Scraper directly against the reference dashboard workflow and implement any remaining same-entry interaction patterns.
+- [x] Add a real post-import completion summary and history block to Run Scraper using actual import-run data.
+- [ ] Re-test the completed Run Scraper flow end to end, including ready, uploading, success, and error states.
