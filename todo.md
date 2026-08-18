@@ -206,6 +206,8 @@
 - [x] Identify the table as Current Residents in the AptCorp Delinquency HTML report title while keeping the resident-detail columns compact.
 - [x] Simplify the portal navigation around run reports, find workbooks, review properties, and manage access, moving advanced operations out of the primary path.
 - [x] Consolidate the sidebar into essential request, property-report library, manager checklist, and access paths while moving advanced controls out of the primary journey.
+- [x] Diagnose and repair newly queued OneSite requests that are not claimed and started by the Mac live Edge runner.
+- [x] Repair the live Edge Rent Roll Detail panel-opening interaction so Generate & Schedule reaches actual OneSite processing.
 - [x] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [x] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
 - [x] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.
