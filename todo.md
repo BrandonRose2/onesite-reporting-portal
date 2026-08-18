@@ -208,6 +208,11 @@
 - [x] Consolidate the sidebar into essential request, property-report library, manager checklist, and access paths while moving advanced controls out of the primary journey.
 - [x] Diagnose and repair newly queued OneSite requests that are not claimed and started by the Mac live Edge runner.
 - [x] Repair the live Edge Rent Roll Detail panel-opening interaction so Generate & Schedule reaches actual OneSite processing.
+- [ ] Identify the Yardi-designated properties from the Notion template’s Yardi-star column and keep them outside OneSite execution scope.
+- [ ] Derive unique Yardi property names only from checked property rows, excluding assistant, leasing, reception, and other support-role records.
+- [ ] Capture and implement a separate live-Edge Yardi login, report-pull, filing, and generated-output workflow.
+- [x] Inventory every visible Yardi report category from Affordable through System and add all report types to the Pull Reports – Yardi selector.
+- [ ] Store verified Yardi credentials as protected runner secrets for future unattended report pulls.
 - [x] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [x] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.
 - [x] Simplify the report journey into an explicit run, processing, ready, and open-workbook path from one results workspace.
