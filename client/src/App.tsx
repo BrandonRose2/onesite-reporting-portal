@@ -17,6 +17,7 @@ import ManagerChecklistDetail from "./pages/ManagerChecklistDetail";
 import SourceDocumentPreview from "./pages/SourceDocumentPreview";
 import OneSiteReportingHub from "./pages/OneSiteReportingHub";
 import YardiReports from "./pages/YardiReports";
+import RunAReport from "./pages/RunAReport";
 import AccessManagement from "./pages/AccessManagement";
 import PropertyReportView from "./pages/PropertyReportView";
 import ReportCatalogManager from "./pages/ReportCatalogManager";
@@ -40,6 +41,7 @@ function Router() {
       <Route path={"/manager-checklists"}><PortalRoute><ManagerChecklists /></PortalRoute></Route>
       <Route path={"/manager-checklists/:propertyId"}><PortalRoute><ManagerChecklistDetail /></PortalRoute></Route>
       <Route path={"/source-documents/:sourceFileId"}><PortalRoute><SourceDocumentPreview /></PortalRoute></Route>
+      <Route path={"/run-report"}><PortalRoute><RunAReport /></PortalRoute></Route>
       <Route path={"/onesite-reports"}><PortalRoute><OneSiteReportingHub /></PortalRoute></Route>
       <Route path={"/report-catalog"}><PortalRoute><ReportCatalogManager /></PortalRoute></Route>
       <Route path={"/yardi-reports"}><PortalRoute><YardiReports /></PortalRoute></Route>

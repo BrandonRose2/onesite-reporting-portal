@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { yardiCategoryOrder, yardiEmptyCategories, yardiReportCatalog } from "../client/src/data/yardiReportCatalog";
+import { yardiCategoryOrder, yardiDesignatedProperties, yardiEmptyCategories, yardiReportCatalog } from "../client/src/data/yardiReportCatalog";
 
 describe("Yardi report catalog", () => {
   it("preserves the observed Yardi category coverage and key report types", () => {
@@ -13,5 +13,11 @@ describe("Yardi report catalog", () => {
   it("does not expose duplicate Yardi report identities", () => {
     const identities = yardiReportCatalog.map((report) => `${report.category}::${report.group ?? ""}::${report.title}`);
     expect(new Set(identities).size).toBe(identities.length);
+  });
+
+  it("keeps the verified Yardi property scope separate and complete", () => {
+    expect(yardiDesignatedProperties).toHaveLength(8);
+    expect(yardiDesignatedProperties).toContain("La Promesa");
+    expect(yardiDesignatedProperties).toContain("Thibodaux - Colonial Estates Apts");
   });
 });

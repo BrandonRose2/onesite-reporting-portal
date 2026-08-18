@@ -131,3 +131,14 @@ export const yardiCategoryOrder = [
 ] as const;
 
 export const yardiEmptyCategories = ["Financial Reports", "Custom Reports", "Custom Correspondence"] as const;
+
+export const yardiDesignatedProperties = [
+  "Columbia Village (Office)",
+  "Forest View Senior Apts",
+  "La Promesa",
+  "River Garden",
+  "River Pointe Apts",
+  "Ruby Diamond / Star Homes",
+  "The Gates on Manhattan",
+  "Thibodaux - Colonial Estates Apts",
+] as const;

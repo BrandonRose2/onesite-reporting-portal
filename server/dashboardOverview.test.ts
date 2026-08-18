@@ -29,6 +29,17 @@ describe("overall reporting homepage", () => {
     expect(layout).toContain("Property Reports");
   });
 
+  it("makes the reporting-system choice explicit before a catalog is opened", () => {
+    const runAReport = readFileSync(new URL("../client/src/pages/RunAReport.tsx", import.meta.url), "utf8");
+    const routes = readFileSync(new URL("../client/src/App.tsx", import.meta.url), "utf8");
+    expect(runAReport).toContain("Where do you need to pull the report from?");
+    expect(runAReport).toContain('title: "OneSite / RealPage"');
+    expect(runAReport).toContain('title: "Yardi"');
+    expect(runAReport).toContain('path: "/onesite-reports"');
+    expect(runAReport).toContain('path: "/yardi-reports"');
+    expect(routes).toContain('path={"/run-report"}');
+  });
+
   it("layers a reduced-motion-safe AptCorp atmosphere behind reporting content", () => {
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
     const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");

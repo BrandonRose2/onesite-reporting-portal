@@ -91,10 +91,11 @@ describe("OneSite Reporting Hub request workflow", () => {
     const layout = readFileSync(new URL("../client/src/components/DashboardLayout.tsx", import.meta.url), "utf8");
     expect(app).toContain('<Route path={"/onesite-reports"}>');
     expect(app).toContain('<Route path={"/yardi-reports"}>');
-    expect(layout).toContain('{ icon: FileOutput, label: "Run a report", path: "/onesite-reports" }');
+    expect(app).toContain('<Route path={"/run-report"}>');
+    expect(layout).toContain('{ icon: FileOutput, label: "Run a report", path: "/run-report" }');
     expect(layout).not.toContain('label: "Pull Reports – Yardi"');
     expect(layout).toContain('setLocation(item.path)');
-    expect(layout).toContain('location.startsWith("/onesite-reports")');
+    expect(layout).toContain('location.startsWith("/run-report") || location.startsWith("/onesite-reports") || location.startsWith("/yardi-reports")');
     expect(layout).toContain('aria-current={isActive ? "page" : undefined}');
     expect(layout).toContain('focus-visible:ring-2');
   });

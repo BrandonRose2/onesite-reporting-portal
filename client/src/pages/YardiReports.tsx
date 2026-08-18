@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Panel } from "@/components/delinquency-ui";
 import { Badge } from "@/components/ui/badge";
 import { Building2, CircleCheck, LockKeyhole, Search, ShieldCheck } from "lucide-react";
-import { yardiCategoryOrder, yardiEmptyCategories, yardiReportCatalog } from "@/data/yardiReportCatalog";
+import { yardiCategoryOrder, yardiDesignatedProperties, yardiEmptyCategories, yardiReportCatalog } from "@/data/yardiReportCatalog";
 
 export default function YardiReports() {
   const [query, setQuery] = useState("");
@@ -36,9 +36,10 @@ export default function YardiReports() {
       </div>
     </Panel>
     <div className="grid gap-4 md:grid-cols-2">
-      <Panel eyebrow="Scope" title="Yardi-designated properties"><div className="flex gap-3 p-5"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eaf5f3] text-[#0c7469]"><Building2 className="h-5 w-5" /></div><p className="text-sm leading-6 text-slate-600">The Yardi-star source identifies eight properties. They remain excluded from OneSite execution and will file to their own Property Reports Library folders.</p></div></Panel>
+      <Panel eyebrow="Scope" title="Yardi-designated properties"><div className="space-y-3 p-5"><div className="flex gap-3"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eaf5f3] text-[#0c7469]"><Building2 className="h-5 w-5" /></div><p className="text-sm leading-6 text-slate-600">The Yardi-star source identifies eight properties. They remain excluded from OneSite execution and will file to their own Property Reports Library folders.</p></div><div className="grid gap-1 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600 sm:grid-cols-2">{yardiDesignatedProperties.map((property) => <span key={property}>• {property}</span>)}</div></div></Panel>
       <Panel eyebrow="Readiness" title="Safe Yardi setup"><div className="flex gap-3 p-5"><div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eef5ff] text-[#275c98]"><LockKeyhole className="h-5 w-5" /></div><p className="text-sm leading-6 text-slate-600">Protected runner credentials and a live Edge session are configured. Catalog discovery does not run, export, or alter any Yardi report.</p></div></Panel>
     </div>
+    <Panel eyebrow="Confirmed first workflow" title="Tenant Delinquency standard"><div className="grid gap-3 p-5 text-sm leading-6 text-slate-600 sm:grid-cols-2 lg:grid-cols-3"><p><strong className="text-slate-800">Property scope:</strong> all eight Yardi properties</p><p><strong className="text-slate-800">Unit / resident:</strong> leave blank for all within scope</p><p><strong className="text-slate-800">Resident status:</strong> Current residents only</p><p><strong className="text-slate-800">As Of:</strong> current day’s month/year</p><p><strong className="text-slate-800">Summarize by:</strong> Resident</p><p><strong className="text-slate-800">HUD subsidies:</strong> Include</p><p><strong className="text-slate-800">Output:</strong> Excel source + AptCorp HTML</p></div></Panel>
     <div className="flex items-start gap-3 rounded-xl border border-[#c4dfd7] bg-[#f3fbf8] p-4 text-sm text-[#245b53]"><CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#0c7469]" /><p>The empty categories <strong>{yardiEmptyCategories.join(", ")}</strong> were observed in Yardi but have no currently configured report entries. They are retained in the catalog coverage count for future updates.</p></div>
     <div className="flex items-start gap-3 rounded-xl border border-[#ead8ad] bg-[#fffaf0] p-4 text-sm text-[#76521d]"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" /><p>Selecting a report here never sends it automatically. Each report will remain in settings-review status until its Yardi filters, property behavior, and download workflow have been documented.</p></div>
   </div>;

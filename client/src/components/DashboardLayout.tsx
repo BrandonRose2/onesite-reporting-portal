@@ -37,7 +37,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "Report workspace",
     items: [
       { icon: LayoutDashboard, label: "Home", path: "/" },
-      { icon: FileOutput, label: "Run a report", path: "/onesite-reports" },
+      { icon: FileOutput, label: "Run a report", path: "/run-report" },
       { icon: CalendarRange, label: "Property Reports Library", path: "/history" },
       { icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists", managerAllowed: true },
     ],
@@ -237,7 +237,7 @@ function DashboardLayoutContent({
               if (!visibleItems.length) return null;
               return <div key={group.label} className="px-2 pb-2 pt-3 first:pt-2"><p className="px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#7fb6c6] group-data-[collapsible=icon]:sr-only">{group.label}</p><SidebarMenu>
               {visibleItems.map(item => {
-                const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/")) || (item.path === "/onesite-reports" && location.startsWith("/onesite-reports"));
+                const isActive = location === item.path || (item.path === "/manager-checklists" && location.startsWith("/manager-checklists/")) || (item.path === "/run-report" && (location.startsWith("/run-report") || location.startsWith("/onesite-reports") || location.startsWith("/yardi-reports")));
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton

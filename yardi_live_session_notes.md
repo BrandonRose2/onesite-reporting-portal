@@ -63,3 +63,15 @@ The related **Receivable Reports** are Receivable Aging Detail, Receivable Aging
 ## Sidebar Inventory Status
 
 The requested Yardi sidebar categories have been observed: Affordable, 50059, Tax Credit, Waiting List, Financial Reports, RentCafe, Custom Reports, Custom Correspondence, and System. Affordable itself was observed at its initial top position; its visible report inventory will be consolidated with the other captured categories during catalog normalization. Financial Reports, Custom Reports, and Custom Correspondence were visible but empty for this account.
+
+## Tenant Delinquency Parameters
+
+The Yardi **Tenant Delinquency** report opens with a required Property selector and a required **As Of (MM/YYYY)** field. Optional controls are Unit, Resident, Resident Status, Transaction Date From/To, Summarize By, Minimum Amount, and HUD Subsidies. The page presents Excel and PDF output controls and a Generate Report action.
+
+The final user-configured standard is: all eight Yardi-designated properties; **all units**; **all residents** with **Resident Status: Current**; **As Of** set to the current calendar day's month/year in `MM/YYYY`; **Summarize By: Resident**; **HUD Subsidies: Include**; Excel as source output; and an AptCorp HTML report created from that source output. When all properties is selected, Yardi does not permit distinct Unit or Resident multi-selection; blank Unit and Resident fields therefore mean all units and residents within the full selected property scope. No Yardi report should be generated until live selection and export behavior are validated.
+
+The final live form capture confirms **All Properties** in the Property field, blank Unit and Resident fields, Resident Status set to Current, As Of `08/2026`, Summarize By Resident, and HUD Subsidies set to Include. The Excel and PDF controls appear at the top of the form, but clicking Excel does not provide a separate persistent selected-state indicator before Generate Report; the actual exported file behavior must be confirmed only after a user-approved test generation.
+
+## Verified Excel Export Behavior
+
+Clicking **Excel** directly starts the Yardi Tenant Delinquency export; it is not merely an output-format selection. After the loading state completed, Yardi downloaded `ReportOutput.xlsx` (197,056 bytes; 2026-08-18 12:05:26 on the connected Mac). The Generate Report button returned afterward. Future workflow: click Excel once with the validated filters, wait for `ReportOutput.xlsx`, and never click Generate Report as a follow-up action for the same export.

@@ -212,6 +212,14 @@
 - [ ] Derive unique Yardi property names only from checked property rows, excluding assistant, leasing, reception, and other support-role records.
 - [ ] Capture and implement a separate live-Edge Yardi login, report-pull, filing, and generated-output workflow.
 - [x] Inventory every visible Yardi report category from Affordable through System and add all report types to the Pull Reports – Yardi selector.
+- [ ] Configure Yardi Tenant Delinquency for all eight Yardi properties, all units, all residents filtered by Current status, included HUD subsidies, current-day MM/YYYY, resident summary, Excel source output, and AptCorp HTML generation.
+- [ ] Treat blank Unit and Resident filters as all units and residents when Yardi Tenant Delinquency uses all-property scope.
+- [ ] Diagnose the long-running Yardi Excel action without duplicate submission and document safe export recovery behavior.
+- [ ] File the validated Yardi Tenant Delinquency ReportOutput.xlsx and create its AptCorp HTML output under the Yardi property-report workflow.
+- [ ] Create manager checklist Markdown outputs from the Yardi Tenant Delinquency report data after filing the report.
+- [ ] Display a ⭐️ marker beside all eight Yardi properties in Property Reports Library and manager checklist navigation.
+- [ ] Add verified Regional Manager assignments from Company Contacts beside property-manager contacts on checklist cards and AptCorp property reports, including Regional Manager phone and email.
+- [x] Add unmistakable OneSite / RealPage and Yardi entry cards at the top of Run a Report before either report selector appears.
 - [ ] Store verified Yardi credentials as protected runner secrets for future unattended report pulls.
 - [x] Use the supplied fillable manager-checklist PDF package as the reference for the portal manager checklist workflow.
 - [x] Populate the portal-native manager checklist from filed availability and current-resident delinquency reports, with no prepaid terminology in the manager view.

@@ -99,6 +99,13 @@
       "when": 1787006556090,
       "tag": "0013_legal_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1787080616891,
+      "tag": "0014_tricky_cyclops",
+      "breakpoints": true
     }
   ]
 }
