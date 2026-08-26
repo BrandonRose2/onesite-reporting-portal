@@ -1,0 +1,45 @@
+import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/portal/PageHeader";
+import { StatusBadge } from "@/components/portal/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
+import { CheckSquare2, ClipboardList, Download, FileText, Loader2, Mail, UsersRound } from "lucide-react";
+import { useMemo, useState } from "react";
+
+type PropertyChoice = { id: number | null; name: string; externalId?: string | null; active?: boolean | null };
+
+export default function ManagerChecklists() {
+  const [requestId, setRequestId] = useState<number | null>(null);
+  const [propertyId, setPropertyId] = useState<number | null>(null);
+  const { data: requests = [], isLoading } = trpc.requests.library.useQuery({ limit: 250 }, { refetchInterval: 5000, refetchIntervalInBackground: false });
+  const completedRequests = useMemo(() => requests.filter(request => request.status === "completed" || request.status === "completed_with_warnings"), [requests]);
+  const selectedRequest = completedRequests.find(request => request.id === requestId);
+  const { data: details, isLoading: loadingDetails } = trpc.requests.details.useQuery({ id: requestId ?? 1 }, { enabled: requestId !== null });
+  const properties = (details?.properties ?? []) as PropertyChoice[];
+  const selectedProperty = properties.find(property => property.id === propertyId);
+  const checklist = trpc.checklists.generate.useQuery({ requestId: requestId ?? 1, propertyId: propertyId ?? 1 }, { enabled: requestId !== null && propertyId !== null });
+
+  const download = (kind: "html" | "markdown") => {
+    if (!checklist.data || !selectedProperty || !selectedRequest) return;
+    const content = kind === "html" ? checklist.data.html : checklist.data.markdown;
+    const type = kind === "html" ? "text/html" : "text/markdown";
+    const extension = kind === "html" ? "html" : "md";
+    const filename = `${selectedProperty.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "property"}-manager-checklist-${selectedRequest.id}.${extension}`;
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return <DashboardLayout><PageHeader eyebrow="Portfolio / Manager Checklists" title="Manager checklists" description="Generate property-specific HTML and Markdown briefings from filed report results, with approved Notion manager and regional-contact matching." />
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,430px)_1fr]">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)]"><div className="border-b border-slate-100 px-5 py-4"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0b8775]">Report source</p><h2 className="mt-1 text-base font-semibold text-slate-950">Completed report requests</h2><p className="mt-1 text-xs leading-5 text-slate-500">Choose a completed request, then choose the property whose manager briefing you want to prepare.</p></div>{isLoading ? <div className="grid min-h-64 place-items-center text-sm text-slate-500"><Loader2 className="mb-2 h-4 w-4 animate-spin" />Loading report history…</div> : completedRequests.length ? <div className="max-h-[35rem] divide-y divide-slate-100 overflow-auto">{completedRequests.map(request => <button key={request.id} onClick={() => { setRequestId(request.id); setPropertyId(null); }} className={`flex w-full items-center gap-3 px-5 py-4 text-left transition-colors ${requestId === request.id ? "bg-[#f1fbf8]" : "hover:bg-slate-50"}`}><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf7f6] text-[#087365]"><FileText className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{request.requestedReportName}</span><span className="mt-0.5 block truncate text-xs text-slate-500">{request.source === "onesite" ? "OneSite" : "Yardi"} · {request.propertyNames.length ? request.propertyNames.join(", ") : "Portfolio request"}</span></span><StatusBadge status={request.status} /></button>)}</div> : <EmptyState title="No completed reports yet" detail="Manager checklists become available after a source runner completes and files a report request." />}</section>
+      <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)]">{!selectedRequest ? <EmptyState title="Select a completed request" detail="The checklist preview, manager context, and HTML/Markdown downloads will appear here." large /> : loadingDetails ? <div className="grid min-h-96 place-items-center text-sm text-slate-500"><Loader2 className="mb-2 h-4 w-4 animate-spin" />Loading request properties…</div> : <div className="p-5"><div className="flex flex-col gap-4 border-b border-slate-100 pb-5 lg:flex-row lg:items-start lg:justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0b8775]">Checklist builder</p><h2 className="mt-1 text-lg font-semibold text-slate-950">{selectedRequest.requestedReportName}</h2><p className="mt-1 text-xs text-slate-500">Request #{selectedRequest.id} · {selectedRequest.source === "onesite" ? "OneSite Reporting" : "Yardi Reporting"}</p></div><StatusBadge status={selectedRequest.status} /></div><div className="mt-5 grid gap-5 lg:grid-cols-[280px_1fr]"><aside><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Property recipient</span><select value={propertyId ?? ""} onChange={event => setPropertyId(event.target.value ? Number(event.target.value) : null)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#0b8775] focus:ring-2 focus:ring-[#0b8775]/15"><option value="">Select property</option>{properties.filter(property => property.id).map(property => <option key={property.id ?? property.name} value={property.id ?? ""}>{property.name}</option>)}</select></label><div className="mt-4 rounded-xl border border-[#bfe9db] bg-[#effaf7] p-4"><div className="flex gap-2"><UsersRound className="mt-0.5 h-4 w-4 text-[#087365]" /><div><p className="text-xs font-semibold text-[#063e36]">Notion contact source confirmed</p><p className="mt-1.5 text-xs leading-5 text-[#356e65]">Company Contacts 7.23.26 was located. The approved contact fields are Property, Manager, Email Address, Region, and Regional Manager. Runtime matching is prepared without exposing Notion credentials in this portal.</p></div></div></div><div className="mt-3 rounded-xl border border-amber-200 bg-[#fffaf0] p-4"><div className="flex gap-2"><Mail className="mt-0.5 h-4 w-4 text-amber-700" /><div><p className="text-xs font-semibold text-amber-950">Email delivery deferred</p><p className="mt-1.5 text-xs leading-5 text-amber-900/80">Drafting and Exchange delivery are intentionally separate from this checklist generation step and will remain confirmation-gated.</p></div></div></div></aside><main className="min-w-0">{!selectedProperty ? <EmptyState title="Choose a property" detail="The manager-ready checklist is generated only for a property that belongs to the selected report request." /> : checklist.isLoading ? <div className="grid min-h-80 place-items-center text-sm text-slate-500"><Loader2 className="mb-2 h-4 w-4 animate-spin" />Generating manager checklist…</div> : checklist.data ? <div className="space-y-4"><div className="flex flex-wrap items-center gap-2"><Button onClick={() => download("html")} className="bg-[#0b8775] hover:bg-[#087365]"><Download className="mr-2 h-4 w-4" />Download HTML</Button><Button variant="outline" onClick={() => download("markdown")}><ClipboardList className="mr-2 h-4 w-4" />Download Markdown</Button></div><div className="overflow-hidden rounded-xl border border-slate-200"><iframe title="Manager checklist preview" srcDoc={checklist.data.html} className="h-[34rem] w-full border-0 bg-white" /></div><details className="rounded-xl border border-slate-200 p-4"><summary className="cursor-pointer text-xs font-semibold text-slate-700">Markdown source</summary><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-100">{checklist.data.markdown}</pre></details></div> : checklist.error ? <EmptyState title="Checklist unavailable" detail={checklist.error.message} /> : null}</main></div></div>}</section>
+    </div></DashboardLayout>;
+}
+
+function EmptyState({ title, detail, large }: { title: string; detail: string; large?: boolean }) {
+  return <div className={`grid place-items-center p-8 text-center ${large ? "min-h-96" : "min-h-64"}`}><div><span className="mx-auto grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-400"><CheckSquare2 className="h-5 w-5" /></span><p className="mt-3 text-sm font-semibold text-slate-800">{title}</p><p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">{detail}</p></div></div>;
+}

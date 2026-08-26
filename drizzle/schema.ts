@@ -26,6 +26,7 @@ export const properties = mysqlTable("properties", {
 
 export const reportCatalog = mysqlTable("reportCatalog", {
   id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["onesite", "yardi"]).notNull().default("onesite"),
   catalogKey: varchar("catalogKey", { length: 160 }).notNull(),
   exactReportName: varchar("exactReportName", { length: 255 }).notNull(),
   reportArea: varchar("reportArea", { length: 128 }),
@@ -36,10 +37,11 @@ export const reportCatalog = mysqlTable("reportCatalog", {
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => [uniqueIndex("report_catalog_key_unique").on(table.catalogKey), index("report_catalog_active_name_idx").on(table.active, table.exactReportName)]);
+}, table => [uniqueIndex("report_catalog_source_key_unique").on(table.source, table.catalogKey), index("report_catalog_source_active_name_idx").on(table.source, table.active, table.exactReportName)]);
 
 export const reportRequests = mysqlTable("reportRequests", {
   id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["onesite", "yardi"]).notNull().default("onesite"),
   requestType: mysqlEnum("requestType", ["generate_all_properties", "generate_property", "sync_my_reports"]).notNull(),
   requestedReportName: varchar("requestedReportName", { length: 255 }).notNull(),
   requestedFormat: mysqlEnum("requestedFormat", ["excel", "pdf", "csv"]).notNull(),
@@ -48,13 +50,14 @@ export const reportRequests = mysqlTable("reportRequests", {
   warningSummary: text("warningSummary"),
   errorMessage: text("errorMessage"),
   summaryMarkdown: text("summaryMarkdown"),
+  summaryHtml: text("summaryHtml"),
   sourceRunReference: varchar("sourceRunReference", { length: 500 }),
   requestedById: int("requestedById"),
   claimedAt: timestamp("claimedAt"),
   completedAt: timestamp("completedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => [index("report_requests_status_created_idx").on(table.status, table.createdAt), index("report_requests_requester_created_idx").on(table.requestedById, table.createdAt)]);
+}, table => [index("report_requests_source_status_created_idx").on(table.source, table.status, table.createdAt), index("report_requests_requester_created_idx").on(table.requestedById, table.createdAt)]);
 
 export const requestProperties = mysqlTable("requestProperties", {
   id: int("id").autoincrement().primaryKey(),
@@ -66,16 +69,17 @@ export const requestProperties = mysqlTable("requestProperties", {
 export const reportDocuments = mysqlTable("reportDocuments", {
   id: int("id").autoincrement().primaryKey(),
   requestId: int("requestId").notNull(),
+  source: mysqlEnum("source", ["onesite", "yardi"]).notNull().default("onesite"),
   propertyId: int("propertyId"),
   propertyName: varchar("propertyName", { length: 255 }).notNull(),
-  documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook"]).default("source_report").notNull(),
+  documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook", "manager_checklist"]).default("source_report").notNull(),
   originalFilename: varchar("originalFilename", { length: 500 }).notNull(),
   mimeType: varchar("mimeType", { length: 255 }).notNull(),
   storageKey: varchar("storageKey", { length: 1024 }).notNull(),
   storageUrl: varchar("storageUrl", { length: 2048 }).notNull(),
   sizeBytes: int("sizeBytes").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, table => [index("report_documents_request_created_idx").on(table.requestId, table.createdAt), index("report_documents_property_created_idx").on(table.propertyId, table.createdAt)]);
+}, table => [index("report_documents_request_created_idx").on(table.requestId, table.createdAt), index("report_documents_source_property_created_idx").on(table.source, table.propertyId, table.createdAt)]);
 
 export const requestEvents = mysqlTable("requestEvents", {
   id: int("id").autoincrement().primaryKey(),
@@ -84,6 +88,21 @@ export const requestEvents = mysqlTable("requestEvents", {
   detail: text("detail"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("request_events_request_created_idx").on(table.requestId, table.createdAt)]);
+
+export const managerContacts = mysqlTable("managerContacts", {
+  id: int("id").autoincrement().primaryKey(),
+  contactKey: varchar("contactKey", { length: 128 }).notNull(),
+  propertyName: varchar("propertyName", { length: 255 }),
+  normalizedPropertyName: varchar("normalizedPropertyName", { length: 255 }),
+  managerName: varchar("managerName", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  region: varchar("region", { length: 64 }),
+  isRegionalManager: boolean("isRegionalManager").default(false).notNull(),
+  source: varchar("source", { length: 64 }).notNull().default("notion_company_contacts"),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("manager_contacts_key_unique").on(table.contactKey), index("manager_contacts_property_idx").on(table.normalizedPropertyName), index("manager_contacts_region_regional_idx").on(table.region, table.isRegionalManager)]);
 
 export const operationalConfig = mysqlTable("operationalConfig", {
   id: int("id").autoincrement().primaryKey(),
@@ -97,4 +116,3 @@ export type InsertUser = typeof users.$inferInsert;
 export type Property = typeof properties.$inferSelect;
 export type ReportCatalogEntry = typeof reportCatalog.$inferSelect;
 export type ReportRequest = typeof reportRequests.$inferSelect;
-

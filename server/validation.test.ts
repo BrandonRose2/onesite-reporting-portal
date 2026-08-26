@@ -15,7 +15,6 @@ describe("portal input validation", () => {
   it("requires a property only for a single-property request", () => {
     expect(requestCreateSchema.safeParse({ requestType: "generate_property", requestedReportName: "Delinquency", requestedFormat: "excel", parameters: {} }).success).toBe(false);
     expect(requestCreateSchema.safeParse({ requestType: "generate_all_properties", requestedReportName: "Delinquency", requestedFormat: "excel", propertyId: 3, parameters: {} }).success).toBe(false);
-    expect(requestCreateSchema.safeParse({ requestType: "generate_property", requestedReportName: "Delinquency", requestedFormat: "excel", propertyId: 3, parameters: {} }).success).toBe(true);
+    expect(requestCreateSchema.safeParse({ requestType: "generate_property", catalogId: 12, requestedReportName: "Delinquency", requestedFormat: "excel", propertyId: 3, parameters: {} }).success).toBe(true);
   });
 });
-

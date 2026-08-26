@@ -32,6 +32,23 @@ describe("runner token protection", () => {
     await expect(response.json()).resolves.toMatchObject({ status: "ok", service: "onesite-reporting-hub" });
   });
 
+  it("accepts the separate Yardi runner token only on the Yardi health endpoint", async () => {
+    const token = process.env.YARDI_RUNNER_TOKEN;
+    expect(token, "YARDI_RUNNER_TOKEN must be configured for runner integration").toBeTruthy();
+    const baseUrl = await startHealthApp();
+    const response = await fetch(`${baseUrl}/api/yardi-runner/health`, { headers: { "x-runner-token": token! } });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ status: "ok", source: "yardi", credentialStorage: "external" });
+  });
+
+  it("rejects cross-source runner tokens", async () => {
+    const baseUrl = await startHealthApp();
+    const yardiOnOneSite = await fetch(`${baseUrl}/api/onesite-runner/health`, { headers: { "x-runner-token": process.env.YARDI_RUNNER_TOKEN! } });
+    const oneSiteOnYardi = await fetch(`${baseUrl}/api/yardi-runner/health`, { headers: { "x-runner-token": process.env.ONESITE_RUNNER_TOKEN! } });
+    expect(yardiOnOneSite.status).toBe(401);
+    expect(oneSiteOnYardi.status).toBe(401);
+  });
+
   it("rejects a missing runner token", async () => {
     const baseUrl = await startHealthApp();
     const response = await fetch(`${baseUrl}/api/onesite-runner/health`);
@@ -46,6 +63,28 @@ describe("runner token protection", () => {
       body: JSON.stringify({ status: "not-a-real-state" }),
     });
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({ error: "Invalid live Edge status." });
+    await expect(response.json()).resolves.toMatchObject({ error: "Invalid runner session status." });
+  });
+
+  it("rejects credential or cookie material from runner session-status payloads", async () => {
+    const baseUrl = await startHealthApp();
+    const response = await fetch(`${baseUrl}/api/yardi-runner/session-status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-runner-token": process.env.YARDI_RUNNER_TOKEN! },
+      body: JSON.stringify({ status: "ready", password: "must-not-be-stored" }),
+    });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Credential, token, and cookie material must never be sent to the portal." });
+  });
+
+  it("rejects malformed property catalog rows before they can reach persistence", async () => {
+    const baseUrl = await startHealthApp();
+    const response = await fetch(`${baseUrl}/api/onesite-runner/properties/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-onesite-runner-token": process.env.ONESITE_RUNNER_TOKEN! },
+      body: JSON.stringify({ properties: [{ name: "Missing external ID" }] }),
+    });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Properties must contain externalId and name." });
   });
 });

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const reportFormatSchema = z.enum(["excel", "pdf", "csv"]);
 export const requestTypeSchema = z.enum(["generate_all_properties", "generate_property", "sync_my_reports"]);
+export const runnerSourceSchema = z.enum(["onesite", "yardi"]);
 export const metadataSchema = z.record(z.string(), z.unknown());
 
 export const propertySaveSchema = z.object({
@@ -16,6 +17,7 @@ export const propertySaveSchema = z.object({
 
 export const catalogSaveSchema = z.object({
   id: z.number().int().positive().optional(),
+  source: runnerSourceSchema.default("onesite"),
   catalogKey: z.string().trim().min(1).max(160),
   exactReportName: z.string().trim().min(1).max(255),
   reportArea: z.string().trim().max(128).nullable().optional(),
@@ -27,7 +29,9 @@ export const catalogSaveSchema = z.object({
 });
 
 export const requestCreateSchema = z.object({
+  source: runnerSourceSchema.default("onesite"),
   requestType: requestTypeSchema,
+  catalogId: z.number().int().positive().optional(),
   requestedReportName: z.string().trim().min(1).max(255),
   requestedFormat: reportFormatSchema,
   parameters: metadataSchema,
@@ -39,5 +43,7 @@ export const requestCreateSchema = z.object({
   if (value.requestType !== "generate_property" && value.propertyId) {
     context.addIssue({ code: "custom", message: "A property can only be selected for a single-property request.", path: ["propertyId"] });
   }
+  if (value.requestType !== "sync_my_reports" && !value.catalogId) {
+    context.addIssue({ code: "custom", message: "An approved catalog report is required.", path: ["catalogId"] });
+  }
 });
-

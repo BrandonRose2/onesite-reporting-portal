@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
   operationalConfig,
+  managerContacts,
   properties,
   reportCatalog,
   reportDocuments,
@@ -13,8 +14,12 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { assertRequestTransition, type RequestStatus } from "./requestLifecycle";
+import { renderReportSummaryHtml } from "./reportSummary";
+import { buildManagerChecklist } from "./managerChecklist";
+import { matchManagerContacts, normalizePropertyName, type ManagerContactInput } from "./contactMatching";
 
 let dbClient: ReturnType<typeof drizzle> | null = null;
+export type RunnerSource = "onesite" | "yardi";
 
 export function setDbClientForTesting(client: ReturnType<typeof drizzle> | null) {
   dbClient = client;
@@ -82,13 +87,22 @@ export async function upsertProperty(input: { id?: number; externalId: string; n
   return getPropertyById(result.insertId);
 }
 
-export async function listCatalog(includeInactive = false) {
+export async function listCatalog(includeInactive = false, source?: RunnerSource) {
   const db = await requireDb();
-  return db.select().from(reportCatalog).where(includeInactive ? undefined : eq(reportCatalog.active, true)).orderBy(asc(reportCatalog.exactReportName));
+  const conditions = [];
+  if (!includeInactive) conditions.push(eq(reportCatalog.active, true));
+  if (source) conditions.push(eq(reportCatalog.source, source));
+  return db.select().from(reportCatalog).where(conditions.length ? and(...conditions) : undefined).orderBy(asc(reportCatalog.exactReportName));
+}
+
+export async function getCatalogEntryById(id: number) {
+  const db = await requireDb();
+  return (await db.select().from(reportCatalog).where(eq(reportCatalog.id, id)).limit(1))[0];
 }
 
 export async function upsertCatalogEntry(input: {
   id?: number;
+  source: RunnerSource;
   catalogKey: string;
   exactReportName: string;
   reportArea?: string | null;
@@ -105,11 +119,12 @@ export async function upsertCatalogEntry(input: {
     return rows[0];
   }
   await db.insert(reportCatalog).values(input).onDuplicateKeyUpdate({ set: { ...input, id: undefined } });
-  const rows = await db.select().from(reportCatalog).where(eq(reportCatalog.catalogKey, input.catalogKey)).limit(1);
+  const rows = await db.select().from(reportCatalog).where(and(eq(reportCatalog.source, input.source), eq(reportCatalog.catalogKey, input.catalogKey))).limit(1);
   return rows[0];
 }
 
 export async function createReportRequest(input: {
+  source: RunnerSource;
   requestType: "generate_all_properties" | "generate_property" | "sync_my_reports";
   requestedReportName: string;
   requestedFormat: "excel" | "pdf" | "csv";
@@ -130,6 +145,7 @@ export async function createReportRequest(input: {
     }
 
     const [requestResult] = await tx.insert(reportRequests).values({
+      source: input.source,
       requestType: input.requestType,
       requestedReportName: input.requestedReportName,
       requestedFormat: input.requestedFormat,
@@ -151,9 +167,20 @@ export async function createReportRequest(input: {
   });
 }
 
-export async function listRecentRequests(limit = 25) {
+export async function listRecentRequests(limit = 25, source?: RunnerSource) {
   const db = await requireDb();
-  return db.select().from(reportRequests).orderBy(desc(reportRequests.createdAt)).limit(limit);
+  return db.select().from(reportRequests).where(source ? eq(reportRequests.source, source) : undefined).orderBy(desc(reportRequests.createdAt)).limit(limit);
+}
+
+export async function listReportLibraryRequests(limit = 200, source?: RunnerSource) {
+  const db = await requireDb();
+  const requests = await listRecentRequests(limit, source);
+  if (!requests.length) return [];
+  const propertyRows = await db.select({ requestId: requestProperties.requestId, propertyName: requestProperties.propertyNameSnapshot })
+    .from(requestProperties).where(inArray(requestProperties.requestId, requests.map(request => request.id))).orderBy(asc(requestProperties.propertyNameSnapshot));
+  const propertyNamesByRequest = new Map<number, string[]>();
+  propertyRows.forEach(row => propertyNamesByRequest.set(row.requestId, [...(propertyNamesByRequest.get(row.requestId) ?? []), row.propertyName]));
+  return requests.map(request => ({ ...request, propertyNames: propertyNamesByRequest.get(request.id) ?? [] }));
 }
 
 export async function getRequestDetails(requestId: number) {
@@ -169,6 +196,12 @@ export async function getRequestDetails(requestId: number) {
   return { request, properties: requestPropertyRows, documents: documentRows, events: eventRows };
 }
 
+export async function requestBelongsToSource(requestId: number, source: RunnerSource) {
+  const db = await requireDb();
+  const request = (await db.select({ id: reportRequests.id }).from(reportRequests).where(and(eq(reportRequests.id, requestId), eq(reportRequests.source, source))).limit(1))[0];
+  return Boolean(request);
+}
+
 export async function getPropertyHistory(propertyId: number) {
   const db = await requireDb();
   const property = await getPropertyById(propertyId);
@@ -178,6 +211,47 @@ export async function getPropertyHistory(propertyId: number) {
     .where(eq(requestProperties.propertyId, propertyId)).orderBy(desc(reportRequests.createdAt));
   const documents = await db.select().from(reportDocuments).where(eq(reportDocuments.propertyId, propertyId)).orderBy(desc(reportDocuments.createdAt));
   return { property, requests, documents };
+}
+
+export async function upsertManagerContacts(contacts: ManagerContactInput[]) {
+  const db = await requireDb();
+  for (const contact of contacts) {
+    await db.insert(managerContacts).values(contact).onDuplicateKeyUpdate({ set: { propertyName: contact.propertyName, normalizedPropertyName: contact.normalizedPropertyName, managerName: contact.managerName, email: contact.email, region: contact.region, isRegionalManager: contact.isRegionalManager, syncedAt: new Date() } });
+  }
+}
+
+export async function getManagerContactMatch(propertyName: string) {
+  const db = await requireDb();
+  const contacts = await db.select().from(managerContacts);
+  return matchManagerContacts(propertyName, contacts.map(contact => ({ ...contact, normalizedPropertyName: contact.normalizedPropertyName ?? (contact.propertyName ? normalizePropertyName(contact.propertyName) : null) })));
+}
+
+export async function generateManagerChecklist(input: { requestId: number; propertyId: number }) {
+  const db = await requireDb();
+  const [request, property, requestProperty] = await Promise.all([
+    db.select().from(reportRequests).where(eq(reportRequests.id, input.requestId)).limit(1),
+    db.select().from(properties).where(eq(properties.id, input.propertyId)).limit(1),
+    db.select().from(requestProperties).where(and(eq(requestProperties.requestId, input.requestId), eq(requestProperties.propertyId, input.propertyId))).limit(1),
+  ]);
+  const requestRow = request[0];
+  const propertyRow = property[0];
+  if (!requestRow || !propertyRow || !requestProperty[0]) throw new Error("The selected property is not associated with this report request.");
+  const [documents, contacts] = await Promise.all([
+    db.select({ originalFilename: reportDocuments.originalFilename, storageUrl: reportDocuments.storageUrl }).from(reportDocuments).where(and(eq(reportDocuments.requestId, input.requestId), eq(reportDocuments.propertyId, input.propertyId))).orderBy(desc(reportDocuments.createdAt)),
+    getManagerContactMatch(propertyRow.name),
+  ]);
+  return buildManagerChecklist({
+    requestId: requestRow.id,
+    source: requestRow.source,
+    reportName: requestRow.requestedReportName,
+    reportStatus: requestRow.status,
+    generatedAt: requestRow.completedAt ?? requestRow.createdAt,
+    property: propertyRow,
+    summaryMarkdown: requestRow.summaryMarkdown,
+    warningSummary: requestRow.warningSummary,
+    documents,
+    contacts,
+  });
 }
 
 export async function getDashboardOverview() {
@@ -199,10 +273,10 @@ export async function getDashboardOverview() {
   };
 }
 
-export async function claimRunnerRequest(input: { requestId?: number; minimumRequestId?: number }) {
+export async function claimRunnerRequest(input: { source: RunnerSource; requestId?: number; minimumRequestId?: number }) {
   const db = await requireDb();
   return db.transaction(async tx => {
-    const conditions = [eq(reportRequests.status, "queued")];
+    const conditions = [eq(reportRequests.status, "queued"), eq(reportRequests.source, input.source)];
     if (input.requestId) conditions.push(eq(reportRequests.id, input.requestId));
     if (input.minimumRequestId) conditions.push(gte(reportRequests.id, input.minimumRequestId));
     const candidate = (await tx.select().from(reportRequests).where(and(...conditions)).orderBy(asc(reportRequests.createdAt)).limit(1))[0];
@@ -227,20 +301,23 @@ export async function recordRunnerProgress(requestId: number, sourceRunReference
 
 export async function completeRunnerRequest(input: { requestId: number; status: "completed" | "completed_with_warnings" | "failed"; warningSummary?: string; errorMessage?: string; summaryMarkdown?: string }) {
   const db = await requireDb();
-  const current = (await db.select({ status: reportRequests.status }).from(reportRequests).where(eq(reportRequests.id, input.requestId)).limit(1))[0];
+  const current = (await db.select({ status: reportRequests.status, source: reportRequests.source, requestedReportName: reportRequests.requestedReportName }).from(reportRequests).where(eq(reportRequests.id, input.requestId)).limit(1))[0];
   if (!current) throw new Error("Report request was not found.");
   assertRequestTransition(current.status as RequestStatus, input.status);
+  const completedAt = new Date();
+  const summaryHtml = renderReportSummaryHtml({ source: current.source, reportName: current.requestedReportName, status: input.status, requestId: input.requestId, completedAt, summaryMarkdown: input.summaryMarkdown, warningSummary: input.warningSummary, errorMessage: input.errorMessage });
   await db.update(reportRequests).set({
     status: input.status,
     warningSummary: input.warningSummary ?? null,
     errorMessage: input.errorMessage ?? null,
     summaryMarkdown: input.summaryMarkdown ?? null,
-    completedAt: new Date(),
+    summaryHtml,
+    completedAt,
   }).where(eq(reportRequests.id, input.requestId));
   await db.insert(requestEvents).values({ requestId: input.requestId, eventType: input.status, detail: input.errorMessage ?? input.warningSummary ?? "Runner completed request." });
 }
 
-export async function createReportDocument(input: { requestId: number; propertyId?: number; propertyName: string; originalFilename: string; mimeType: string; documentKind: "source_report" | "property_workbook"; storageKey: string; storageUrl: string; sizeBytes: number }) {
+export async function createReportDocument(input: { requestId: number; source: RunnerSource; propertyId?: number; propertyName: string; originalFilename: string; mimeType: string; documentKind: "source_report" | "property_workbook" | "manager_checklist"; storageKey: string; storageUrl: string; sizeBytes: number }) {
   const db = await requireDb();
   await db.insert(reportDocuments).values(input);
   await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "document_filed", detail: `${input.originalFilename} filed for ${input.propertyName}.` });
@@ -257,23 +334,49 @@ export async function setOperationalConfig(configKey: string, configValue: strin
   await db.insert(operationalConfig).values({ configKey, configValue }).onDuplicateKeyUpdate({ set: { configValue, updatedAt: new Date() } });
 }
 
-export async function setLiveEdgeStatus(input: { status: "ready" | "unavailable" | "interactive_required"; detail?: string }) {
-  await setOperationalConfig("live_edge_status", JSON.stringify({ ...input, updatedAt: new Date().toISOString() }));
+export async function setLiveEdgeStatus(source: RunnerSource, input: { status: "ready" | "unavailable" | "interactive_required"; detail?: string }) {
+  await setOperationalConfig(`runner_session:${source}`, JSON.stringify({ source, ...input, updatedAt: new Date().toISOString() }));
 }
 
-export async function syncCatalogFromRunner(reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string }>) {
+export async function getRunnerSessionStatus(source: RunnerSource) {
+  return getOperationalConfig(`runner_session:${source}`);
+}
+
+export async function syncCatalogFromRunner(source: RunnerSource, reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>) {
   for (const report of reports) {
     await upsertCatalogEntry({
+      source,
       catalogKey: report.catalogKey,
       exactReportName: report.name,
       reportArea: report.reportArea ?? null,
       reportLevel: report.reportLevel ?? null,
       product: report.product ?? null,
-      availableFormats: ["excel"],
-      runnerMetadata: {},
+      availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
+      runnerMetadata: report.runnerMetadata ?? {},
       active: true,
     });
   }
+}
+
+export async function syncPropertiesFromRunner(source: RunnerSource, incoming: Array<{ externalId: string; name: string; market?: string; active?: boolean }>) {
+  const db = await requireDb();
+  for (const property of incoming) {
+    const externalId = property.externalId.trim().slice(0, 128);
+    const name = property.name.trim().slice(0, 255);
+    if (!externalId || !name) continue;
+    await db.insert(properties).values({
+      externalId,
+      name,
+      market: property.market?.trim().slice(0, 128) || null,
+      active: property.active ?? true,
+    }).onDuplicateKeyUpdate({ set: {
+      name,
+      market: property.market?.trim().slice(0, 128) || null,
+      active: property.active ?? true,
+      updatedAt: new Date(),
+    } });
+  }
+  await setOperationalConfig(`property_sync:${source}`, JSON.stringify({ source, count: incoming.length, updatedAt: new Date().toISOString() }));
 }
 
 export async function syncPropertyContactsFromRunner(contacts: Array<Record<string, unknown>>) {

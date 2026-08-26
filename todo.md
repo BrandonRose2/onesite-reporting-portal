@@ -30,3 +30,55 @@
 - [x] Diagnose the deployment timeout from build and runtime evidence, then apply and verify a deployment-safe remediation.
 - [x] Record the verified deployment-pipeline blocker and provide the user with the evidence-based retry path, since the production build and local production startup are healthy.
 - [x] Remove recovery/prototype framing from user-facing portal language and present OneSite Reporting Hub as the actual internal reporting portal.
+- [ ] Inspect the authorized OneSite source and preserved runner contract to define a secure, repeatable property-directory and report-catalog synchronization path.
+- [ ] Synchronize and validate the actual property directory and approved report catalog in the portal without exposing credentials.
+- [ ] Add report-library filters for date, property, and report type plus clear sorting controls.
+- [ ] Add an active-generation loading animation and runner-status indicator that updates while a request is in progress.
+- [ ] Add tests and visual verification for live-data synchronization states, library filtering/sorting, and active runner generation feedback.
+- [ ] Model OneSite and Yardi as distinct report catalogs with source-specific metadata, independent runner status, and no credentials stored in portal code or database records.
+- [ ] Define separate secure deployment-secret references for OneSite and Yardi runner authentication, without requesting or persisting credential values in the portal.
+- [ ] Define separate secret-reference and operating-system keychain boundaries for OneSite and Yardi credentials, with no password or cookie persistence in the portal.
+- [ ] Add source-specific runner session-state reporting that exposes only readiness and reauthentication requirements.
+- [ ] Document provider-permitted encrypted browser-profile continuity, including trusted-device use and manual MFA/CAPTCHA handoff requirements.
+- [ ] Add security-focused tests confirming secrets and cookie material cannot be written through portal APIs or database fields.
+- [ ] Restrict OneSite/RealPage synchronization instructions and runner status language to the mandatory macOS Microsoft Edge profile; do not use the connected browser for live catalog or property synchronization.
+- [ ] Verify and use the connected Microsoft Edge runner session as the authorized OneSite/RealPage synchronization environment once its provider page finishes loading.
+- [ ] Keep the connected Microsoft Edge session as the only browser context for Classic OneSite Reports inspection and synchronization; do not misidentify its browser engine.
+- [ ] Inspect the authenticated Classic OneSite Reporting workflow and capture the approved live catalog and property-directory synchronization path without submitting a report run.
+- [ ] Compare the older OneSite-only portal workflow with the rebuilt hub and carry forward any proven catalog, property, and report-run behavior without collapsing the separate Yardi integration.
+- [ ] Capture the complete 10-page, 310-report Classic OneSite catalog from the authenticated Edge session without submitting a report run.
+- [ ] Validate, normalize, and synchronize the authoritative OneSite catalog as the dedicated OneSite selector source while keeping the Yardi catalog separate.
+- [x] Add structured report-parameter definitions to OneSite catalog entries so the portal can render validated Generate & Schedule-style controls.
+- [x] Build a report request flow that captures configured parameters and explicitly supports all-properties or selected-property-only scope.
+- [ ] Populate real OneSite catalog entries with structured parameter definitions through the authorized Edge-runner catalog sync and confirm generated controls render for those reports.
+- [ ] Add focused request-creation tests that enforce matching source, catalog, and format rules while preserving structured parameters for all-properties and selected-property requests.
+- [ ] Verify a real catalog entry end to end in the browser, including parameter validation and scoped request submission paths.
+- [x] File original runner outputs in source-rooted, property-level object-storage paths for OneSite Reporting and Yardi Reporting without storing file bytes in the database.
+- [x] Persist source, property, request, document, and HTML-summary metadata so every filed report is traceable and searchable.
+- [x] Build in-portal document viewing with an expanded PDF viewer and an accessible Excel workbook preview plus original-file download.
+- [x] Generate property-specific Manager’s Checklist HTML/Markdown documents from filed report data, including source links, findings, discussion points, and generation metadata.
+- [x] Add preserved source-document URLs to Manager’s Checklist HTML and Markdown output and test that those links resolve to the original filed reports.
+- [x] Implement an authorized Notion recipient-mapping helper that reads only Property, Manager, Email Address, Region, and Regional Manager from Company Contacts 07.23.26.
+- [x] Add checklist and Notion mapping tests for a successful property match and an explicit no-match result.
+- [x] Add a secure Notion Company Contacts 07.23.26 matching boundary that activates only after the user confirms the Notion connector is configured.
+- [x] Verify the configured Notion connection, locate Company Contacts 07.23.26, and map only approved property/contact fields for Manager’s Checklist recipients.
+- [ ] Inspect existing managed configuration for an Exchange delivery reference without exposing or scanning credential values.
+- [ ] Build separate reviewed email drafts for regional and property managers from each report and Manager’s Checklist.
+- [ ] Add a confirmation-gated Exchange delivery workflow that never sends an email without explicit user approval.
+- [ ] Determine the supported Exchange delivery endpoint from the provided OWA reference and configure protected secret references without writing credential values to project files.
+- [x] Complete the core report, filing, viewer, and Manager’s Checklist workflow before returning to deferred Exchange delivery configuration.
+- [ ] Save a clean stopping-point checkpoint after final validation of the current core portal milestone.
+- [ ] Capture all 10 pages of the authenticated Classic OneSite Reports catalog and validate the expected 310 report entries without submitting any report request.
+- [ ] Load the captured OneSite catalog as the portal’s authoritative OneSite selector source and verify that entries are available to request.
+- [ ] Verify the designated Edge runner’s OneSite health, session readiness, and catalog-sync path without using the connected browser or submitting a report request.
+- [ ] Capture the authoritative Classic OneSite top-of-page property selector through the designated Edge runner and synchronize those property records separately from report catalog entries.
+- [ ] Define a management-user access model with authorized portal roles and per-user OneSite/Yardi source permissions.
+- [ ] Implement source-specific local-connector readiness status per management user without storing provider usernames, passwords, cookies, or MFA data in the portal.
+- [ ] Add a management-computer onboarding path that instructs users to authenticate directly with OneSite and Yardi in their own Edge profiles and reports only permitted connection state to the portal.
+- [x] Optimize report requests, library review, document viewing, Manager’s Checklists, and runner status for iPhone-sized screens.
+- [x] Preserve the management-computer Edge runner as the credential boundary while enabling authorized mobile users to submit and monitor portal requests.
+- [ ] Refine and verify iPhone layouts for DocumentViewer and ManagerChecklists, including expanded document-preview states.
+- [ ] Add code-level coverage for mobile users submitting and monitoring requests while OneSite and Yardi session credentials remain confined to an authorized Edge computer.
+- [ ] Verify the authenticated mobile flow end to end for request submission, runner status, document viewing, and Manager’s Checklist review.
+- [ ] Complete the designated Edge-runner pull of the authoritative Classic OneSite property selector and 10-page report catalog before resuming management-account enhancements.
+- [ ] Retrieve the reconnected private Edge runner repository, identify its existing non-destructive OneSite property/catalog sync command, and configure it for the new portal endpoint.

@@ -7,30 +7,63 @@ import {
   createReportDocument,
   getPropertyByName,
   recordRunnerProgress,
+  requestBelongsToSource,
   setLiveEdgeStatus,
   syncCatalogFromRunner,
+  syncPropertiesFromRunner,
   syncPropertyContactsFromRunner,
+  type RunnerSource,
 } from "./db";
 import { storagePut } from "./storage";
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const validCompletionStatuses = new Set(["completed", "completed_with_warnings", "failed"]);
+const sensitiveKeyPattern = /(password|passcode|cookie|credential|access[_-]?token|refresh[_-]?token|authorization|secret|session[_-]?(id|token))/i;
+const sensitiveValuePattern = /(password\s*[=:]|cookie\s*[=:]|bearer\s+|token\s*[=:]|secret\s*[=:]|sessionid\s*[=:])/i;
 
-function hasValidRunnerToken(token: string | undefined) {
-  const expected = process.env.ONESITE_RUNNER_TOKEN;
+type RunnerDefinition = {
+  source: RunnerSource;
+  tokenEnv: "ONESITE_RUNNER_TOKEN" | "YARDI_RUNNER_TOKEN";
+  storageRoot: string;
+};
+
+const runners: RunnerDefinition[] = [
+  { source: "onesite", tokenEnv: "ONESITE_RUNNER_TOKEN", storageRoot: "OneSite Reporting" },
+  { source: "yardi", tokenEnv: "YARDI_RUNNER_TOKEN", storageRoot: "Yardi Reporting" },
+];
+
+function hasValidRunnerToken(token: string | undefined, expected: string | undefined) {
   if (!expected || !token) return false;
   const actualBuffer = Buffer.from(token);
   const expectedBuffer = Buffer.from(expected);
   return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
-function runnerAuth(req: Request, res: Response, next: NextFunction) {
-  if (!process.env.ONESITE_RUNNER_TOKEN) {
-    res.status(503).json({ error: "Runner API is not configured. Set ONESITE_RUNNER_TOKEN through the portal’s secret manager." });
-    return;
-  }
-  if (!hasValidRunnerToken(req.get("x-onesite-runner-token") ?? undefined)) {
-    res.status(401).json({ error: "Invalid runner token." });
+function runnerAuth(definition: RunnerDefinition) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const expected = process.env[definition.tokenEnv];
+    if (!expected) {
+      res.status(503).json({ error: `${definition.source} runner API is not configured. Set ${definition.tokenEnv} through the deployment secret manager.` });
+      return;
+    }
+    if (!hasValidRunnerToken(req.get("x-runner-token") ?? req.get("x-onesite-runner-token") ?? req.get("x-yardi-runner-token") ?? undefined, expected)) {
+      res.status(401).json({ error: "Invalid runner token." });
+      return;
+    }
+    next();
+  };
+}
+
+function containsSensitiveMaterial(value: unknown): boolean {
+  if (typeof value === "string") return sensitiveValuePattern.test(value);
+  if (Array.isArray(value)) return value.some(containsSensitiveMaterial);
+  if (!value || typeof value !== "object") return false;
+  return Object.entries(value).some(([key, nested]) => sensitiveKeyPattern.test(key) || containsSensitiveMaterial(nested));
+}
+
+function rejectSensitivePayload(req: Request, res: Response, next: NextFunction) {
+  if (containsSensitiveMaterial(req.body)) {
+    res.status(400).json({ error: "Credential, token, and cookie material must never be sent to the portal." });
     return;
   }
   next();
@@ -44,71 +77,109 @@ function safeFilename(filename: string) {
   return filename.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180) || "report.bin";
 }
 
-export function registerRunnerRoutes(app: Express) {
-  const router = app.route.bind(app);
+function safeFolderName(value: string) {
+  return value.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 120) || "Unassigned Property";
+}
 
-  router("/api/onesite-runner/health").get(runnerAuth, (_req, res) => {
-    res.json({ status: "ok", service: "onesite-reporting-hub" });
+async function requireOwnedRequest(requestId: number, source: RunnerSource, res: Response) {
+  if (!isPositiveInteger(requestId)) {
+    res.status(400).json({ error: "A valid request ID is required." });
+    return false;
+  }
+  if (!await requestBelongsToSource(requestId, source)) {
+    res.status(404).json({ error: "Request was not found for this runner source." });
+    return false;
+  }
+  return true;
+}
+
+function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
+  const base = `/api/${definition.source}-runner`;
+  const auth = runnerAuth(definition);
+
+  app.get(`${base}/health`, auth, (_req, res) => {
+    res.json({ status: "ok", service: "onesite-reporting-hub", source: definition.source, credentialStorage: "external" });
   });
 
-  router("/api/onesite-runner/live-edge-status").post(runnerAuth, async (req, res, next) => {
+  const sessionStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const status = req.body?.status;
-      if (!["ready", "unavailable", "interactive_required"].includes(status)) {
-        res.status(400).json({ error: "Invalid live Edge status." });
+      if (!(["ready", "unavailable", "interactive_required"] as string[]).includes(status)) {
+        res.status(400).json({ error: "Invalid runner session status." });
         return;
       }
-      await setLiveEdgeStatus({ status, detail: typeof req.body.detail === "string" ? req.body.detail.slice(0, 1500) : undefined });
-      res.json({ success: true });
+      const detail = typeof req.body?.detail === "string" ? req.body.detail.slice(0, 500) : undefined;
+      if (detail && sensitiveValuePattern.test(detail)) {
+        res.status(400).json({ error: "Session detail may not include credential or cookie material." });
+        return;
+      }
+      await setLiveEdgeStatus(definition.source, { status, detail });
+      res.json({ success: true, source: definition.source });
     } catch (error) { next(error); }
-  });
+  };
+  app.post(`${base}/session-status`, auth, rejectSensitivePayload, sessionStatus);
+  app.post(`${base}/live-edge-status`, auth, rejectSensitivePayload, sessionStatus);
 
-  router("/api/onesite-runner/catalog/sync").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/catalog/sync`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
       const reports = Array.isArray(req.body?.reports) ? req.body.reports : [];
       if (!reports.every((report: unknown) => report && typeof report === "object" && typeof (report as { catalogKey?: unknown }).catalogKey === "string" && typeof (report as { name?: unknown }).name === "string")) {
         res.status(400).json({ error: "Reports must contain catalogKey and name." });
         return;
       }
-      await syncCatalogFromRunner(reports);
-      res.json({ success: true, count: reports.length });
+      await syncCatalogFromRunner(definition.source, reports as Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>);
+      res.json({ success: true, source: definition.source, count: reports.length });
     } catch (error) { next(error); }
   });
 
-  router("/api/onesite-runner/property-contacts/sync").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/properties/sync`, auth, rejectSensitivePayload, async (req, res, next) => {
+    try {
+      const properties = Array.isArray(req.body?.properties) ? req.body.properties : [];
+      if (!properties.every((property: unknown) => property && typeof property === "object" && typeof (property as { externalId?: unknown }).externalId === "string" && typeof (property as { name?: unknown }).name === "string")) {
+        res.status(400).json({ error: "Properties must contain externalId and name." });
+        return;
+      }
+      await syncPropertiesFromRunner(definition.source, properties as Array<{ externalId: string; name: string; market?: string; active?: boolean }>);
+      res.json({ success: true, source: definition.source, count: properties.length });
+    } catch (error) { next(error); }
+  });
+
+  app.post(`${base}/property-contacts/sync`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
       const contacts = Array.isArray(req.body?.contacts) ? req.body.contacts : [];
       await syncPropertyContactsFromRunner(contacts.filter((contact: unknown): contact is Record<string, unknown> => Boolean(contact) && typeof contact === "object"));
-      res.json({ success: true, count: contacts.length });
+      res.json({ success: true, source: definition.source, count: contacts.length });
     } catch (error) { next(error); }
   });
 
-  router("/api/onesite-runner/requests/claim").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/requests/claim`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
       const requestId = isPositiveInteger(req.body?.requestId) ? req.body.requestId : undefined;
       const minimumRequestId = isPositiveInteger(req.body?.minimumRequestId) ? req.body.minimumRequestId : undefined;
-      res.json(await claimRunnerRequest({ requestId, minimumRequestId }));
+      res.json(await claimRunnerRequest({ source: definition.source, requestId, minimumRequestId }));
     } catch (error) { next(error); }
   });
 
-  router("/api/onesite-runner/requests/:requestId/progress").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/requests/:requestId/progress`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
       const requestId = Number(req.params.requestId);
       const sourceRunReference = req.body?.sourceRunReference;
-      if (!isPositiveInteger(requestId) || typeof sourceRunReference !== "string" || !sourceRunReference.trim()) {
-        res.status(400).json({ error: "A request ID and source run reference are required." });
+      if (!await requireOwnedRequest(requestId, definition.source, res)) return;
+      if (typeof sourceRunReference !== "string" || !sourceRunReference.trim()) {
+        res.status(400).json({ error: "A source run reference is required." });
         return;
       }
       await recordRunnerProgress(requestId, sourceRunReference.slice(0, 500));
-      res.json({ success: true });
+      res.json({ success: true, source: definition.source });
     } catch (error) { next(error); }
   });
 
-  router("/api/onesite-runner/requests/:requestId/documents").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/requests/:requestId/documents`, auth, async (req, res, next) => {
     try {
       const requestId = Number(req.params.requestId);
       const { propertyName, originalFilename, mimeType, dataBase64, documentKind = "source_report" } = req.body ?? {};
-      if (!isPositiveInteger(requestId) || typeof propertyName !== "string" || typeof originalFilename !== "string" || typeof mimeType !== "string" || typeof dataBase64 !== "string") {
+      if (!await requireOwnedRequest(requestId, definition.source, res)) return;
+      if (typeof propertyName !== "string" || typeof originalFilename !== "string" || typeof mimeType !== "string" || typeof dataBase64 !== "string") {
         res.status(400).json({ error: "Document metadata and dataBase64 are required." });
         return;
       }
@@ -121,42 +192,32 @@ export function registerRunnerRoutes(app: Express) {
         res.status(413).json({ error: "Document must be between 1 byte and 25 MB." });
         return;
       }
-      const filename = safeFilename(originalFilename);
-      const storageKey = `onesite-reports/requests/${requestId}/${Date.now()}-${nanoid(10)}-${filename}`;
-      const stored = await storagePut(storageKey, data, mimeType);
       const property = await getPropertyByName(propertyName);
-      await createReportDocument({
-        requestId,
-        propertyId: property?.id,
-        propertyName: propertyName.slice(0, 255),
-        originalFilename: filename,
-        mimeType: mimeType.slice(0, 255),
-        documentKind,
-        storageKey: stored.key,
-        storageUrl: stored.url,
-        sizeBytes: data.length,
-      });
-      res.json({ success: true, key: stored.key, url: stored.url });
+      const filename = safeFilename(originalFilename);
+      const propertyFolder = safeFolderName(property?.name ?? propertyName);
+      const filingDate = new Date().toISOString().slice(0, 10);
+      const storageKey = `${definition.storageRoot}/${propertyFolder}/${filingDate}/${requestId}-${nanoid(10)}-${filename}`;
+      const stored = await storagePut(storageKey, data, mimeType);
+      await createReportDocument({ requestId, source: definition.source, propertyId: property?.id, propertyName: propertyName.slice(0, 255), originalFilename: filename, mimeType: mimeType.slice(0, 255), documentKind, storageKey: stored.key, storageUrl: stored.url, sizeBytes: data.length });
+      res.json({ success: true, source: definition.source, key: stored.key, url: stored.url });
     } catch (error) { next(error); }
   });
 
-  router("/api/onesite-runner/requests/:requestId/complete").post(runnerAuth, async (req, res, next) => {
+  app.post(`${base}/requests/:requestId/complete`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
       const requestId = Number(req.params.requestId);
       const { status, warningSummary, errorMessage, summaryMarkdown } = req.body ?? {};
-      if (!isPositiveInteger(requestId) || !validCompletionStatuses.has(status)) {
-        res.status(400).json({ error: "A valid request ID and completion status are required." });
+      if (!await requireOwnedRequest(requestId, definition.source, res)) return;
+      if (!validCompletionStatuses.has(status)) {
+        res.status(400).json({ error: "A valid completion status is required." });
         return;
       }
-      await completeRunnerRequest({
-        requestId,
-        status,
-        warningSummary: typeof warningSummary === "string" ? warningSummary : undefined,
-        errorMessage: typeof errorMessage === "string" ? errorMessage : undefined,
-        summaryMarkdown: typeof summaryMarkdown === "string" ? summaryMarkdown : undefined,
-      });
-      res.json({ success: true });
+      await completeRunnerRequest({ requestId, status, warningSummary: typeof warningSummary === "string" ? warningSummary : undefined, errorMessage: typeof errorMessage === "string" ? errorMessage : undefined, summaryMarkdown: typeof summaryMarkdown === "string" ? summaryMarkdown : undefined });
+      res.json({ success: true, source: definition.source });
     } catch (error) { next(error); }
   });
 }
 
+export function registerRunnerRoutes(app: Express) {
+  runners.forEach(definition => registerRoutesForRunner(app, definition));
+}

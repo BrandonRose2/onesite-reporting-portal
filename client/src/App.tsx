@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import ManagerChecklists from "./pages/ManagerChecklists";
 import { AutomationSettings, RecoveryPlaceholder } from "./pages/Operations";
 import NotFound from "./pages/NotFound";
 import Properties from "./pages/Properties";
@@ -19,7 +20,7 @@ function Router() {
     <Route path="/properties" component={Properties} />
     <Route path="/automation-settings" component={AutomationSettings} />
     <Route path="/compare-periods"><RecoveryPlaceholder kind="compare" /></Route>
-    <Route path="/manager-checklists"><RecoveryPlaceholder kind="checklists" /></Route>
+    <Route path="/manager-checklists" component={ManagerChecklists} />
     <Route path="/import-data"><RecoveryPlaceholder kind="import" /></Route>
     <Route path="/portal-access"><RecoveryPlaceholder kind="access" /></Route>
     <Route path="/404" component={NotFound} />
@@ -32,4 +33,3 @@ function App() {
 }
 
 export default App;
-

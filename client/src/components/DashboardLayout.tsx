@@ -103,7 +103,10 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { data: recovery } = trpc.operations.recoveryStatus.useQuery(undefined, { retry: false });
-  const liveStatus = recovery?.liveEdge?.status ?? "unavailable";
+  const runnerStatuses = recovery?.runners ?? {
+    onesite: { status: "unavailable" },
+    yardi: { status: "unavailable" },
+  };
 
   useEffect(() => {
     const onMove = (event: MouseEvent) => {
@@ -140,7 +143,10 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
               </span>
             </button>
             <div className="mt-5 rounded-xl bg-white/[0.055] px-3 py-2.5 group-data-[collapsible=icon]:hidden">
-              <div className="flex items-center gap-2 text-[11px] text-slate-300"><span className={`h-1.5 w-1.5 rounded-full ${liveStatus === "ready" ? "bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" : "bg-amber-400"}`} />Runner {liveStatus === "ready" ? "ready" : "requires attention"}</div>
+              {(["onesite", "yardi"] as const).map(source => {
+                const status = runnerStatuses[source]?.status ?? "unavailable";
+                return <div key={source} className="flex items-center justify-between gap-2 py-0.5 text-[11px] text-slate-300"><span className="capitalize">{source}</span><span className="flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${status === "ready" ? "bg-emerald-400 shadow-[0_0_0_4px_rgba(74,222,128,.12)]" : status === "interactive_required" ? "bg-amber-400" : "bg-slate-500"}`} />{status === "ready" ? "ready" : status === "interactive_required" ? "sign-in needed" : "offline"}</span></div>;
+              })}
             </div>
           </SidebarHeader>
 
@@ -180,7 +186,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
         <div aria-hidden="true" className="absolute right-0 top-0 z-50 h-full w-1 cursor-col-resize transition-colors hover:bg-teal-400/30" onMouseDown={() => setIsResizing(true)} />
       </div>
       <SidebarInset className="min-w-0 bg-[#f4f6fb]">
-        {isMobile ? <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-[#f4f6fb]/95 px-4 backdrop-blur"><SidebarTrigger className="h-8 w-8 rounded-lg bg-white shadow-sm" /><span className="text-sm font-semibold text-slate-900">Property Reports</span></header> : null}
+        {isMobile ? <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-[#f4f6fb]/95 px-4 backdrop-blur"><SidebarTrigger className="h-8 w-8 rounded-lg bg-white shadow-sm" /><div className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">Property Reports</span><span className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500"><span className="flex items-center gap-1"><i className={`h-1.5 w-1.5 rounded-full ${runnerStatuses.onesite?.status === "ready" ? "bg-emerald-500" : runnerStatuses.onesite?.status === "interactive_required" ? "bg-amber-500" : "bg-slate-400"}`} />OneSite</span><span className="flex items-center gap-1"><i className={`h-1.5 w-1.5 rounded-full ${runnerStatuses.yardi?.status === "ready" ? "bg-emerald-500" : runnerStatuses.yardi?.status === "interactive_required" ? "bg-amber-500" : "bg-slate-400"}`} />Yardi</span></span></div></header> : null}
         <main className="min-h-screen px-5 py-5 lg:px-9 lg:py-8">{children}</main>
       </SidebarInset>
     </>
