@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -343,6 +343,8 @@ export async function getRunnerSessionStatus(source: RunnerSource) {
 }
 
 export async function syncCatalogFromRunner(source: RunnerSource, reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>) {
+  const activeKeys = reports.map(report => report.catalogKey);
+  const db = await requireDb();
   for (const report of reports) {
     await upsertCatalogEntry({
       source,
@@ -355,6 +357,9 @@ export async function syncCatalogFromRunner(source: RunnerSource, reports: Array
       runnerMetadata: report.runnerMetadata ?? {},
       active: true,
     });
+  }
+  if (activeKeys.length) {
+    await db.update(reportCatalog).set({ active: false }).where(and(eq(reportCatalog.source, source), notInArray(reportCatalog.catalogKey, activeKeys)));
   }
 }
 

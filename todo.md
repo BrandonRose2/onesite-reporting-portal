@@ -82,3 +82,23 @@
 - [ ] Verify the authenticated mobile flow end to end for request submission, runner status, document viewing, and Manager’s Checklist review.
 - [ ] Complete the designated Edge-runner pull of the authoritative Classic OneSite property selector and 10-page report catalog before resuming management-account enhancements.
 - [ ] Retrieve the reconnected private Edge runner repository, identify its existing non-destructive OneSite property/catalog sync command, and configure it for the new portal endpoint.
+- [ ] Bring the available Mac’s self-hosted Edge helper online with the live portal configuration so it can claim the queued OneSite catalog-sync job without generating reports.
+- [ ] Update the recovered Edge helper to recognize the authenticated Classic OneSite shell before re-running the non-destructive catalog sync.
+- [ ] Inspect the self-hosted macOS helper’s visible Microsoft Edge tab URLs to identify the exact authenticated OneSite context without interacting with reports.
+- [ ] Resolve the failed sync-live-edge-source visibility check before attempting another non-destructive OneSite catalog run.
+- [ ] Enable the local Microsoft Edge AppleScript JavaScript bridge required for the recovered macOS helper to read the authenticated OneSite Reports tab.
+- [ ] Run the recovered OneSite catalog sync from the management Mac’s logged-in Terminal context, which shares the authenticated Edge user session.
+- [ ] Capture the direct logged-in Mac AppleScript error for a read-only Edge document-title check before altering any OneSite sync logic.
+- [ ] Update the recovered Edge helper to activate the already-detected OneSite Reports tab before executing its read-only catalog script.
+- [ ] Correct the recovered helper’s macOS Edge active-tab-index command so the detected OneSite tab can be targeted safely.
+- [x] Add a non-destructive OneSite property-selector capture that opens and cancels a Generate & Schedule panel without generating a report.
+- [x] Inspect the live OneSite property selector’s loaded option model and lazy-loading behavior before treating any property sync as complete.
+- [x] Extract and validate the full OneSite property portfolio rather than a partial selector page before updating the live property directory.
+- [x] Correct the safe property-selector inspector so it returns and prints the live option model instead of an undefined result.
+- [x] Inspect the OneSite Advanced Search property model, confirm it is not authoritative for the full portfolio, and use the Classic OneSite top-level dropdown for the authorized property directory without submitting a report.
+- [ ] Correct the OneSite catalog collector to the verified 310-report total shown by the live Reports page and remove pagination over-counting.
+- [x] Identify the separate Classic OneSite top-level property source instead of relying on the single-property report-generation selector.
+- [x] Capture the entries and structure of the user-opened Classic OneSite top-level property dropdown through the designated Edge helper.
+- [x] Synchronize the verified Classic OneSite top-level dropdown into the live portal directory without using the Reports page selector.
+- [ ] Re-run the corrected report collector and replace stale OneSite catalog records with the verified 310-report source.
+- [ ] Deploy and validate the portal-side stale OneSite catalog deactivation before the corrected 310-report sync is rerun.
