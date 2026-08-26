@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, notInArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, like, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -365,6 +365,7 @@ export async function syncCatalogFromRunner(source: RunnerSource, reports: Array
 
 export async function syncPropertiesFromRunner(source: RunnerSource, incoming: Array<{ externalId: string; name: string; market?: string; active?: boolean }>) {
   const db = await requireDb();
+  const incomingExternalIds = incoming.map(property => property.externalId.trim().slice(0, 128)).filter(Boolean);
   for (const property of incoming) {
     const externalId = property.externalId.trim().slice(0, 128);
     const name = property.name.trim().slice(0, 255);
@@ -380,6 +381,9 @@ export async function syncPropertiesFromRunner(source: RunnerSource, incoming: A
       active: property.active ?? true,
       updatedAt: new Date(),
     } });
+  }
+  if (source === "onesite" && incomingExternalIds.length) {
+    await db.update(properties).set({ active: false, updatedAt: new Date() }).where(and(like(properties.externalId, "onesite:%"), notInArray(properties.externalId, incomingExternalIds)));
   }
   await setOperationalConfig(`property_sync:${source}`, JSON.stringify({ source, count: incoming.length, updatedAt: new Date().toISOString() }));
 }
