@@ -96,9 +96,14 @@
 - [x] Extract and validate the full OneSite property portfolio rather than a partial selector page before updating the live property directory.
 - [x] Correct the safe property-selector inspector so it returns and prints the live option model instead of an undefined result.
 - [x] Inspect the OneSite Advanced Search property model, confirm it is not authoritative for the full portfolio, and use the Classic OneSite top-level dropdown for the authorized property directory without submitting a report.
-- [ ] Correct the OneSite catalog collector to the verified 310-report total shown by the live Reports page and remove pagination over-counting.
+- [x] Correct the OneSite catalog collector to the verified 310-report total shown by the live Reports page and remove pagination over-counting.
 - [x] Identify the separate Classic OneSite top-level property source instead of relying on the single-property report-generation selector.
 - [x] Capture the entries and structure of the user-opened Classic OneSite top-level property dropdown through the designated Edge helper.
 - [x] Synchronize the verified Classic OneSite top-level dropdown into the live portal directory without using the Reports page selector.
-- [ ] Re-run the corrected report collector and replace stale OneSite catalog records with the verified 310-report source.
-- [ ] Deploy and validate the portal-side stale OneSite catalog deactivation before the corrected 310-report sync is rerun.
+- [x] Re-run the corrected report collector and replace stale OneSite catalog records with the verified 310-report source.
+- [x] Exclude the OneSite Reports table header from the paged collector so the synchronized catalog contains exactly the verified 310 report rows.
+- [x] Retire the stale earlier partial OneSite property record so the active directory contains only the verified 38 Classic OneSite properties.
+- [x] Verify the registered live OneSite report-request route so the populated 310-report selector is reachable at /request/onesite.
+- [x] Open the OneSite request selector and verify it renders active entries from the synchronized 310-row catalog rather than only confirming the route loads.
+- [x] Deploy and validate the portal-side stale OneSite catalog deactivation before the corrected 310-report sync is rerun.
+- [x] Confirm the stale development-console Manager’s Checklist import warning is no longer current and verify the OneSite request UI renders the synchronized 310 active-report count from its catalog query.
