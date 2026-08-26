@@ -27,3 +27,5 @@
 - [x] Add focused persistence validation for report-catalog edits, including runner metadata and active-status updates returned through the portal data layer.
 - [x] Create a final checkpoint after all completed work is marked in this checklist.
 - [x] Save and confirm a final checkpoint after every checklist item is marked complete.
+- [x] Diagnose the deployment timeout from build and runtime evidence, then apply and verify a deployment-safe remediation.
+- [x] Record the verified deployment-pipeline blocker and provide the user with the evidence-based retry path, since the production build and local production startup are healthy.
