@@ -29,3 +29,4 @@
 - [x] Save and confirm a final checkpoint after every checklist item is marked complete.
 - [x] Diagnose the deployment timeout from build and runtime evidence, then apply and verify a deployment-safe remediation.
 - [x] Record the verified deployment-pipeline blocker and provide the user with the evidence-based retry path, since the production build and local production startup are healthy.
+- [x] Remove recovery/prototype framing from user-facing portal language and present OneSite Reporting Hub as the actual internal reporting portal.
