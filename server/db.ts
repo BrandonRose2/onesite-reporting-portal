@@ -1,92 +1,292 @@
-import { eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import {
+  InsertUser,
+  operationalConfig,
+  properties,
+  reportCatalog,
+  reportDocuments,
+  reportRequests,
+  requestEvents,
+  requestProperties,
+  users,
+} from "../drizzle/schema";
+import { ENV } from "./_core/env";
+import { assertRequestTransition, type RequestStatus } from "./requestLifecycle";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let dbClient: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+export function setDbClientForTesting(client: ReturnType<typeof drizzle> | null) {
+  dbClient = client;
+}
+
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
+  if (!dbClient && process.env.DATABASE_URL) {
+    dbClient = drizzle(process.env.DATABASE_URL);
   }
-  return _db;
+  return dbClient;
+}
+
+async function requireDb() {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection is unavailable.");
+  return db;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+  if (!user.openId) throw new Error("User openId is required for upsert");
+  const db = await requireDb();
+  const values: InsertUser = { ...user, lastSignedIn: user.lastSignedIn ?? new Date() };
+  if (!values.role && user.openId === ENV.ownerOpenId) values.role = "admin";
+  await db.insert(users).values(values).onDuplicateKeyUpdate({
+    set: {
+      name: values.name ?? null,
+      email: values.email ?? null,
+      loginMethod: values.loginMethod ?? null,
+      role: values.role,
+      lastSignedIn: new Date(),
+    },
+  });
 }
 
 export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  const db = await requireDb();
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return result[0];
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function listProperties(includeInactive = true) {
+  const db = await requireDb();
+  return db.select().from(properties).where(includeInactive ? undefined : eq(properties.active, true)).orderBy(asc(properties.name));
+}
+
+export async function getPropertyById(id: number) {
+  const db = await requireDb();
+  const result = await db.select().from(properties).where(eq(properties.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getPropertyByName(name: string) {
+  const db = await requireDb();
+  const result = await db.select().from(properties).where(eq(properties.name, name)).limit(1);
+  return result[0];
+}
+
+export async function upsertProperty(input: { id?: number; externalId: string; name: string; market?: string | null; managerName?: string | null; managerEmail?: string | null; active: boolean }) {
+  const db = await requireDb();
+  if (input.id) {
+    await db.update(properties).set({ ...input, id: undefined }).where(eq(properties.id, input.id));
+    return getPropertyById(input.id);
+  }
+  const [result] = await db.insert(properties).values(input);
+  return getPropertyById(result.insertId);
+}
+
+export async function listCatalog(includeInactive = false) {
+  const db = await requireDb();
+  return db.select().from(reportCatalog).where(includeInactive ? undefined : eq(reportCatalog.active, true)).orderBy(asc(reportCatalog.exactReportName));
+}
+
+export async function upsertCatalogEntry(input: {
+  id?: number;
+  catalogKey: string;
+  exactReportName: string;
+  reportArea?: string | null;
+  reportLevel?: string | null;
+  product?: string | null;
+  availableFormats: Array<"excel" | "pdf" | "csv">;
+  runnerMetadata: Record<string, unknown>;
+  active: boolean;
+}) {
+  const db = await requireDb();
+  if (input.id) {
+    await db.update(reportCatalog).set({ ...input, id: undefined }).where(eq(reportCatalog.id, input.id));
+    const rows = await db.select().from(reportCatalog).where(eq(reportCatalog.id, input.id)).limit(1);
+    return rows[0];
+  }
+  await db.insert(reportCatalog).values(input).onDuplicateKeyUpdate({ set: { ...input, id: undefined } });
+  const rows = await db.select().from(reportCatalog).where(eq(reportCatalog.catalogKey, input.catalogKey)).limit(1);
+  return rows[0];
+}
+
+export async function createReportRequest(input: {
+  requestType: "generate_all_properties" | "generate_property" | "sync_my_reports";
+  requestedReportName: string;
+  requestedFormat: "excel" | "pdf" | "csv";
+  parameters: Record<string, unknown>;
+  requestedById: number;
+  propertyId?: number;
+}) {
+  const db = await requireDb();
+  return db.transaction(async tx => {
+    const selectedProperties = input.requestType === "generate_property"
+      ? await tx.select().from(properties).where(and(eq(properties.id, input.propertyId ?? -1), eq(properties.active, true)))
+      : input.requestType === "generate_all_properties"
+        ? await tx.select().from(properties).where(eq(properties.active, true)).orderBy(asc(properties.name))
+        : [];
+
+    if (input.requestType !== "sync_my_reports" && selectedProperties.length === 0) {
+      throw new Error("No active properties are available for this request.");
+    }
+
+    const [requestResult] = await tx.insert(reportRequests).values({
+      requestType: input.requestType,
+      requestedReportName: input.requestedReportName,
+      requestedFormat: input.requestedFormat,
+      parameters: input.parameters,
+      requestedById: input.requestedById,
+    });
+    const requestId = requestResult.insertId;
+
+    if (selectedProperties.length) {
+      await tx.insert(requestProperties).values(selectedProperties.map(property => ({
+        requestId,
+        propertyId: property.id,
+        propertyNameSnapshot: property.name,
+      })));
+    }
+
+    await tx.insert(requestEvents).values({ requestId, eventType: "queued", detail: "Report request submitted from the internal portal." });
+    return requestId;
+  });
+}
+
+export async function listRecentRequests(limit = 25) {
+  const db = await requireDb();
+  return db.select().from(reportRequests).orderBy(desc(reportRequests.createdAt)).limit(limit);
+}
+
+export async function getRequestDetails(requestId: number) {
+  const db = await requireDb();
+  const request = (await db.select().from(reportRequests).where(eq(reportRequests.id, requestId)).limit(1))[0];
+  if (!request) return undefined;
+  const [requestPropertyRows, documentRows, eventRows] = await Promise.all([
+    db.select({ id: properties.id, externalId: properties.externalId, name: requestProperties.propertyNameSnapshot, active: properties.active })
+      .from(requestProperties).leftJoin(properties, eq(requestProperties.propertyId, properties.id)).where(eq(requestProperties.requestId, requestId)).orderBy(asc(requestProperties.propertyNameSnapshot)),
+    db.select().from(reportDocuments).where(eq(reportDocuments.requestId, requestId)).orderBy(desc(reportDocuments.createdAt)),
+    db.select().from(requestEvents).where(eq(requestEvents.requestId, requestId)).orderBy(desc(requestEvents.createdAt)),
+  ]);
+  return { request, properties: requestPropertyRows, documents: documentRows, events: eventRows };
+}
+
+export async function getPropertyHistory(propertyId: number) {
+  const db = await requireDb();
+  const property = await getPropertyById(propertyId);
+  if (!property) return undefined;
+  const requests = await db.select({ request: reportRequests, propertyName: requestProperties.propertyNameSnapshot })
+    .from(requestProperties).innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
+    .where(eq(requestProperties.propertyId, propertyId)).orderBy(desc(reportRequests.createdAt));
+  const documents = await db.select().from(reportDocuments).where(eq(reportDocuments.propertyId, propertyId)).orderBy(desc(reportDocuments.createdAt));
+  return { property, requests, documents };
+}
+
+export async function getDashboardOverview() {
+  const db = await requireDb();
+  const [recentRequests, activePropertyRows, catalogRows, liveEdge] = await Promise.all([
+    listRecentRequests(8),
+    db.select({ count: count() }).from(properties).where(eq(properties.active, true)),
+    db.select({ count: count() }).from(reportCatalog).where(eq(reportCatalog.active, true)),
+    getOperationalConfig("live_edge_status"),
+  ]);
+  const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30);
+  const statusRows = await db.select({ status: reportRequests.status, count: count() }).from(reportRequests).where(gte(reportRequests.createdAt, since)).groupBy(reportRequests.status);
+  return {
+    recentRequests,
+    statusCounts: Object.fromEntries(statusRows.map(row => [row.status, row.count])),
+    activeProperties: activePropertyRows[0]?.count ?? 0,
+    activeCatalogEntries: catalogRows[0]?.count ?? 0,
+    liveEdgeStatus: liveEdge?.configValue ?? "unavailable",
+  };
+}
+
+export async function claimRunnerRequest(input: { requestId?: number; minimumRequestId?: number }) {
+  const db = await requireDb();
+  return db.transaction(async tx => {
+    const conditions = [eq(reportRequests.status, "queued")];
+    if (input.requestId) conditions.push(eq(reportRequests.id, input.requestId));
+    if (input.minimumRequestId) conditions.push(gte(reportRequests.id, input.minimumRequestId));
+    const candidate = (await tx.select().from(reportRequests).where(and(...conditions)).orderBy(asc(reportRequests.createdAt)).limit(1))[0];
+    if (!candidate) return { request: null, properties: [] };
+    const update = await tx.update(reportRequests).set({ status: "claimed", claimedAt: new Date() }).where(and(eq(reportRequests.id, candidate.id), eq(reportRequests.status, "queued")));
+    if (update[0].affectedRows !== 1) return { request: null, properties: [] };
+    await tx.insert(requestEvents).values({ requestId: candidate.id, eventType: "claimed", detail: "Runner claimed the request." });
+    const requestPropertiesRows = await tx.select({ id: properties.id, externalId: properties.externalId, name: requestProperties.propertyNameSnapshot })
+      .from(requestProperties).innerJoin(properties, eq(requestProperties.propertyId, properties.id)).where(eq(requestProperties.requestId, candidate.id)).orderBy(asc(requestProperties.propertyNameSnapshot));
+    return { request: { ...candidate, status: "claimed" as const }, properties: requestPropertiesRows };
+  });
+}
+
+export async function recordRunnerProgress(requestId: number, sourceRunReference: string) {
+  const db = await requireDb();
+  const current = (await db.select({ status: reportRequests.status }).from(reportRequests).where(eq(reportRequests.id, requestId)).limit(1))[0];
+  if (!current) throw new Error("Report request was not found.");
+  assertRequestTransition(current.status as RequestStatus, "in_progress");
+  await db.update(reportRequests).set({ status: "in_progress", sourceRunReference }).where(eq(reportRequests.id, requestId));
+  await db.insert(requestEvents).values({ requestId, eventType: "in_progress", detail: sourceRunReference });
+}
+
+export async function completeRunnerRequest(input: { requestId: number; status: "completed" | "completed_with_warnings" | "failed"; warningSummary?: string; errorMessage?: string; summaryMarkdown?: string }) {
+  const db = await requireDb();
+  const current = (await db.select({ status: reportRequests.status }).from(reportRequests).where(eq(reportRequests.id, input.requestId)).limit(1))[0];
+  if (!current) throw new Error("Report request was not found.");
+  assertRequestTransition(current.status as RequestStatus, input.status);
+  await db.update(reportRequests).set({
+    status: input.status,
+    warningSummary: input.warningSummary ?? null,
+    errorMessage: input.errorMessage ?? null,
+    summaryMarkdown: input.summaryMarkdown ?? null,
+    completedAt: new Date(),
+  }).where(eq(reportRequests.id, input.requestId));
+  await db.insert(requestEvents).values({ requestId: input.requestId, eventType: input.status, detail: input.errorMessage ?? input.warningSummary ?? "Runner completed request." });
+}
+
+export async function createReportDocument(input: { requestId: number; propertyId?: number; propertyName: string; originalFilename: string; mimeType: string; documentKind: "source_report" | "property_workbook"; storageKey: string; storageUrl: string; sizeBytes: number }) {
+  const db = await requireDb();
+  await db.insert(reportDocuments).values(input);
+  await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "document_filed", detail: `${input.originalFilename} filed for ${input.propertyName}.` });
+}
+
+export async function getOperationalConfig(configKey: string) {
+  const db = await requireDb();
+  const rows = await db.select().from(operationalConfig).where(eq(operationalConfig.configKey, configKey)).limit(1);
+  return rows[0];
+}
+
+export async function setOperationalConfig(configKey: string, configValue: string) {
+  const db = await requireDb();
+  await db.insert(operationalConfig).values({ configKey, configValue }).onDuplicateKeyUpdate({ set: { configValue, updatedAt: new Date() } });
+}
+
+export async function setLiveEdgeStatus(input: { status: "ready" | "unavailable" | "interactive_required"; detail?: string }) {
+  await setOperationalConfig("live_edge_status", JSON.stringify({ ...input, updatedAt: new Date().toISOString() }));
+}
+
+export async function syncCatalogFromRunner(reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string }>) {
+  for (const report of reports) {
+    await upsertCatalogEntry({
+      catalogKey: report.catalogKey,
+      exactReportName: report.name,
+      reportArea: report.reportArea ?? null,
+      reportLevel: report.reportLevel ?? null,
+      product: report.product ?? null,
+      availableFormats: ["excel"],
+      runnerMetadata: {},
+      active: true,
+    });
+  }
+}
+
+export async function syncPropertyContactsFromRunner(contacts: Array<Record<string, unknown>>) {
+  for (const contact of contacts) {
+    const externalId = typeof contact.externalId === "string" ? contact.externalId : undefined;
+    const propertyName = typeof contact.propertyName === "string" ? contact.propertyName : undefined;
+    const managerName = typeof contact.managerName === "string" ? contact.managerName : null;
+    const managerEmail = typeof contact.managerEmail === "string" ? contact.managerEmail : null;
+    if (!externalId && !propertyName) continue;
+    const db = await requireDb();
+    const target = externalId
+      ? (await db.select().from(properties).where(eq(properties.externalId, externalId)).limit(1))[0]
+      : await getPropertyByName(propertyName!);
+    if (target) await db.update(properties).set({ managerName, managerEmail }).where(eq(properties.id, target.id));
+  }
+}

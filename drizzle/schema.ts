@@ -1,17 +1,7 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,7 +12,89 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const properties = mysqlTable("properties", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 128 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  market: varchar("market", { length: 128 }),
+  managerName: varchar("managerName", { length: 255 }),
+  managerEmail: varchar("managerEmail", { length: 320 }),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("properties_external_id_unique").on(table.externalId), index("properties_active_name_idx").on(table.active, table.name)]);
+
+export const reportCatalog = mysqlTable("reportCatalog", {
+  id: int("id").autoincrement().primaryKey(),
+  catalogKey: varchar("catalogKey", { length: 160 }).notNull(),
+  exactReportName: varchar("exactReportName", { length: 255 }).notNull(),
+  reportArea: varchar("reportArea", { length: 128 }),
+  reportLevel: varchar("reportLevel", { length: 128 }),
+  product: varchar("product", { length: 128 }),
+  availableFormats: json("availableFormats").$type<Array<"excel" | "pdf" | "csv">>().notNull(),
+  runnerMetadata: json("runnerMetadata").$type<Record<string, unknown>>().notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("report_catalog_key_unique").on(table.catalogKey), index("report_catalog_active_name_idx").on(table.active, table.exactReportName)]);
+
+export const reportRequests = mysqlTable("reportRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  requestType: mysqlEnum("requestType", ["generate_all_properties", "generate_property", "sync_my_reports"]).notNull(),
+  requestedReportName: varchar("requestedReportName", { length: 255 }).notNull(),
+  requestedFormat: mysqlEnum("requestedFormat", ["excel", "pdf", "csv"]).notNull(),
+  status: mysqlEnum("status", ["queued", "claimed", "in_progress", "completed", "completed_with_warnings", "failed"]).default("queued").notNull(),
+  parameters: json("parameters").$type<Record<string, unknown>>().notNull(),
+  warningSummary: text("warningSummary"),
+  errorMessage: text("errorMessage"),
+  summaryMarkdown: text("summaryMarkdown"),
+  sourceRunReference: varchar("sourceRunReference", { length: 500 }),
+  requestedById: int("requestedById"),
+  claimedAt: timestamp("claimedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("report_requests_status_created_idx").on(table.status, table.createdAt), index("report_requests_requester_created_idx").on(table.requestedById, table.createdAt)]);
+
+export const requestProperties = mysqlTable("requestProperties", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: int("requestId").notNull(),
+  propertyId: int("propertyId").notNull(),
+  propertyNameSnapshot: varchar("propertyNameSnapshot", { length: 255 }).notNull(),
+}, table => [uniqueIndex("request_property_unique").on(table.requestId, table.propertyId), index("request_properties_property_idx").on(table.propertyId)]);
+
+export const reportDocuments = mysqlTable("reportDocuments", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: int("requestId").notNull(),
+  propertyId: int("propertyId"),
+  propertyName: varchar("propertyName", { length: 255 }).notNull(),
+  documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook"]).default("source_report").notNull(),
+  originalFilename: varchar("originalFilename", { length: 500 }).notNull(),
+  mimeType: varchar("mimeType", { length: 255 }).notNull(),
+  storageKey: varchar("storageKey", { length: 1024 }).notNull(),
+  storageUrl: varchar("storageUrl", { length: 2048 }).notNull(),
+  sizeBytes: int("sizeBytes").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("report_documents_request_created_idx").on(table.requestId, table.createdAt), index("report_documents_property_created_idx").on(table.propertyId, table.createdAt)]);
+
+export const requestEvents = mysqlTable("requestEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: int("requestId").notNull(),
+  eventType: varchar("eventType", { length: 96 }).notNull(),
+  detail: text("detail"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, table => [index("request_events_request_created_idx").on(table.requestId, table.createdAt)]);
+
+export const operationalConfig = mysqlTable("operationalConfig", {
+  id: int("id").autoincrement().primaryKey(),
+  configKey: varchar("configKey", { length: 128 }).notNull(),
+  configValue: text("configValue"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("operational_config_key_unique").on(table.configKey)]);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type Property = typeof properties.$inferSelect;
+export type ReportCatalogEntry = typeof reportCatalog.$inferSelect;
+export type ReportRequest = typeof reportRequests.$inferSelect;
 
-// TODO: Add your tables here

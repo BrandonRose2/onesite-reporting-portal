@@ -1,0 +1,50 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/portal/PageHeader";
+import { StatusBadge } from "@/components/portal/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { trpc } from "@/lib/trpc";
+import { Building2, FileText, Loader2, Pencil, Plus, ShieldAlert, X } from "lucide-react";
+import { useState } from "react";
+
+type PropertyForm = { id?: number; externalId: string; name: string; market: string; managerName: string; managerEmail: string; active: boolean };
+const blankForm: PropertyForm = { externalId: "", name: "", market: "", managerName: "", managerEmail: "", active: true };
+
+export default function Properties() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const utils = trpc.useUtils();
+  const { data: properties = [] } = trpc.properties.list.useQuery({ includeInactive: true });
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<PropertyForm>(blankForm);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  const { data: selectedProperty, isLoading: loadingProperty } = trpc.properties.details.useQuery({ id: selectedPropertyId ?? 1 }, { enabled: selectedPropertyId !== null });
+  const save = trpc.properties.save.useMutation({
+    onSuccess: () => { utils.properties.list.invalidate(); setForm(blankForm); setShowForm(false); },
+  });
+  const openNew = () => { setForm(blankForm); setShowForm(true); };
+  const openEdit = (property: typeof properties[number]) => {
+    setForm({ id: property.id, externalId: property.externalId, name: property.name, market: property.market ?? "", managerName: property.managerName ?? "", managerEmail: property.managerEmail ?? "", active: property.active });
+    setShowForm(true);
+  };
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    save.mutate({ ...form, market: form.market || null, managerName: form.managerName || null, managerEmail: form.managerEmail || null });
+  };
+
+  return <DashboardLayout><PageHeader eyebrow="Portfolio / Properties" title="Property directory" description="Maintain the active property scope and contextual manager details used by report requests and document filing." action={isAdmin ? <Button onClick={openNew} className="bg-[#0b8775] hover:bg-[#087365]"><Plus className="mr-2 h-4 w-4" />Add property</Button> : undefined} />
+    {!isAdmin ? <div className="mb-5 flex gap-3 rounded-xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-600"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />Directory updates are limited to portal administrators. You can still review the active property scope and its report history.</div> : null}
+    {showForm ? <form onSubmit={submit} className="mb-5 rounded-2xl border border-[#bfe9db] bg-white p-5 shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)]"><p className="text-sm font-semibold text-slate-950">{form.id ? "Edit property" : "Add property"}</p><div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3"><FormField label="External ID" value={form.externalId} onChange={value => setForm({ ...form, externalId: value })} required /><FormField label="Property name" value={form.name} onChange={value => setForm({ ...form, name: value })} required /><FormField label="Market" value={form.market} onChange={value => setForm({ ...form, market: value })} /><FormField label="Manager name" value={form.managerName} onChange={value => setForm({ ...form, managerName: value })} /><FormField label="Manager email" value={form.managerEmail} onChange={value => setForm({ ...form, managerEmail: value })} type="email" /><label className="flex items-end gap-2 pb-2 text-sm text-slate-700"><input type="checkbox" checked={form.active} onChange={event => setForm({ ...form, active: event.target.checked })} className="h-4 w-4 accent-[#0b8775]" />Active in runner scope</label></div><div className="mt-5 flex gap-3"><Button type="submit" disabled={save.isPending} className="bg-[#0b8775] hover:bg-[#087365]">{save.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Save property</Button><Button type="button" variant="outline" onClick={() => { setForm(blankForm); setShowForm(false); }}>Cancel</Button></div></form> : null}
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)]"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0b8775]">Runner scope</p><h2 className="mt-1 text-base font-semibold text-slate-950">All properties</h2></div><span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{properties.filter(property => property.active).length} active</span></div>{properties.length ? <div className="divide-y divide-slate-100">{properties.map(property => <div key={property.id} className={`flex items-center gap-3 px-5 py-4 ${selectedPropertyId === property.id ? "bg-[#f1fbf8]" : ""}`}><button onClick={() => setSelectedPropertyId(property.id)} className="flex min-w-0 flex-1 items-center gap-4 text-left"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#edf7f6] text-[#087365]"><Building2 className="h-4 w-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{property.name}</span><span className="mt-0.5 block text-xs text-slate-500">{property.externalId}{property.market ? ` · ${property.market}` : ""}{property.managerName ? ` · ${property.managerName}` : ""}</span></span></button><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${property.active ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>{property.active ? "Active" : "Inactive"}</span>{isAdmin ? <Button variant="ghost" size="icon" onClick={() => openEdit(property)} className="h-8 w-8 text-slate-500"><Pencil className="h-3.5 w-3.5" /><span className="sr-only">Edit {property.name}</span></Button> : null}</div>)}</div> : <div className="grid min-h-64 place-items-center p-8 text-center"><div><Building2 className="mx-auto h-5 w-5 text-slate-400" /><p className="mt-3 text-sm font-semibold text-slate-800">Property directory is empty</p><p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">Import or add the approved property directory before requesting an all-properties report.</p></div></div>}</section>
+    {selectedPropertyId !== null ? <section className="mt-5 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)]">{loadingProperty ? <div className="grid min-h-48 place-items-center text-xs text-slate-500"><Loader2 className="mb-2 h-4 w-4 animate-spin" />Loading property report history…</div> : selectedProperty ? <PropertyReportHistory data={selectedProperty} onClose={() => setSelectedPropertyId(null)} /> : null}</section> : null}
+  </DashboardLayout>;
+}
+
+function FormField({ label, value, onChange, required, type = "text" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; type?: string }) { return <div><Label>{label}</Label><Input className="mt-1.5" required={required} type={type} value={value} onChange={event => onChange(event.target.value)} /></div>; }
+
+function PropertyReportHistory({ data, onClose }: { data: { property: { name: string; externalId: string; managerName: string | null; managerEmail: string | null }; requests: Array<{ request: { id: number; requestedReportName: string; status: string; warningSummary: string | null } }>; documents: Array<{ id: number; originalFilename: string; storageUrl: string; createdAt: Date | string }> }; onClose: () => void }) {
+  return <div><div className="flex items-start justify-between border-b border-slate-100 p-5"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0b8775]">Property reporting</p><h2 className="mt-1 text-base font-semibold text-slate-950">{data.property.name}</h2><p className="mt-1 text-xs text-slate-500">{data.property.externalId}{data.property.managerName ? ` · ${data.property.managerName}` : ""}{data.property.managerEmail ? ` · ${data.property.managerEmail}` : ""}</p></div><Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8"><X className="h-4 w-4" /></Button></div><div className="grid gap-5 p-5 lg:grid-cols-2"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Request history</p>{data.requests.length ? <div className="mt-3 space-y-2">{data.requests.map(({ request }) => <div key={request.id} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"><FileText className="h-4 w-4 text-[#087365]" /><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-slate-800">{request.requestedReportName}</p>{request.warningSummary ? <p className="mt-0.5 truncate text-[11px] text-amber-700">Warning recorded</p> : null}</div><StatusBadge status={request.status} /></div>)}</div> : <p className="mt-3 text-xs leading-5 text-slate-500">No requests have included this property yet.</p>}</div><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Filed documents</p>{data.documents.length ? <div className="mt-3 space-y-2">{data.documents.map(document => <a key={document.id} href={document.storageUrl} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-xs text-slate-700 hover:bg-slate-50"><FileText className="h-4 w-4 text-[#087365]" /><span className="min-w-0 flex-1 truncate">{document.originalFilename}</span><span className="text-[10px] text-slate-400">Open</span></a>)}</div> : <p className="mt-3 text-xs leading-5 text-slate-500">No report documents have been filed for this property.</p>}</div></div></div>;
+}
+

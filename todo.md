@@ -1,0 +1,28 @@
+# Project TODO
+
+- [x] Extract the prototype PDF’s screen inventory, navigation model, visible workflows, copy, and visual design tokens into a recovery specification.
+- [x] Recreate the verified prototype shell, page hierarchy, and operational interactions before adding new scope.
+- [x] Recreate the prototype’s grouped navigation: Pull Reports, Review Reports, Portfolio, and Operations.
+- [x] Recreate the prototype home dashboard with the reporting-action cards, previous-reports preview, report-count status, and sample-data labeling.
+- [x] Preserve the prototype’s deep-navy sidebar, teal status accents, editorial typography, calm off-white workspace, and elevated action-card treatment.
+- [x] Define a recovery-oriented data model for properties, report catalog entries, report requests, request parameters, request events, documents, runner configuration, and live Edge state.
+- [x] Add database tables and a schema migration for properties, report catalog entries, report requests, request properties, documents, request events, and operational configuration.
+- [x] Implement authenticated and role-protected procedures for dashboard summaries, property directory management, report catalog management, request creation, request history, document metadata, and recovery guidance.
+- [x] Implement runner-token verification and compatible endpoints for health, request claiming, progress, live Edge status, document upload, and request completion/failure without storing credentials in source code.
+- [x] Store uploaded report files in managed object storage and persist only file metadata and storage keys in the database.
+- [x] Build an elegant accessible dashboard with request-status overview, operational health, and explicitly labeled known limitations.
+- [x] Build property directory management with runner-relevant property metadata, active status, and property-level request/document history.
+- [x] Build report catalog management with exact report names, area, level, product, supported formats, and preserved runner metadata.
+- [x] Build an all-properties and single-property report request workflow with file format selection, parameter capture, and clear queue-submission feedback.
+- [x] Build property-level and request-level document library views with statuses, warnings, summaries, and secure download links.
+- [x] Add recovery configuration guidance and a staged macOS Edge/RealPage runner reconnection checklist without exposing credentials.
+- [x] Add unit tests for data validation, runner-token protection, request lifecycle transitions, and documented operational limitations.
+- [x] Verify TypeScript, unit tests, database operations, desktop and mobile rendering, and no-console-error behavior.
+- [x] Complete the recovered prototype destinations with data-backed comparison, manager follow-up, import/recovery, and access-control workflows rather than empty placeholders.
+- [x] Add a truthful recovered-prototype status label that preserves the visual checkpoint without presenting fabricated sample data as operational records.
+- [x] Add property editing and active-status controls for existing directory records, then verify the update path.
+- [x] Add report-catalog editing and active-status controls for existing entries, then verify runner metadata updates through the portal.
+- [x] Add dedicated Vitest coverage for property, report-catalog, and request input validation rules.
+- [x] Add focused persistence validation for property edits, including active-status changes returned through the portal data layer.
+- [x] Add focused persistence validation for report-catalog edits, including runner metadata and active-status updates returned through the portal data layer.
+- [ ] Create a final checkpoint after all completed work is marked in this checklist.
