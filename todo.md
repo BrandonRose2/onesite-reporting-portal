@@ -25,4 +25,5 @@
 - [x] Add dedicated Vitest coverage for property, report-catalog, and request input validation rules.
 - [x] Add focused persistence validation for property edits, including active-status changes returned through the portal data layer.
 - [x] Add focused persistence validation for report-catalog edits, including runner metadata and active-status updates returned through the portal data layer.
-- [ ] Create a final checkpoint after all completed work is marked in this checklist.
+- [x] Create a final checkpoint after all completed work is marked in this checklist.
+- [x] Save and confirm a final checkpoint after every checklist item is marked complete.
