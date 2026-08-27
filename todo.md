@@ -120,3 +120,6 @@
 - [ ] Confirm the selected Delinquent and Prepaid (Excel) entry renders the verified editable controls before drafting a selected-property request.
 - [x] Reject incomplete OneSite page contexts during catalog synchronization so a partial row set cannot overwrite the verified 310-report catalog.
 - [ ] Validate the controlled report-picker wheel behavior with the user’s physical mouse or trackpad after the updated portal is published.
+- [ ] Execute the explicitly approved Boca Ciega Townhomes Delinquent and Prepaid (Excel) practice request only through the designated Microsoft Edge helper, then verify filing and status.
+- [ ] Correct Edge-helper property selection so a single-property OneSite request verifies exactly one chosen property before Generate is available.
+- [x] Diagnose and repair the portal OAuth state validation failure that currently prevents the approved Boca Ciega request from being created.
