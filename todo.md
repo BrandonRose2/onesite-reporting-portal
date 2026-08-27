@@ -132,14 +132,14 @@
 - [x] Create, run, file, and verify an approved Boca Ciega replacement report with Hide all PII data disabled while retaining Request #1 as the original restricted-data run.
 - [x] Allow the authorized filing helper to accept an explicit local workbook path when multiple recent report downloads exist.
 - [x] Make replacement-workbook filing resilient when workbook-to-HTML rendering is slow or malformed, preserving the original file before the HTML companion is generated.
-- [ ] Review the recorded completed-report interaction and refine the management report layout for clearer desktop and iPhone use.
+- [x] Review the recorded completed-report interaction and refine the management report layout for clearer desktop and iPhone use.
 - [x] Add property-restricted manager access for assigned reports, persistent validation checklists in Markdown and polished HTML, and a submission state that does not send email until later explicitly enabled.
 - [x] Enforce property-scoped report, document, and property-detail access server-side for non-administrator manager accounts, not only in sidebar navigation.
 - [x] Replace legacy static manager-checklist storage links with the portal-hosted interactive HTML checklist route, including auto-save and Submit for Review wording.
 - [x] Optimize the portal’s report and manager checklist workflows for iPhone and Google Fold phone widths, including touch-friendly controls and no horizontal overflow.
 - [x] Make report-request dropdowns and editable parameter controls unmistakably interactive with green-tinted surfaces, clear labels, and visible selected/focus states.
 - [x] Replace the blank embedded workbook-HTML frame with the portal-native authenticated workbook table so actual report data is visible on iPhone and Fold layouts.
-- [ ] Add prominent Manager Review calls to action from completed reports and property report history so managers can immediately find the auto-saving verification checklist.
+- [x] Add prominent Manager Review calls to action from completed reports and property report history so managers can immediately find the auto-saving verification checklist.
 - [x] Replace generic manager checklist items with report-linked current-resident rows that support delinquency verification, corrected amounts, management notes, automatic saving, and Submit for Review.
 - [x] Generalize manager checklist reviews into an adaptive, property-scoped workflow for every completed report and both manager and regional-manager reviewers.
 - [x] Add manager-review progress tracking and explicit missing-field indicators that prevent submission until required verification, correction, and explanation fields are complete.
@@ -148,10 +148,17 @@
 - [x] Hide Resh ID and Lease ID from manager-facing report review rows while preserving the original workbook for audit.
 - [x] Apply the Resh ID and Lease ID suppression rule to every future manager review generated from a completed report.
 - [x] Show only Net Delinquency Amount, Current, resident name, 30/60/90 aging, permitted contact details, and move-in/move-out dates in manager delinquency previews; hide Total Prepaid, Net Balance, Prorate Credit, and all later columns.
-- [ ] Create a reusable source-agnostic reporting workflow skill covering secure runner boundaries, catalog collection, parameterized reporting, filing, HTML summaries, manager review, approval, and later confirmation-gated email delivery for Yardi reuse.
-- [ ] Document the future email response sequence: interactive HTML checklist link, auto-saved manager edits, reply-to-sender delivery, and user-editable CC recipients, all behind explicit send approval.
+- [x] Create a reusable source-agnostic reporting workflow skill covering secure runner boundaries, catalog collection, parameterized reporting, filing, HTML summaries, manager review, approval, and later confirmation-gated email delivery for Yardi reuse.
+- [x] Document the future email response sequence: interactive HTML checklist link, auto-saved manager edits, reply-to-sender delivery, and user-editable CC recipients, all behind explicit send approval.
 - [ ] Push the current portal and recovered Edge-runner source updates to the user’s GitHub repositories while deferring Vercel or Netlify configuration until a hosting choice is provided.
 - [ ] Publish the validated manager, Pull Reports, and Boca Ciega property-history updates, then preserve the reusable Yardi-ready reporting workflow skill before the user leaves.
+- [x] Add a Show non-zero balances only toggle to completed delinquency report previews, defaulting to the delinquency-focused view while retaining access to all source rows.
+- [x] Use a light-purple visual treatment for editable Pull Reports controls and retain neutral styling for read-only or unavailable controls.
+- [x] Apply clean, readable viewer transformations to every workbook sheet, not only Sheet1, while preserving each sheet’s actual source data.
+- [x] Replace multi-sheet manager-facing workbook navigation with one unified responsive HTML report for every completed report, while retaining the original workbook as a separate download.
+- [x] Ensure completed property reports are visibly filed in each property’s searchable report history, starting with Boca Ciega Townhomes.
+- [x] Verify the unified report and property filing hub at iPhone and Google Fold widths without horizontal page overflow.
+- [ ] Inspect and prepare the requested All Units report for all properties through the designated Edge helper using actual provider settings before controlled generation and filing.
 - [x] Simplify Pull Reports Section 2 report-picker choices so each result displays only its report title, without catalog metadata or secondary descriptive lines.
 - [x] Fix the Boca Ciega Start verification action so the manager checklist reliably opens its interactive report review instead of remaining on a loading preview.
 - [x] Refine the in-portal Excel preview to hide redundant report header and parameter rows, default to the management worksheet, and de-emphasize supporting sheet tabs while preserving the original workbook unchanged.
