@@ -124,7 +124,8 @@
 - [x] Correct Edge-helper property selection so a single-property OneSite request verifies exactly one chosen property before Generate is available.
 - [x] Diagnose and repair the portal OAuth state validation failure that currently prevents the approved Boca Ciega request from being created.
 - [x] File the approved Boca Ciega workbook downloaded by the Edge helper under the OneSite Reporting property path and complete Request #1 with its original filename preserved.
-- [ ] Render the actual completed OneSite workbook data as a readable portal HTML summary URL, starting with Boca Ciega Request #1.
-- [ ] Add the matched property manager and regional manager phone, extension, and email details from the authorized Notion contact directory to completed report views.
+- [x] Render the actual completed OneSite workbook data as a readable portal HTML summary URL, starting with Boca Ciega Request #1.
+- [x] Add the matched property manager and regional manager phone, extension, and email details from the authorized Notion contact directory to completed report views.
 - [ ] Correct the protected workbook-summary storage read so completed report data pages remain available after the source workbook is filed.
-- [ ] Convert each authorized Edge-downloaded workbook into a separate storage-backed HTML data document during filing, so completed report data pages do not depend on server-side workbook retrieval.
+- [x] Convert each authorized Edge-downloaded workbook into a separate storage-backed HTML data document during filing, so completed report data pages do not depend on server-side workbook retrieval.
+- [ ] Preserve the original downloaded workbook as a distinct Excel document and redesign the Boca Ciega HTML rendition into a cleaner, organized management report.

@@ -30,12 +30,12 @@ export default function WorkbookDataReport() {
   const { data: details, isLoading: loadingDetails } = trpc.requests.details.useQuery({ id: requestId || 1 }, { enabled: Number.isInteger(requestId) && requestId > 0 });
   const [sheets, setSheets] = useState<SheetData[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const workbook = details?.documents.find(document => isWorkbook(document.originalFilename));
+  const workbook = details?.documents.filter(document => isWorkbook(document.originalFilename)).at(-1);
   const renderedHtml = details?.documents.find(document => document.documentKind === "workbook_html" && document.mimeType === "text/html");
 
   useEffect(() => {
     let active = true;
-    if (!workbook) return;
+    if (!workbook || renderedHtml) return;
     setLoadError(null); setSheets([]);
     void (async () => {
       try {
@@ -50,7 +50,7 @@ export default function WorkbookDataReport() {
       }
     })();
     return () => { active = false; };
-  }, [workbook?.storageUrl]);
+  }, [workbook?.storageUrl, renderedHtml]);
 
   const contactMatches = details?.contactMatches ?? [];
   return <DashboardLayout><PageHeader eyebrow="Review Reports / Workbook Data" title={details?.request.requestedReportName ?? "Workbook data"} description={details ? `Request #${details.request.id} · ${details.properties.map(property => property.name).join(", ") || "Portfolio request"}` : "Opening the preserved report workbook."} action={<Button asChild variant="outline" size="sm"><Link href="/library"><ArrowLeft className="mr-1.5 h-3.5 w-3.5" />Report library</Link></Button>} />
