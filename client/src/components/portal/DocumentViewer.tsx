@@ -10,7 +10,7 @@ export type FiledDocument = {
   originalFilename: string;
   propertyName: string;
   mimeType: string;
-  documentKind: "source_report" | "property_workbook" | "manager_checklist";
+  documentKind: "source_report" | "property_workbook" | "workbook_html" | "manager_checklist";
 };
 
 const workbookExtensions = /\.(xlsx|xls|xlsm|csv)$/i;

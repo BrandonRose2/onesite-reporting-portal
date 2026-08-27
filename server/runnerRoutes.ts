@@ -28,8 +28,8 @@ type RunnerDefinition = {
 };
 
 const runners: RunnerDefinition[] = [
-  { source: "onesite", tokenEnv: "ONESITE_RUNNER_TOKEN", storageRoot: "OneSite Reporting" },
-  { source: "yardi", tokenEnv: "YARDI_RUNNER_TOKEN", storageRoot: "Yardi Reporting" },
+  { source: "onesite", tokenEnv: "ONESITE_RUNNER_TOKEN", storageRoot: "OneSite-Reporting" },
+  { source: "yardi", tokenEnv: "YARDI_RUNNER_TOKEN", storageRoot: "Yardi-Reporting" },
 ];
 
 function hasValidRunnerToken(token: string | undefined, expected: string | undefined) {
@@ -93,7 +93,7 @@ function safeFilename(filename: string) {
 }
 
 function safeFolderName(value: string) {
-  return value.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim().slice(0, 120) || "Unassigned Property";
+  return value.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-").trim().slice(0, 120) || "Unassigned-Property";
 }
 
 async function requireOwnedRequest(requestId: number, source: RunnerSource, res: Response) {
@@ -198,7 +198,7 @@ function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
         res.status(400).json({ error: "Document metadata and dataBase64 are required." });
         return;
       }
-      if (documentKind !== "source_report" && documentKind !== "property_workbook") {
+      if (documentKind !== "source_report" && documentKind !== "property_workbook" && documentKind !== "workbook_html") {
         res.status(400).json({ error: "Unsupported document kind." });
         return;
       }

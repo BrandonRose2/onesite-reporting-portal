@@ -72,7 +72,7 @@ export const reportDocuments = mysqlTable("reportDocuments", {
   source: mysqlEnum("source", ["onesite", "yardi"]).notNull().default("onesite"),
   propertyId: int("propertyId"),
   propertyName: varchar("propertyName", { length: 255 }).notNull(),
-  documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook", "manager_checklist"]).default("source_report").notNull(),
+  documentKind: mysqlEnum("documentKind", ["source_report", "property_workbook", "workbook_html", "manager_checklist"]).default("source_report").notNull(),
   originalFilename: varchar("originalFilename", { length: 500 }).notNull(),
   mimeType: varchar("mimeType", { length: 255 }).notNull(),
   storageKey: varchar("storageKey", { length: 1024 }).notNull(),

@@ -1,0 +1,1 @@
+ALTER TABLE `reportDocuments` MODIFY COLUMN `documentKind` enum('source_report','property_workbook','workbook_html','manager_checklist') NOT NULL DEFAULT 'source_report';
