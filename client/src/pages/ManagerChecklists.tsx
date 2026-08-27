@@ -94,6 +94,7 @@ export default function ManagerChecklists() {
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const summaryRef = useRef<HTMLDivElement | null>(null);
+  const derivationKeyRef = useRef<string | null>(null);
 
   useEffect(() => { if (!selectedKey && (requestedKey ? assignments.some(item => `${item.requestId}:${item.propertyId}` === requestedKey) : assignments[0])) setSelectedKey(requestedKey && assignments.some(item => `${item.requestId}:${item.propertyId}` === requestedKey) ? requestedKey : `${assignments[0].requestId}:${assignments[0].propertyId}`); }, [assignments, requestedKey, selectedKey]);
   useEffect(() => { if (requestedKey && assignments.some(item => `${item.requestId}:${item.propertyId}` === requestedKey) && selectedKey !== requestedKey) setSelectedKey(requestedKey); }, [assignments, requestedKey, selectedKey]);
@@ -104,25 +105,28 @@ export default function ManagerChecklists() {
     setState(saved); setManagerSummary(review.data.review.managerSummary); setMarkdown(review.data.markdown); setLoadedKey(key); setSavedSignature(JSON.stringify({ state: saved, managerSummary: review.data.review.managerSummary })); setSaveState("saved");
   }, [review.data, selected?.requestId, selected?.propertyId]);
   useEffect(() => {
-    if (!review.data || !selected || state?.items.length || deriving) return;
+    if (!review.data || !selected || state?.items.length) return;
+    const key = `${selected.requestId}:${selected.propertyId}`;
+    if (derivationKeyRef.current === key) return;
+    derivationKeyRef.current = key;
+    const fallback: ReviewState = { version: 2, items: [{ id: "report-completeness", sectionId: "report_review", label: "Confirm report completeness", detail: "Open the source report and confirm it is complete and accurate.", status: "pending", notes: "", targetDate: "", requiresVerification: true }] };
+    setState(fallback);
     const source = review.data.documents.find(document => document.documentKind === "source_report" && workbookExtensions.test(document.originalFilename));
     if (!source) return;
-    let active = true; setDeriving(true);
-    const useFallback = () => setState(previous => previous?.items.length ? previous : { version: 2, items: [{ id: "report-completeness", sectionId: "report_review", label: "Confirm report completeness", detail: "Open the source report and confirm it is complete and accurate.", status: "pending", notes: "", targetDate: "", requiresVerification: true }] });
-    const timeout = window.setTimeout(() => { if (active) { useFallback(); setDeriving(false); } }, 8000);
     void (async () => {
       try {
-        const response = await fetch(source.storageUrl); if (!response.ok) throw new Error("Workbook could not be opened.");
+        const response = await fetch(source.storageUrl);
+        if (!response.ok) throw new Error("Workbook could not be opened.");
         const XLSX = await import("xlsx");
         const workbook = XLSX.read(await response.arrayBuffer(), { type: "array", cellDates: true });
         const sheets = workbook.SheetNames.map(name => ({ name, rows: XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[name], { header: 1, defval: "", raw: false }) }));
         const items = buildReviewItems(sheets);
-        if (active) setState({ version: 2, items });
-      } catch { if (active) useFallback(); }
-      finally { window.clearTimeout(timeout); if (active) setDeriving(false); }
+        if (derivationKeyRef.current === key && items.length) setState({ version: 2, items });
+      } catch {
+        // The immediately displayed fallback remains available if the optional source parse cannot complete.
+      }
     })();
-    return () => { active = false; window.clearTimeout(timeout); };
-  }, [deriving, review.data, selected?.requestId, selected?.propertyId, state?.items.length]);
+  }, [review.data, selected?.requestId, selected?.propertyId, state?.items.length]);
 
   const save = trpc.checklists.save.useMutation({ onSuccess: data => { setMarkdown(data.markdown); setSavedSignature(JSON.stringify({ state: data.review.state, managerSummary: data.review.managerSummary })); setSaveState("saved"); void utils.checklists.assignments.invalidate(); }, onError: () => setSaveState("error") });
   const submit = trpc.checklists.submit.useMutation({ onSuccess: data => { setState(data.review.state as ReviewState); setManagerSummary(data.review.managerSummary); setMarkdown(data.markdown); setSavedSignature(JSON.stringify({ state: data.review.state, managerSummary: data.review.managerSummary })); setSaveState("saved"); void utils.checklists.assignments.invalidate(); void utils.checklists.review.invalidate(); } });
