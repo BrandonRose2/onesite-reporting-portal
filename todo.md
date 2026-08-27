@@ -116,4 +116,7 @@
 - [x] Fix the OneSite report picker’s wheel behavior so small scroll movements traverse the controlled result panel without skipping large portions of the 310-report catalog.
 - [ ] Inspect Delinquent and Prepaid (Excel) settings through the designated Edge helper without generating the report.
 - [ ] Import the discovered Delinquent and Prepaid (Excel) settings into editable portal controls for a controlled single-property draft.
+- [ ] Refresh the OneSite catalog from the updated Edge helper so Delinquent and Prepaid (Excel) retains its verified parameter definitions in portal metadata.
+- [ ] Confirm the selected Delinquent and Prepaid (Excel) entry renders the verified editable controls before drafting a selected-property request.
+- [x] Reject incomplete OneSite page contexts during catalog synchronization so a partial row set cannot overwrite the verified 310-report catalog.
 - [ ] Validate the controlled report-picker wheel behavior with the user’s physical mouse or trackpad after the updated portal is published.

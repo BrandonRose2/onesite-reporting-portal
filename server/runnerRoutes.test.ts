@@ -1,7 +1,7 @@
 import express from "express";
 import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
-import { registerRunnerRoutes } from "./runnerRoutes";
+import { registerRunnerRoutes, validateCompleteCatalogSync } from "./runnerRoutes";
 
 const activeServers: Array<ReturnType<typeof express>["listen"]> = [];
 
@@ -86,5 +86,21 @@ describe("runner token protection", () => {
     });
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({ error: "Properties must contain externalId and name." });
+  });
+
+  it("rejects a partial OneSite catalog before it can reach stale-row deactivation", async () => {
+    const baseUrl = await startHealthApp();
+    const response = await fetch(`${baseUrl}/api/onesite-runner/catalog/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-onesite-runner-token": process.env.ONESITE_RUNNER_TOKEN! },
+      body: JSON.stringify({ reports: [{ catalogKey: "single-row", name: "Only one row" }], complete: false, expectedTotal: 310 }),
+    });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Catalog synchronization requires a verified complete report set." });
+  });
+
+  it("accepts a complete catalog contract only when its declared count matches the report rows", () => {
+    expect(validateCompleteCatalogSync({ reports: [{ catalogKey: "report-a", name: "Report A" }, { catalogKey: "report-b", name: "Report B" }], complete: true, expectedTotal: 2 })).toMatchObject({ expectedTotal: 2, reports: [{ catalogKey: "report-a" }, { catalogKey: "report-b" }] });
+    expect(validateCompleteCatalogSync({ reports: [{ catalogKey: "report-a", name: "Report A" }], complete: true, expectedTotal: 2 })).toEqual({ error: "Catalog expectedTotal must be a positive integer equal to the submitted report count." });
   });
 });

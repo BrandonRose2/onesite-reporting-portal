@@ -342,25 +342,39 @@ export async function getRunnerSessionStatus(source: RunnerSource) {
   return getOperationalConfig(`runner_session:${source}`);
 }
 
-export async function syncCatalogFromRunner(source: RunnerSource, reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>) {
+export async function syncCatalogFromRunner(source: RunnerSource, reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>, options: { expectedTotal: number; complete: boolean }) {
+  if (!options.complete || !Number.isInteger(options.expectedTotal) || options.expectedTotal < 1 || reports.length !== options.expectedTotal) {
+    throw new Error("Catalog synchronization requires a complete payload whose expected total matches its report count.");
+  }
   const activeKeys = reports.map(report => report.catalogKey);
   const db = await requireDb();
-  for (const report of reports) {
-    await upsertCatalogEntry({
-      source,
-      catalogKey: report.catalogKey,
-      exactReportName: report.name,
-      reportArea: report.reportArea ?? null,
-      reportLevel: report.reportLevel ?? null,
-      product: report.product ?? null,
-      availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
-      runnerMetadata: report.runnerMetadata ?? {},
-      active: true,
-    });
-  }
-  if (activeKeys.length) {
-    await db.update(reportCatalog).set({ active: false }).where(and(eq(reportCatalog.source, source), notInArray(reportCatalog.catalogKey, activeKeys)));
-  }
+  await db.transaction(async tx => {
+    const currentRows = await tx.select().from(reportCatalog).where(eq(reportCatalog.source, source));
+    const currentByKey = new Map(currentRows.map(row => [row.catalogKey, row]));
+    for (const report of reports) {
+      const suppliedMetadata = report.runnerMetadata && Object.keys(report.runnerMetadata).length ? report.runnerMetadata : undefined;
+      await tx.insert(reportCatalog).values({
+        source,
+        catalogKey: report.catalogKey,
+        exactReportName: report.name,
+        reportArea: report.reportArea ?? null,
+        reportLevel: report.reportLevel ?? null,
+        product: report.product ?? null,
+        availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
+        runnerMetadata: suppliedMetadata ?? currentByKey.get(report.catalogKey)?.runnerMetadata ?? {},
+        active: true,
+      }).onDuplicateKeyUpdate({ set: {
+        exactReportName: report.name,
+        reportArea: report.reportArea ?? null,
+        reportLevel: report.reportLevel ?? null,
+        product: report.product ?? null,
+        availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
+        runnerMetadata: suppliedMetadata ?? currentByKey.get(report.catalogKey)?.runnerMetadata ?? {},
+        active: true,
+      } });
+    }
+    await tx.update(reportCatalog).set({ active: false }).where(and(eq(reportCatalog.source, source), notInArray(reportCatalog.catalogKey, activeKeys)));
+  });
 }
 
 export async function syncPropertiesFromRunner(source: RunnerSource, incoming: Array<{ externalId: string; name: string; market?: string; active?: boolean }>) {

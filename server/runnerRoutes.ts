@@ -73,6 +73,21 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
+type RunnerCatalogReport = { catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> };
+
+export function validateCompleteCatalogSync(input: unknown): { reports: RunnerCatalogReport[]; expectedTotal: number } | { error: string } {
+  const payload = input && typeof input === "object" ? input as { reports?: unknown; complete?: unknown; expectedTotal?: unknown } : {};
+  const reports = Array.isArray(payload.reports) ? payload.reports : [];
+  if (!reports.every((report: unknown) => report && typeof report === "object" && typeof (report as { catalogKey?: unknown }).catalogKey === "string" && typeof (report as { name?: unknown }).name === "string")) {
+    return { error: "Reports must contain catalogKey and name." };
+  }
+  if (payload.complete !== true) return { error: "Catalog synchronization requires a verified complete report set." };
+  if (!isPositiveInteger(payload.expectedTotal) || payload.expectedTotal !== reports.length) {
+    return { error: "Catalog expectedTotal must be a positive integer equal to the submitted report count." };
+  }
+  return { reports: reports as RunnerCatalogReport[], expectedTotal: payload.expectedTotal };
+}
+
 function safeFilename(filename: string) {
   return filename.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180) || "report.bin";
 }
@@ -122,13 +137,13 @@ function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
 
   app.post(`${base}/catalog/sync`, auth, rejectSensitivePayload, async (req, res, next) => {
     try {
-      const reports = Array.isArray(req.body?.reports) ? req.body.reports : [];
-      if (!reports.every((report: unknown) => report && typeof report === "object" && typeof (report as { catalogKey?: unknown }).catalogKey === "string" && typeof (report as { name?: unknown }).name === "string")) {
-        res.status(400).json({ error: "Reports must contain catalogKey and name." });
+      const catalogSync = validateCompleteCatalogSync(req.body);
+      if ("error" in catalogSync) {
+        res.status(400).json({ error: catalogSync.error });
         return;
       }
-      await syncCatalogFromRunner(definition.source, reports as Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>);
-      res.json({ success: true, source: definition.source, count: reports.length });
+      await syncCatalogFromRunner(definition.source, catalogSync.reports, { complete: true, expectedTotal: catalogSync.expectedTotal });
+      res.json({ success: true, source: definition.source, count: catalogSync.reports.length });
     } catch (error) { next(error); }
   });
 
