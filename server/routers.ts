@@ -45,12 +45,17 @@ const checklistItemSchema = z.object({
   status: z.enum(["pending", "confirmed", "follow_up", "escalated"]),
   notes: z.string().max(4000),
   targetDate: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/),
+  reportedValue: z.string().max(120).optional(),
+  correctedValue: z.string().max(120).optional(),
+  sourceSheet: z.string().max(100).optional(),
+  sourceRow: z.number().int().positive().optional(),
+  requiresVerification: z.boolean().optional(),
 });
 
 const checklistReviewInput = z.object({
   requestId: z.number().int().positive(),
   propertyId: z.number().int().positive(),
-  state: z.object({ version: z.literal(1), items: z.array(checklistItemSchema).max(20) }),
+  state: z.object({ version: z.literal(2), items: z.array(checklistItemSchema).max(500) }),
   managerSummary: z.string().max(8000),
 });
 

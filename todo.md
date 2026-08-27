@@ -139,4 +139,17 @@
 - [x] Optimize the portal’s report and manager checklist workflows for iPhone and Google Fold phone widths, including touch-friendly controls and no horizontal overflow.
 - [x] Make report-request dropdowns and editable parameter controls unmistakably interactive with green-tinted surfaces, clear labels, and visible selected/focus states.
 - [x] Replace the blank embedded workbook-HTML frame with the portal-native authenticated workbook table so actual report data is visible on iPhone and Fold layouts.
+- [ ] Add prominent Manager Review calls to action from completed reports and property report history so managers can immediately find the auto-saving verification checklist.
+- [x] Replace generic manager checklist items with report-linked current-resident rows that support delinquency verification, corrected amounts, management notes, automatic saving, and Submit for Review.
+- [x] Generalize manager checklist reviews into an adaptive, property-scoped workflow for every completed report and both manager and regional-manager reviewers.
+- [x] Add manager-review progress tracking and explicit missing-field indicators that prevent submission until required verification, correction, and explanation fields are complete.
+- [x] Add a red Needs Attention list beside Submit for Review that enumerates every outstanding validation or required-field blocker.
+- [x] Make each Needs Attention item clickable so it scrolls and focuses the matching manager review row for correction.
+- [x] Hide Resh ID and Lease ID from manager-facing report review rows while preserving the original workbook for audit.
+- [x] Apply the Resh ID and Lease ID suppression rule to every future manager review generated from a completed report.
+- [x] Show only Net Delinquency Amount, Current, resident name, 30/60/90 aging, permitted contact details, and move-in/move-out dates in manager delinquency previews; hide Total Prepaid, Net Balance, Prorate Credit, and all later columns.
+- [ ] Create a reusable source-agnostic reporting workflow skill covering secure runner boundaries, catalog collection, parameterized reporting, filing, HTML summaries, manager review, approval, and later confirmation-gated email delivery for Yardi reuse.
+- [ ] Document the future email response sequence: interactive HTML checklist link, auto-saved manager edits, reply-to-sender delivery, and user-editable CC recipients, all behind explicit send approval.
+- [ ] Push the current portal and recovered Edge-runner source updates to the user’s GitHub repositories while deferring Vercel or Netlify configuration until a hosting choice is provided.
 - [ ] After checklist workflow verification, prepare an all-properties Delinquent and Prepaid (Excel) request for explicit settings approval, then file each completed property artifact with separate HTML and original document links.
+- [ ] After the all-properties delinquency run is reviewed, prepare Rent Roll Detail (Excel) for all properties and then All Units, with separate explicit settings approval before each provider run.

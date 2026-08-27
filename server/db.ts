@@ -264,14 +264,22 @@ async function accessiblePropertyIdsForActor(actor: PortalActor) {
   const db = await requireDb();
   const [allProperties, contacts] = await Promise.all([
     db.select({ id: properties.id, name: properties.name }).from(properties).where(eq(properties.active, true)),
-    db.select({ propertyName: managerContacts.propertyName, normalizedPropertyName: managerContacts.normalizedPropertyName, email: managerContacts.email, isRegionalManager: managerContacts.isRegionalManager }).from(managerContacts),
+    db.select({ propertyName: managerContacts.propertyName, normalizedPropertyName: managerContacts.normalizedPropertyName, email: managerContacts.email, region: managerContacts.region, isRegionalManager: managerContacts.isRegionalManager }).from(managerContacts),
   ]);
   const email = actor.email.trim().toLowerCase();
   const assignedNames = new Set(contacts
     .filter(contact => !contact.isRegionalManager && contact.email?.trim().toLowerCase() === email)
     .map(contact => contact.normalizedPropertyName ?? (contact.propertyName ? normalizePropertyName(contact.propertyName) : ""))
     .filter(Boolean));
-  return allProperties.filter(property => assignedNames.has(normalizePropertyName(property.name))).map(property => property.id);
+  const assignedRegions = new Set(contacts
+    .filter(contact => contact.isRegionalManager && contact.email?.trim().toLowerCase() === email)
+    .map(contact => contact.region?.trim().toLowerCase())
+    .filter((region): region is string => Boolean(region)));
+  const regionalPropertyNames = new Set(contacts
+    .filter(contact => !contact.isRegionalManager && contact.region?.trim() && assignedRegions.has(contact.region.trim().toLowerCase()))
+    .map(contact => contact.normalizedPropertyName ?? (contact.propertyName ? normalizePropertyName(contact.propertyName) : ""))
+    .filter(Boolean));
+  return allProperties.filter(property => assignedNames.has(normalizePropertyName(property.name)) || regionalPropertyNames.has(normalizePropertyName(property.name))).map(property => property.id);
 }
 
 async function requireChecklistPropertyAccess(actor: PortalActor, requestId: number, propertyId: number) {
