@@ -107,3 +107,13 @@
 - [x] Open the OneSite request selector and verify it renders active entries from the synchronized 310-row catalog rather than only confirming the route loads.
 - [x] Deploy and validate the portal-side stale OneSite catalog deactivation before the corrected 310-report sync is rerun.
 - [x] Confirm the stale development-console Manager’s Checklist import warning is no longer current and verify the OneSite request UI renders the synchronized 310 active-report count from its catalog query.
+- [ ] Compare the prior OneSite portal’s editable report settings with the current request form and document the reusable parameter interactions.
+- [ ] Add an editable report-settings panel with report-specific controls, default values, date/format inputs, and a clear request review before queueing.
+- [ ] Prepare one selected-property OneSite test request without submitting it and present its exact settings for user approval.
+- [x] Replace the native OneSite report dropdown with an accessible searchable picker that filters the synchronized active catalog.
+- [ ] Verify long report-list scrolling and direct search discovery, including the Delinquency report, without skipped options.
+- [x] Normalize synonymous report terms so searching Delinquency discovers the active Delinquent and Prepaid OneSite reports.
+- [x] Fix the OneSite report picker’s wheel behavior so small scroll movements traverse the controlled result panel without skipping large portions of the 310-report catalog.
+- [ ] Inspect Delinquent and Prepaid (Excel) settings through the designated Edge helper without generating the report.
+- [ ] Import the discovered Delinquent and Prepaid (Excel) settings into editable portal controls for a controlled single-property draft.
+- [ ] Validate the controlled report-picker wheel behavior with the user’s physical mouse or trackpad after the updated portal is published.

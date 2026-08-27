@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, ChevronDown, Info, Loader2, Send, SlidersHorizontal } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, ChevronDown, Info, Loader2, Search, Send, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState, type WheelEvent } from "react";
 import { useLocation } from "wouter";
 
 type Scope = "generate_all_properties" | "generate_property" | "sync_my_reports";
@@ -22,6 +22,11 @@ function defaultsFor(definitions: ParameterDefinition[]) {
   return Object.fromEntries(definitions.filter(definition => definition.defaultValue !== undefined).map(definition => [definition.key, definition.defaultValue])) as Record<string, unknown>;
 }
 
+function normalizedSearchTerms(value: string) {
+  const aliases: Record<string, string> = { delinquency: "delinquent", delinquent: "delinquent" };
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean).map(term => aliases[term] ?? term);
+}
+
 export default function ReportRequest({ source = "OneSite" }: { source?: "OneSite" | "Yardi" }) {
   const [, setLocation] = useLocation();
   const runnerSource = source === "Yardi" ? "yardi" as const : "onesite" as const;
@@ -29,6 +34,8 @@ export default function ReportRequest({ source = "OneSite" }: { source?: "OneSit
   const { data: properties = [] } = trpc.properties.list.useQuery({ includeInactive: false });
   const [scope, setScope] = useState<Scope>("generate_all_properties");
   const [catalogId, setCatalogId] = useState("");
+  const [reportSearch, setReportSearch] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [propertyId, setPropertyId] = useState("");
   const [format, setFormat] = useState<"excel" | "pdf" | "csv">("excel");
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({});
@@ -37,6 +44,14 @@ export default function ReportRequest({ source = "OneSite" }: { source?: "OneSit
   const [error, setError] = useState<string | null>(null);
   const mutation = trpc.requests.create.useMutation({ onSuccess: () => setLocation("/library") });
   const selectedReport = useMemo(() => catalog.find(item => item.id === Number(catalogId)), [catalog, catalogId]);
+  const filteredCatalog = useMemo(() => {
+    const terms = normalizedSearchTerms(reportSearch);
+    if (!terms.length) return catalog;
+    return catalog.filter(item => {
+      const searchable = normalizedSearchTerms([item.exactReportName, item.reportArea, item.product, item.reportLevel].filter(Boolean).join(" "));
+      return terms.every(term => searchable.some(candidate => candidate.includes(term)));
+    });
+  }, [catalog, reportSearch]);
   const parameterDefinitions = useMemo(() => selectedReport ? getParameterDefinitions(selectedReport.runnerMetadata) : [], [selectedReport]);
 
   useEffect(() => {
@@ -66,10 +81,17 @@ export default function ReportRequest({ source = "OneSite" }: { source?: "OneSit
   };
 
   const step = scope === "generate_property" ? 4 : 3;
+  const controlPickerWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!event.deltaY) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const controlledStep = Math.min(56, Math.max(22, Math.abs(event.deltaY) * 0.2));
+    event.currentTarget.scrollBy({ top: Math.sign(event.deltaY) * controlledStep, behavior: "auto" });
+  };
   return <DashboardLayout><PageHeader eyebrow={`Pull Reports / ${source}`} title={`Request a ${source} report`} description="Choose an approved report, set its supported parameters, and route it to all active properties or one selected property." />
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px]"><section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_28px_-22px_rgba(15,35,67,.5)] sm:p-7"><div className="space-y-7">
       <fieldset><legend className="text-sm font-semibold text-slate-950">1. Select report scope</legend><div className="mt-3 grid gap-3 sm:grid-cols-3">{([{ value: "generate_all_properties", title: "All active properties", description: "Run the configured report against every active portal property." }, { value: "generate_property", title: "Selected property", description: "Run only against one active property you select." }, { value: "sync_my_reports", title: "My Reports retrieval", description: "Retrieve provider-generated outputs that the runner can safely match and file." }] as Array<{ value: Scope; title: string; description: string }>).map(option => <label key={option.value} className={`cursor-pointer rounded-xl border p-4 transition-colors ${scope === option.value ? "border-[#0b8775] bg-[#f0fbf8]" : "border-slate-200 hover:border-slate-300"}`}><input className="sr-only" type="radio" name="scope" checked={scope === option.value} onChange={() => { setScope(option.value); setError(null); }} /><span className="block text-sm font-semibold text-slate-900">{option.title}</span><span className="mt-1 block text-xs leading-5 text-slate-500">{option.description}</span></label>)}</div></fieldset>
-      {scope !== "sync_my_reports" ? <fieldset><legend className="text-sm font-semibold text-slate-950">2. Select an approved {source} report</legend><div className="mt-3 grid gap-4 sm:grid-cols-2"><div><Label htmlFor="report" className="flex items-center justify-between gap-2">Report catalog <span className="text-[11px] font-medium text-[#087365]">{loadingCatalog ? "Syncing…" : `${catalog.length} active reports`}</span></Label><select id="report" value={catalogId} onChange={event => { setCatalogId(event.target.value); setError(null); }} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#0b8775] focus:ring-2 focus:ring-[#0b8775]/15"><option value="">{loadingCatalog ? "Loading approved reports…" : `Select a ${source} report`}</option>{catalog.map(item => <option key={item.id} value={item.id}>{item.exactReportName}</option>)}</select></div><div><Label>Allowed formats</Label><div className="mt-1.5 flex h-10 gap-2">{(["excel", "pdf", "csv"] as const).map(item => <button key={item} disabled={!selectedReport?.availableFormats.includes(item)} onClick={() => setFormat(item)} type="button" className={`rounded-lg border px-3 text-xs font-semibold capitalize transition-colors ${format === item ? "border-[#0b8775] bg-[#e7f8f2] text-[#087365]" : "border-slate-200 text-slate-500"} disabled:cursor-not-allowed disabled:opacity-40`}>{item}</button>)}</div></div></div>
+      {scope !== "sync_my_reports" ? <fieldset><legend className="text-sm font-semibold text-slate-950">2. Select an approved {source} report</legend><div className="mt-3 grid gap-4 sm:grid-cols-2"><div><Label htmlFor="report-search" className="flex items-center justify-between gap-2">Report catalog <span className="text-[11px] font-medium text-[#087365]">{loadingCatalog ? "Syncing…" : `${catalog.length} active reports`}</span></Label><div className="relative mt-1.5"><Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input id="report-search" value={reportSearch} onFocus={() => setPickerOpen(true)} onChange={event => { setReportSearch(event.target.value); setPickerOpen(true); }} onKeyDown={event => { if (event.key === "Escape") setPickerOpen(false); }} placeholder={`Search ${source} reports, areas, or products`} className="h-10 pl-9 text-sm" aria-controls="report-results" aria-expanded={pickerOpen} /><button type="button" onClick={() => setPickerOpen(open => !open)} className="mt-2 flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-700 outline-none transition-colors hover:border-slate-300 focus:border-[#0b8775] focus:ring-2 focus:ring-[#0b8775]/15"><span className="truncate">{selectedReport?.exactReportName ?? (loadingCatalog ? "Loading approved reports…" : `Select a ${source} report`)}</span><ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${pickerOpen ? "rotate-180" : ""}`} /></button>{pickerOpen ? <div id="report-results" role="listbox" aria-label={`${source} report results`} onWheel={controlPickerWheel} className="absolute z-20 mt-1 max-h-72 w-full snap-y snap-proximity overscroll-contain overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/10">{filteredCatalog.length ? filteredCatalog.map(item => <button key={item.id} type="button" role="option" aria-selected={selectedReport?.id === item.id} onClick={() => { setCatalogId(String(item.id)); setPickerOpen(false); setError(null); }} className={`flex w-full snap-start flex-col rounded-lg px-3 py-2.5 text-left transition-colors ${selectedReport?.id === item.id ? "bg-[#e7f8f2] text-[#063e36]" : "hover:bg-slate-50"}`}><span className="text-sm font-medium">{item.exactReportName}</span><span className="mt-0.5 text-[11px] text-slate-500">{[item.reportArea, item.reportLevel, item.product].filter(Boolean).join(" · ") || "OneSite report"}</span></button>) : <p className="px-3 py-4 text-sm text-slate-500">No reports match “{reportSearch}”.</p>}</div> : null}</div><p className="mt-2 text-xs text-slate-500">{filteredCatalog.length} matching report{filteredCatalog.length === 1 ? "" : "s"}. Use the search box or scroll the report list in controlled increments.</p></div><div><Label>Allowed formats</Label><div className="mt-1.5 flex h-10 gap-2">{(["excel", "pdf", "csv"] as const).map(item => <button key={item} disabled={!selectedReport?.availableFormats.includes(item)} onClick={() => setFormat(item)} type="button" className={`rounded-lg border px-3 text-xs font-semibold capitalize transition-colors ${format === item ? "border-[#0b8775] bg-[#e7f8f2] text-[#087365]" : "border-slate-200 text-slate-500"} disabled:cursor-not-allowed disabled:opacity-40`}>{item}</button>)}</div></div></div>
         {selectedReport ? <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600"><span className="font-semibold text-slate-800">Runner report:</span> <span className="font-mono text-[11px]">{selectedReport.exactReportName}</span>{selectedReport.reportArea ? ` · ${selectedReport.reportArea}` : ""}{selectedReport.product ? ` · ${selectedReport.product}` : ""}</div> : null}</fieldset> : null}
       {scope === "generate_property" ? <fieldset><legend className="text-sm font-semibold text-slate-950">3. Select property</legend><div className="mt-3 max-w-md"><Label htmlFor="property">Active property</Label><select id="property" value={propertyId} onChange={event => setPropertyId(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#0b8775] focus:ring-2 focus:ring-[#0b8775]/15"><option value="">Select a property</option>{properties.map(property => <option key={property.id} value={property.id}>{property.name}{property.market ? ` · ${property.market}` : ""}</option>)}</select></div></fieldset> : null}
       {scope !== "sync_my_reports" ? <fieldset><legend className="flex items-center gap-2 text-sm font-semibold text-slate-950"><SlidersHorizontal className="h-4 w-4 text-[#087365]" />{step}. Configure report parameters</legend>{selectedReport ? parameterDefinitions.length ? <><p className="mt-1 text-xs leading-5 text-slate-500">These controls reflect the approved parameter model captured for this {source} report.</p><ParameterFields definitions={parameterDefinitions} values={parameterValues} onChange={(key, value) => setParameterValues(current => ({ ...current, [key]: value }))} /></> : <><p className="mt-1 text-xs leading-5 text-slate-500">This catalog item does not yet have a structured parameter model. Use only runner-supported JSON settings.</p><Textarea value={advancedParametersText} onChange={event => setAdvancedParametersText(event.target.value)} className="mt-3 min-h-28 font-mono text-xs" spellCheck={false} /></> : <div className="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-xs text-slate-500">Choose a report to load its approved parameter controls.</div>}</fieldset> : null}
