@@ -25,9 +25,9 @@ export function DocumentViewer({ document }: { document: FiledDocument }) {
 export function ReportSummaryViewer({ html, requestId, reportName }: { html?: string; requestId?: number; reportName: string }) {
   const [open, setOpen] = useState(false);
   const resolvedRequestId = requestId ?? Number(html?.match(/Request #(\d+)/)?.[1]);
-  const summaryUrl = Number.isInteger(resolvedRequestId) && resolvedRequestId > 0 ? `/api/report-summaries/${resolvedRequestId}` : undefined;
+  const summaryUrl = Number.isInteger(resolvedRequestId) && resolvedRequestId > 0 ? `/report-data/${resolvedRequestId}` : undefined;
   if (!summaryUrl) return null;
-  return <Dialog open={open} onOpenChange={setOpen}><DialogTrigger asChild><Button variant="outline" size="sm" className="mt-2 w-full sm:w-auto">Open workbook data as HTML</Button></DialogTrigger><DialogContent className="flex h-[100dvh] w-screen max-w-none flex-col overflow-hidden rounded-none p-0 sm:h-[86vh] sm:max-w-5xl sm:rounded-lg"><DialogHeader className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5"><div className="flex items-start justify-between gap-3 pr-7"><div><DialogTitle className="text-sm sm:text-base">{reportName} — workbook data</DialogTitle><DialogDescription className="text-xs">Actual cells from the filed workbook, rendered as a readable HTML report.</DialogDescription></div><Button asChild size="sm" variant="outline" className="shrink-0"><a href={summaryUrl} target="_blank" rel="noreferrer">Open URL</a></Button></div></DialogHeader><iframe title={`${reportName} workbook data`} sandbox="" src={summaryUrl} className="min-h-0 flex-1 border-0 bg-white" /></DialogContent></Dialog>;
+  return <Button asChild variant="outline" size="sm" className="mt-2 w-full sm:w-auto"><a href={summaryUrl}>Open workbook data as HTML</a></Button>;
 }
 
 function WorkbookPreview({ document }: { document: FiledDocument }) {

@@ -11,6 +11,7 @@ import {
   getCatalogEntryById,
   getPropertyHistory,
   getRequestDetails,
+  getManagerContactMatch,
   getRunnerSessionStatus,
   listCatalog,
   listReportLibraryRequests,
@@ -57,7 +58,12 @@ export const appRouter = router({
   requests: router({
     list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ input }) => listRecentRequests(input?.limit ?? 25, input?.source)),
     library: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(250).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ input }) => listReportLibraryRequests(input?.limit ?? 200, input?.source)),
-    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getRequestDetails(input.id)),
+    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
+      const details = await getRequestDetails(input.id);
+      if (!details) return undefined;
+      const contactMatches = await Promise.all(details.properties.map(async property => ({ propertyName: property.name, ...(await getManagerContactMatch(property.name)) })));
+      return { ...details, contactMatches };
+    }),
     create: protectedProcedure.input(requestCreateSchema).mutation(async ({ ctx, input }) => {
       if (input.requestType === "sync_my_reports") return createReportRequest({ ...input, requestedById: ctx.user.id });
       const catalogEntry = await getCatalogEntryById(input.catalogId!);

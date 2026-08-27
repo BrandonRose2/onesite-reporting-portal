@@ -126,3 +126,4 @@
 - [x] File the approved Boca Ciega workbook downloaded by the Edge helper under the OneSite Reporting property path and complete Request #1 with its original filename preserved.
 - [ ] Render the actual completed OneSite workbook data as a readable portal HTML summary URL, starting with Boca Ciega Request #1.
 - [ ] Add the matched property manager and regional manager phone, extension, and email details from the authorized Notion contact directory to completed report views.
+- [ ] Correct the protected workbook-summary storage read so completed report data pages remain available after the source workbook is filed.

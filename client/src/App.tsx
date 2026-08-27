@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Properties from "./pages/Properties";
 import ReportLibrary from "./pages/ReportLibrary";
 import ReportRequest from "./pages/ReportRequest";
+import WorkbookDataReport from "./pages/WorkbookDataReport";
 import { Route, Switch } from "wouter";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
     <Route path="/request/onesite"><ReportRequest source="OneSite" /></Route>
     <Route path="/request/yardi"><ReportRequest source="Yardi" /></Route>
     <Route path="/library" component={ReportLibrary} />
+    <Route path="/report-data/:id" component={WorkbookDataReport} />
     <Route path="/properties" component={Properties} />
     <Route path="/automation-settings" component={AutomationSettings} />
     <Route path="/compare-periods"><RecoveryPlaceholder kind="compare" /></Route>
