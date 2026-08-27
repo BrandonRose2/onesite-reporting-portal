@@ -135,4 +135,8 @@
 - [ ] Review the recorded completed-report interaction and refine the management report layout for clearer desktop and iPhone use.
 - [x] Add property-restricted manager access for assigned reports, persistent validation checklists in Markdown and polished HTML, and a submission state that does not send email until later explicitly enabled.
 - [x] Enforce property-scoped report, document, and property-detail access server-side for non-administrator manager accounts, not only in sidebar navigation.
+- [x] Replace legacy static manager-checklist storage links with the portal-hosted interactive HTML checklist route, including auto-save and Submit for Review wording.
+- [x] Optimize the portal’s report and manager checklist workflows for iPhone and Google Fold phone widths, including touch-friendly controls and no horizontal overflow.
+- [x] Make report-request dropdowns and editable parameter controls unmistakably interactive with green-tinted surfaces, clear labels, and visible selected/focus states.
+- [x] Replace the blank embedded workbook-HTML frame with the portal-native authenticated workbook table so actual report data is visible on iPhone and Fold layouts.
 - [ ] After checklist workflow verification, prepare an all-properties Delinquent and Prepaid (Excel) request for explicit settings approval, then file each completed property artifact with separate HTML and original document links.
