@@ -216,7 +216,7 @@ export async function getPropertyHistory(propertyId: number) {
 export async function upsertManagerContacts(contacts: ManagerContactInput[]) {
   const db = await requireDb();
   for (const contact of contacts) {
-    await db.insert(managerContacts).values(contact).onDuplicateKeyUpdate({ set: { propertyName: contact.propertyName, normalizedPropertyName: contact.normalizedPropertyName, managerName: contact.managerName, email: contact.email, region: contact.region, isRegionalManager: contact.isRegionalManager, syncedAt: new Date() } });
+    await db.insert(managerContacts).values(contact).onDuplicateKeyUpdate({ set: { propertyName: contact.propertyName, normalizedPropertyName: contact.normalizedPropertyName, managerName: contact.managerName, recordName: contact.recordName, email: contact.email, officePhone: contact.officePhone, mobilePhone: contact.mobilePhone, phoneExtension: contact.phoneExtension, region: contact.region, isRegionalManager: contact.isRegionalManager, syncedAt: new Date() } });
   }
 }
 

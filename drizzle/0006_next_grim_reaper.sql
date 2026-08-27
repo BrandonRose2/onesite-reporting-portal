@@ -1,0 +1,1 @@
+ALTER TABLE `managerContacts` ADD `recordName` varchar(255);

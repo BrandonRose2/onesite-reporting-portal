@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { getRequestDetails } from "./db";
+import { getManagerContactMatch } from "./db";
 import { sdk } from "./_core/sdk";
 import { storageGetSignedUrl } from "./storage";
 import { renderWorkbookDataHtml } from "./workbookSummary";
@@ -32,7 +33,9 @@ export function registerReportSummaryRoutes(app: Express) {
       const signedUrl = await storageGetSignedUrl(workbook.storageKey);
       const fileResponse = await fetch(signedUrl);
       if (!fileResponse.ok) throw new Error(`Stored workbook could not be read (${fileResponse.status}).`);
-      const html = renderWorkbookDataHtml({ source: details.request.source, requestId, reportName: details.request.requestedReportName, propertyNames: details.properties.map(property => property.name), originalFilename: workbook.originalFilename, originalFileUrl: workbook.storageUrl, workbookBytes: await fileResponse.arrayBuffer() });
+      const propertyNames = details.properties.map(property => property.name);
+      const contactMatches = await Promise.all(propertyNames.map(async propertyName => ({ propertyName, ...(await getManagerContactMatch(propertyName)) })));
+      const html = renderWorkbookDataHtml({ source: details.request.source, requestId, reportName: details.request.requestedReportName, propertyNames, originalFilename: workbook.originalFilename, originalFileUrl: workbook.storageUrl, workbookBytes: await fileResponse.arrayBuffer(), contactMatches });
       res.setHeader("Cache-Control", "private, no-store");
       res.type("html").send(html);
     } catch (error) {
