@@ -128,4 +128,11 @@
 - [x] Add the matched property manager and regional manager phone, extension, and email details from the authorized Notion contact directory to completed report views.
 - [ ] Correct the protected workbook-summary storage read so completed report data pages remain available after the source workbook is filed.
 - [x] Convert each authorized Edge-downloaded workbook into a separate storage-backed HTML data document during filing, so completed report data pages do not depend on server-side workbook retrieval.
-- [ ] Preserve the original downloaded workbook as a distinct Excel document and redesign the Boca Ciega HTML rendition into a cleaner, organized management report.
+- [x] Preserve the original downloaded workbook as a distinct Excel document and redesign the Boca Ciega HTML rendition into a cleaner, organized management report.
+- [x] Create, run, file, and verify an approved Boca Ciega replacement report with Hide all PII data disabled while retaining Request #1 as the original restricted-data run.
+- [x] Allow the authorized filing helper to accept an explicit local workbook path when multiple recent report downloads exist.
+- [x] Make replacement-workbook filing resilient when workbook-to-HTML rendering is slow or malformed, preserving the original file before the HTML companion is generated.
+- [ ] Review the recorded completed-report interaction and refine the management report layout for clearer desktop and iPhone use.
+- [x] Add property-restricted manager access for assigned reports, persistent validation checklists in Markdown and polished HTML, and a submission state that does not send email until later explicitly enabled.
+- [x] Enforce property-scoped report, document, and property-detail access server-side for non-administrator manager accounts, not only in sidebar navigation.
+- [ ] After checklist workflow verification, prepare an all-properties Delinquent and Prepaid (Excel) request for explicit settings approval, then file each completed property artifact with separate HTML and original document links.

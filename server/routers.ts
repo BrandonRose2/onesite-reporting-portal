@@ -7,6 +7,9 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createReportRequest,
   generateManagerChecklist,
+  getAccessiblePropertyHistory,
+  getAccessibleRequestDetails,
+  getManagerChecklistReview,
   getDashboardOverview,
   getCatalogEntryById,
   getPropertyHistory,
@@ -14,11 +17,16 @@ import {
   getManagerContactMatch,
   getRunnerSessionStatus,
   listCatalog,
+  listAccessibleProperties,
+  listAccessibleReportLibraryRequests,
+  listManagerChecklistAssignments,
   listReportLibraryRequests,
   listProperties,
   listRecentRequests,
   upsertCatalogEntry,
   upsertProperty,
+  saveManagerChecklistReview,
+  submitManagerChecklistReview,
 } from "./db";
 import { knownOperationalLimitations } from "./operationalLimitations";
 import { catalogSaveSchema, propertySaveSchema, requestCreateSchema, runnerSourceSchema } from "./validation";
@@ -27,6 +35,23 @@ import { getCatalogParameterDefinitions, validateCatalogParameterValues } from "
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required for this operation." });
   return next();
+});
+
+const checklistItemSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  sectionId: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(200),
+  detail: z.string().trim().max(1000),
+  status: z.enum(["pending", "confirmed", "follow_up", "escalated"]),
+  notes: z.string().max(4000),
+  targetDate: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/),
+});
+
+const checklistReviewInput = z.object({
+  requestId: z.number().int().positive(),
+  propertyId: z.number().int().positive(),
+  state: z.object({ version: z.literal(1), items: z.array(checklistItemSchema).max(20) }),
+  managerSummary: z.string().max(8000),
 });
 
 export const appRouter = router({
@@ -41,12 +66,12 @@ export const appRouter = router({
   }),
 
   dashboard: router({
-    overview: protectedProcedure.query(() => getDashboardOverview()),
+    overview: adminProcedure.query(() => getDashboardOverview()),
   }),
 
   properties: router({
-    list: protectedProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query(({ input }) => listProperties(input?.includeInactive ?? false)),
-    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ input }) => getPropertyHistory(input.id)),
+    list: protectedProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query(({ ctx, input }) => input?.includeInactive && ctx.user.role === "admin" ? listProperties(true) : listAccessibleProperties(ctx.user)),
+    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => getAccessiblePropertyHistory(ctx.user, input.id)),
     save: adminProcedure.input(propertySaveSchema).mutation(({ input }) => upsertProperty(input)),
   }),
 
@@ -56,15 +81,15 @@ export const appRouter = router({
   }),
 
   requests: router({
-    list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ input }) => listRecentRequests(input?.limit ?? 25, input?.source)),
-    library: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(250).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ input }) => listReportLibraryRequests(input?.limit ?? 200, input?.source)),
-    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
-      const details = await getRequestDetails(input.id);
+    list: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ ctx, input }) => ctx.user.role === "admin" ? listRecentRequests(input?.limit ?? 25, input?.source) : listAccessibleReportLibraryRequests(ctx.user, input?.limit ?? 25, input?.source)),
+    library: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(250).optional(), source: runnerSourceSchema.optional() }).optional()).query(({ ctx, input }) => listAccessibleReportLibraryRequests(ctx.user, input?.limit ?? 200, input?.source)),
+    details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ ctx, input }) => {
+      const details = await getAccessibleRequestDetails(ctx.user, input.id);
       if (!details) return undefined;
       const contactMatches = await Promise.all(details.properties.map(async property => ({ propertyName: property.name, ...(await getManagerContactMatch(property.name)) })));
       return { ...details, contactMatches };
     }),
-    create: protectedProcedure.input(requestCreateSchema).mutation(async ({ ctx, input }) => {
+    create: adminProcedure.input(requestCreateSchema).mutation(async ({ ctx, input }) => {
       if (input.requestType === "sync_my_reports") return createReportRequest({ ...input, requestedById: ctx.user.id });
       const catalogEntry = await getCatalogEntryById(input.catalogId!);
       if (!catalogEntry || !catalogEntry.active || catalogEntry.source !== input.source) throw new TRPCError({ code: "BAD_REQUEST", message: "Select an active report from the matching source catalog." });
@@ -103,7 +128,11 @@ export const appRouter = router({
   }),
 
   checklists: router({
-    generate: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), propertyId: z.number().int().positive() })).query(({ input }) => generateManagerChecklist(input)),
+    generate: adminProcedure.input(z.object({ requestId: z.number().int().positive(), propertyId: z.number().int().positive() })).query(({ input }) => generateManagerChecklist(input)),
+    assignments: protectedProcedure.query(({ ctx }) => listManagerChecklistAssignments(ctx.user)),
+    review: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), propertyId: z.number().int().positive() })).query(({ ctx, input }) => getManagerChecklistReview(ctx.user, input)),
+    save: protectedProcedure.input(checklistReviewInput).mutation(({ ctx, input }) => saveManagerChecklistReview(ctx.user, input)),
+    submit: protectedProcedure.input(checklistReviewInput).mutation(({ ctx, input }) => submitManagerChecklistReview(ctx.user, input)),
   }),
 });
 

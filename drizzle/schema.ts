@@ -108,6 +108,22 @@ export const managerContacts = mysqlTable("managerContacts", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [uniqueIndex("manager_contacts_key_unique").on(table.contactKey), index("manager_contacts_property_idx").on(table.normalizedPropertyName), index("manager_contacts_region_regional_idx").on(table.region, table.isRegionalManager)]);
 
+export const managerChecklistReviews = mysqlTable("managerChecklistReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  requestId: int("requestId").notNull(),
+  propertyId: int("propertyId").notNull(),
+  status: mysqlEnum("status", ["in_progress", "submitted"]).default("in_progress").notNull(),
+  checklistState: json("checklistState").$type<Record<string, unknown>>().notNull(),
+  managerSummary: text("managerSummary"),
+  submittedById: int("submittedById"),
+  submittedAt: timestamp("submittedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("manager_checklist_request_property_unique").on(table.requestId, table.propertyId),
+  index("manager_checklist_property_status_idx").on(table.propertyId, table.status),
+]);
+
 export const operationalConfig = mysqlTable("operationalConfig", {
   id: int("id").autoincrement().primaryKey(),
   configKey: varchar("configKey", { length: 128 }).notNull(),

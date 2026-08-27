@@ -57,6 +57,13 @@
       "when": 1787855839435,
       "tag": "0007_tricky_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1787864810747,
+      "tag": "0008_tricky_young_avengers",
+      "breakpoints": true
     }
   ]
 }

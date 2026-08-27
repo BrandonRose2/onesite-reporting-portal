@@ -4,6 +4,7 @@ import {
   InsertUser,
   operationalConfig,
   managerContacts,
+  managerChecklistReviews,
   properties,
   reportCatalog,
   reportDocuments,
@@ -17,6 +18,7 @@ import { assertRequestTransition, type RequestStatus } from "./requestLifecycle"
 import { renderReportSummaryHtml } from "./reportSummary";
 import { buildManagerChecklist } from "./managerChecklist";
 import { matchManagerContacts, normalizePropertyName, type ManagerContactInput } from "./contactMatching";
+import { createDefaultManagerChecklistState, managerChecklistProgress, normalizeManagerChecklistState, renderManagerChecklistMarkdown, type ManagerChecklistState } from "./managerChecklistReview";
 
 let dbClient: ReturnType<typeof drizzle> | null = null;
 export type RunnerSource = "onesite" | "yardi";
@@ -252,6 +254,140 @@ export async function generateManagerChecklist(input: { requestId: number; prope
     documents,
     contacts,
   });
+}
+
+export type PortalActor = { id: number; email: string | null; role: "admin" | "user" };
+
+async function accessiblePropertyIdsForActor(actor: PortalActor) {
+  if (actor.role === "admin") return null;
+  if (!actor.email) return [];
+  const db = await requireDb();
+  const [allProperties, contacts] = await Promise.all([
+    db.select({ id: properties.id, name: properties.name }).from(properties).where(eq(properties.active, true)),
+    db.select({ propertyName: managerContacts.propertyName, normalizedPropertyName: managerContacts.normalizedPropertyName, email: managerContacts.email, isRegionalManager: managerContacts.isRegionalManager }).from(managerContacts),
+  ]);
+  const email = actor.email.trim().toLowerCase();
+  const assignedNames = new Set(contacts
+    .filter(contact => !contact.isRegionalManager && contact.email?.trim().toLowerCase() === email)
+    .map(contact => contact.normalizedPropertyName ?? (contact.propertyName ? normalizePropertyName(contact.propertyName) : ""))
+    .filter(Boolean));
+  return allProperties.filter(property => assignedNames.has(normalizePropertyName(property.name))).map(property => property.id);
+}
+
+async function requireChecklistPropertyAccess(actor: PortalActor, requestId: number, propertyId: number) {
+  const db = await requireDb();
+  const requestProperty = (await db.select({ requestId: requestProperties.requestId, propertyId: requestProperties.propertyId, propertyName: requestProperties.propertyNameSnapshot })
+    .from(requestProperties).where(and(eq(requestProperties.requestId, requestId), eq(requestProperties.propertyId, propertyId))).limit(1))[0];
+  if (!requestProperty) throw new Error("This property is not associated with the selected report request.");
+  const allowedIds = await accessiblePropertyIdsForActor(actor);
+  if (allowedIds !== null && !allowedIds.includes(propertyId)) throw new Error("You are not assigned to this property’s manager checklist.");
+  return requestProperty;
+}
+
+export async function listManagerChecklistAssignments(actor: PortalActor) {
+  const db = await requireDb();
+  const propertyIds = await accessiblePropertyIdsForActor(actor);
+  if (propertyIds?.length === 0) return [];
+  return db.select({
+    requestId: reportRequests.id,
+    reportName: reportRequests.requestedReportName,
+    source: reportRequests.source,
+    completedAt: reportRequests.completedAt,
+    propertyId: requestProperties.propertyId,
+    propertyName: requestProperties.propertyNameSnapshot,
+    reviewStatus: managerChecklistReviews.status,
+    reviewUpdatedAt: managerChecklistReviews.updatedAt,
+  }).from(requestProperties)
+    .innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
+    .leftJoin(managerChecklistReviews, and(eq(managerChecklistReviews.requestId, requestProperties.requestId), eq(managerChecklistReviews.propertyId, requestProperties.propertyId)))
+    .where(and(inArray(reportRequests.status, ["completed", "completed_with_warnings"]), propertyIds === null ? undefined : inArray(requestProperties.propertyId, propertyIds)))
+    .orderBy(desc(reportRequests.completedAt), asc(requestProperties.propertyNameSnapshot));
+}
+
+export async function getManagerChecklistReview(actor: PortalActor, input: { requestId: number; propertyId: number }) {
+  const db = await requireDb();
+  const requestProperty = await requireChecklistPropertyAccess(actor, input.requestId, input.propertyId);
+  const [request, property, review, documents, contacts] = await Promise.all([
+    db.select().from(reportRequests).where(and(eq(reportRequests.id, input.requestId), inArray(reportRequests.status, ["completed", "completed_with_warnings"]))).limit(1),
+    db.select().from(properties).where(eq(properties.id, input.propertyId)).limit(1),
+    db.select().from(managerChecklistReviews).where(and(eq(managerChecklistReviews.requestId, input.requestId), eq(managerChecklistReviews.propertyId, input.propertyId))).limit(1),
+    db.select().from(reportDocuments).where(and(eq(reportDocuments.requestId, input.requestId), eq(reportDocuments.propertyId, input.propertyId))).orderBy(desc(reportDocuments.createdAt)),
+    getManagerContactMatch(requestProperty.propertyName),
+  ]);
+  if (!request[0] || !property[0]) throw new Error("The selected completed report is unavailable.");
+  const state = normalizeManagerChecklistState(review[0]?.checklistState ?? createDefaultManagerChecklistState());
+  const status = review[0]?.status ?? "in_progress";
+  const managerSummary = review[0]?.managerSummary ?? "";
+  return {
+    request: request[0], property: property[0], documents, contacts,
+    review: { id: review[0]?.id ?? null, status, state, managerSummary, submittedAt: review[0]?.submittedAt ?? null, updatedAt: review[0]?.updatedAt ?? null, progress: managerChecklistProgress(state) },
+    markdown: renderManagerChecklistMarkdown({ propertyName: property[0].name, reportName: request[0].requestedReportName, requestId: request[0].id, state, managerSummary, status, submittedAt: review[0]?.submittedAt ?? null }),
+  };
+}
+
+export async function saveManagerChecklistReview(actor: PortalActor, input: { requestId: number; propertyId: number; state: ManagerChecklistState; managerSummary: string }) {
+  const db = await requireDb();
+  await requireChecklistPropertyAccess(actor, input.requestId, input.propertyId);
+  const state = normalizeManagerChecklistState(input.state);
+  const managerSummary = input.managerSummary.slice(0, 8000);
+  await db.insert(managerChecklistReviews).values({ requestId: input.requestId, propertyId: input.propertyId, checklistState: state, managerSummary })
+    .onDuplicateKeyUpdate({ set: { checklistState: state, managerSummary, updatedAt: new Date() } });
+  return getManagerChecklistReview(actor, input);
+}
+
+export async function submitManagerChecklistReview(actor: PortalActor, input: { requestId: number; propertyId: number; state: ManagerChecklistState; managerSummary: string }) {
+  const db = await requireDb();
+  await requireChecklistPropertyAccess(actor, input.requestId, input.propertyId);
+  const state = normalizeManagerChecklistState(input.state);
+  const managerSummary = input.managerSummary.slice(0, 8000);
+  const now = new Date();
+  await db.insert(managerChecklistReviews).values({ requestId: input.requestId, propertyId: input.propertyId, checklistState: state, managerSummary, status: "submitted", submittedById: actor.id, submittedAt: now })
+    .onDuplicateKeyUpdate({ set: { checklistState: state, managerSummary, status: "submitted", submittedById: actor.id, submittedAt: now, updatedAt: now } });
+  await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "manager_checklist_submitted", detail: `Manager checklist submitted for property ID ${input.propertyId}. Email delivery is disabled.` });
+  return getManagerChecklistReview(actor, input);
+}
+
+export async function listAccessibleProperties(actor: PortalActor) {
+  const allowedIds = await accessiblePropertyIdsForActor(actor);
+  if (allowedIds === null) return listProperties(false);
+  if (!allowedIds.length) return [];
+  const db = await requireDb();
+  return db.select().from(properties).where(and(eq(properties.active, true), inArray(properties.id, allowedIds))).orderBy(asc(properties.name));
+}
+
+export async function getAccessiblePropertyHistory(actor: PortalActor, propertyId: number) {
+  const allowedIds = await accessiblePropertyIdsForActor(actor);
+  if (allowedIds !== null && !allowedIds.includes(propertyId)) throw new Error("You are not assigned to this property.");
+  return getPropertyHistory(propertyId);
+}
+
+export async function listAccessibleReportLibraryRequests(actor: PortalActor, limit = 200, source?: RunnerSource) {
+  const allowedIds = await accessiblePropertyIdsForActor(actor);
+  if (allowedIds === null) return listReportLibraryRequests(limit, source);
+  if (!allowedIds.length) return [];
+  const db = await requireDb();
+  const rows = await db.select({ request: reportRequests, propertyName: requestProperties.propertyNameSnapshot })
+    .from(requestProperties).innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
+    .where(and(inArray(requestProperties.propertyId, allowedIds), source ? eq(reportRequests.source, source) : undefined))
+    .orderBy(desc(reportRequests.createdAt), asc(requestProperties.propertyNameSnapshot));
+  const byRequest = new Map<number, { request: typeof reportRequests.$inferSelect; propertyNames: string[] }>();
+  for (const row of rows) {
+    const current = byRequest.get(row.request.id) ?? { request: row.request, propertyNames: [] };
+    current.propertyNames.push(row.propertyName);
+    byRequest.set(row.request.id, current);
+  }
+  return Array.from(byRequest.values()).slice(0, limit).map(({ request, propertyNames }) => ({ ...request, propertyNames }));
+}
+
+export async function getAccessibleRequestDetails(actor: PortalActor, requestId: number) {
+  const details = await getRequestDetails(requestId);
+  if (!details) return undefined;
+  const allowedIds = await accessiblePropertyIdsForActor(actor);
+  if (allowedIds === null) return details;
+  const visibleProperties = details.properties.filter(property => property.id !== null && allowedIds.includes(property.id));
+  if (!visibleProperties.length) throw new Error("You are not assigned to this report.");
+  const visibleIds = new Set(visibleProperties.map(property => property.id));
+  return { ...details, properties: visibleProperties, documents: details.documents.filter(document => document.propertyId !== null && visibleIds.has(document.propertyId)), events: details.events.filter(event => event.eventType !== "queued" && event.eventType !== "claimed" && event.eventType !== "in_progress") };
 }
 
 export async function getDashboardOverview() {

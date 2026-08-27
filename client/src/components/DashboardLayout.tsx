@@ -107,6 +107,9 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
     onesite: { status: "unavailable" },
     yardi: { status: "unavailable" },
   };
+  const visibleNavigationGroups = user?.role === "admin"
+    ? navigationGroups
+    : [{ label: "My reports", items: [{ icon: ClipboardCheck, label: "Manager Checklists", path: "/manager-checklists" }] }];
 
   useEffect(() => {
     const onMove = (event: MouseEvent) => {
@@ -151,7 +154,7 @@ function DashboardLayoutContent({ children, setSidebarWidth }: { children: React
           </SidebarHeader>
 
           <SidebarContent className="px-3 pb-3">
-            {navigationGroups.map(group => (
+            {visibleNavigationGroups.map(group => (
               <section key={group.label} className="mb-4">
                 <p className="px-2 pb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500 group-data-[collapsible=icon]:hidden">{group.label}</p>
                 <SidebarMenu className="gap-0.5">
