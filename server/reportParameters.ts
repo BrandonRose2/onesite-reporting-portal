@@ -16,11 +16,33 @@ export const parameterDefinitionSchema = z.object({
 
 export type CatalogParameterDefinition = z.infer<typeof parameterDefinitionSchema>;
 const sensitiveKeyPattern = /(password|passcode|cookie|credential|token|secret|authorization|session)/i;
+const providerEligibilitySchema = z.object({
+  complete: z.literal(true),
+  completionEvidence: z.enum(["component_option_model", "terminal_virtual_list_traversal"]),
+  capturedAt: z.string().datetime(),
+  properties: z.array(z.object({
+    name: z.string().trim().min(1).max(255),
+    providerId: z.string().trim().min(1).max(128),
+  })).min(1).max(500),
+});
 
 export function getCatalogParameterDefinitions(runnerMetadata: Record<string, unknown>): CatalogParameterDefinition[] {
   const raw = runnerMetadata.parameterDefinitions;
   if (!Array.isArray(raw)) return [];
   return raw.map(item => parameterDefinitionSchema.safeParse(item)).filter((result): result is { success: true; data: CatalogParameterDefinition } => result.success).map(result => result.data).filter(definition => !sensitiveKeyPattern.test(definition.key));
+}
+
+export function getCompleteProviderEligiblePropertyNames(runnerMetadata: Record<string, unknown>): string[] | null {
+  const parsed = providerEligibilitySchema.safeParse(runnerMetadata.providerEligibility);
+  if (!parsed.success) return null;
+  const names = parsed.data.properties.map(property => property.name.trim());
+  const uniqueNames = new Set(names.map(name => name.toLocaleLowerCase()));
+  if (uniqueNames.size !== names.length) return null;
+  return names.sort((left, right) => left.localeCompare(right));
+}
+
+export function requiresProviderEligibility(runnerMetadata: Record<string, unknown>) {
+  return runnerMetadata.requiresProviderEligibility === true || Object.hasOwn(runnerMetadata, "providerEligibility");
 }
 
 export function validateCatalogParameterValues(definitions: CatalogParameterDefinition[], values: Record<string, unknown>) {

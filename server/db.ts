@@ -133,14 +133,25 @@ export async function createReportRequest(input: {
   parameters: Record<string, unknown>;
   requestedById: number;
   propertyId?: number;
+  eligiblePropertyNames?: string[];
 }) {
   const db = await requireDb();
   return db.transaction(async tx => {
     const selectedProperties = input.requestType === "generate_property"
       ? await tx.select().from(properties).where(and(eq(properties.id, input.propertyId ?? -1), eq(properties.active, true)))
       : input.requestType === "generate_all_properties"
-        ? await tx.select().from(properties).where(eq(properties.active, true)).orderBy(asc(properties.name))
+        ? await tx.select().from(properties).where(input.eligiblePropertyNames?.length
+          ? and(eq(properties.active, true), inArray(properties.name, input.eligiblePropertyNames))
+          : eq(properties.active, true)).orderBy(asc(properties.name))
         : [];
+
+    if (input.requestType === "generate_all_properties" && input.eligiblePropertyNames?.length) {
+      const selectedNames = new Set(selectedProperties.map(property => property.name.toLocaleLowerCase()));
+      const missingProperties = input.eligiblePropertyNames.filter(name => !selectedNames.has(name.toLocaleLowerCase()));
+      if (missingProperties.length) {
+        throw new Error(`The provider-approved report scope cannot be created because these eligible properties are not active portal records: ${missingProperties.join(", ")}.`);
+      }
+    }
 
     if (input.requestType !== "sync_my_reports" && selectedProperties.length === 0) {
       throw new Error("No active properties are available for this request.");

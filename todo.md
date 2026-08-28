@@ -172,3 +172,4 @@
 - [x] Correct the All Units inspector’s virtual-list scroll-target detection after its first guarded run stopped at 10 visible options without reaching the selector’s terminal position.
 - [x] Add the verified OneSite All Units (Excel) parameter definitions—Excel output, Report Type, Subproperty, and Sort by—to its catalog metadata and confirm the existing Pull Reports form renders them correctly.
 - [x] Map the approved All Units parameter keys to their exact OneSite controls in the local Edge runner and verify settings during future preflight without submitting a report.
+- [x] Enforce report-specific provider eligibility when an all-properties request is created, beginning with the verified ten-property OneSite All Units scope.

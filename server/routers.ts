@@ -30,7 +30,7 @@ import {
 } from "./db";
 import { knownOperationalLimitations } from "./operationalLimitations";
 import { catalogSaveSchema, propertySaveSchema, requestCreateSchema, runnerSourceSchema } from "./validation";
-import { getCatalogParameterDefinitions, validateCatalogParameterValues } from "./reportParameters";
+import { getCatalogParameterDefinitions, getCompleteProviderEligiblePropertyNames, requiresProviderEligibility, validateCatalogParameterValues } from "./reportParameters";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required for this operation." });
@@ -101,6 +101,12 @@ export const appRouter = router({
       if (catalogEntry.exactReportName !== input.requestedReportName || !catalogEntry.availableFormats.includes(input.requestedFormat)) throw new TRPCError({ code: "BAD_REQUEST", message: "The selected report title or format is not approved for this source." });
       const parameterErrors = validateCatalogParameterValues(getCatalogParameterDefinitions(catalogEntry.runnerMetadata), input.parameters);
       if (parameterErrors.length) throw new TRPCError({ code: "BAD_REQUEST", message: parameterErrors.join(" ") });
+      const eligiblePropertyNames = input.requestType === "generate_all_properties"
+        ? getCompleteProviderEligiblePropertyNames(catalogEntry.runnerMetadata)
+        : null;
+      if (input.requestType === "generate_all_properties" && requiresProviderEligibility(catalogEntry.runnerMetadata) && !eligiblePropertyNames) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This report requires a complete, verified provider property scope before it can be queued." });
+      }
       return createReportRequest({
         ...input,
         parameters: {
@@ -112,6 +118,7 @@ export const appRouter = router({
           generationSettings: { reportParameters: input.parameters },
         },
         requestedById: ctx.user.id,
+        eligiblePropertyNames: eligiblePropertyNames ?? undefined,
       });
     }),
   }),
