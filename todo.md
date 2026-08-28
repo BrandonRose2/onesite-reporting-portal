@@ -173,3 +173,6 @@
 - [x] Add the verified OneSite All Units (Excel) parameter definitions—Excel output, Report Type, Subproperty, and Sort by—to its catalog metadata and confirm the existing Pull Reports form renders them correctly.
 - [x] Map the approved All Units parameter keys to their exact OneSite controls in the local Edge runner and verify settings during future preflight without submitting a report.
 - [x] Enforce report-specific provider eligibility when an all-properties request is created, beginning with the verified ten-property OneSite All Units scope.
+- [x] Withdraw the disproven ten-property All Units eligibility metadata and server-side request restriction before any report can be queued.
+- [ ] Rebuild the read-only All Units Edge collector to identify and traverse the actual provider property-list container, using the user’s prior multi-property report evidence as a completeness cross-check.
+- [x] Hide zero-balance rows by default in the manager checklist, provide an explicit reveal control, and preserve the original report and all review-state records unchanged.

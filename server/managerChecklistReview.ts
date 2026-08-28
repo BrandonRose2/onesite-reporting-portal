@@ -21,6 +21,17 @@ const allowedStatuses = new Set<ManagerChecklistItemStatus>(["pending", "confirm
 const validDate = (value: unknown) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : "";
 const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
 
+export function isZeroReportedBalance(item: Pick<ManagerChecklistItem, "reportedValue">) {
+  const reportedValue = item.reportedValue?.trim();
+  if (!reportedValue) return false;
+  const normalized = reportedValue.replace(/[$,\s]/g, "").replace(/^\((.+)\)$/, "-$1");
+  return /^-?\d+(?:\.\d+)?$/.test(normalized) && Number(normalized) === 0;
+}
+
+export function requiresActiveManagerReview(item: ManagerChecklistItem) {
+  return item.requiresVerification && !(item.status === "pending" && isZeroReportedBalance(item));
+}
+
 export function createDefaultManagerChecklistState(): ManagerChecklistState {
   return { version: 2, items: [] };
 }
@@ -65,17 +76,19 @@ export type ManagerChecklistBlocker = { itemId: string; message: string };
 export function managerChecklistBlockers(state: ManagerChecklistState, managerSummary = ""): ManagerChecklistBlocker[] {
   const blockers: ManagerChecklistBlocker[] = [];
   for (const item of state.items) {
+    if (!requiresActiveManagerReview(item)) continue;
     if (item.requiresVerification && item.status === "pending") blockers.push({ itemId: item.id, message: `${item.label}: select Verified or Needs correction.` });
     if (item.status === "follow_up" && !item.correctedValue?.trim()) blockers.push({ itemId: item.id, message: `${item.label}: enter the corrected value.` });
     if ((item.status === "follow_up" || item.status === "escalated") && !item.notes.trim()) blockers.push({ itemId: item.id, message: `${item.label}: add a note for upper management.` });
   }
-  if (state.items.length && !managerSummary.trim()) blockers.push({ itemId: "manager-summary", message: "Add a manager summary before submitting for review." });
+  if (state.items.some(requiresActiveManagerReview) && !managerSummary.trim()) blockers.push({ itemId: "manager-summary", message: "Add a manager summary before submitting for review." });
   return blockers;
 }
 
 export function managerChecklistProgress(state: ManagerChecklistState) {
-  const total = state.items.filter(item => item.requiresVerification).length;
-  const completed = state.items.filter(item => item.requiresVerification && item.status !== "pending").length;
+  const reviewItems = state.items.filter(requiresActiveManagerReview);
+  const total = reviewItems.length;
+  const completed = reviewItems.filter(item => item.status !== "pending").length;
   const confirmed = state.items.filter(item => item.status === "confirmed").length;
   const blockers = managerChecklistBlockers(state);
   return { total, completed, confirmed, percent: total ? Math.round((completed / total) * 100) : 0, missing: blockers.length };
@@ -92,8 +105,9 @@ export function renderManagerChecklistMarkdown(input: {
 }) {
   const progress = managerChecklistProgress(input.state);
   const statusLabel = (status: ManagerChecklistItemStatus) => ({ pending: "Pending", confirmed: "Verified", follow_up: "Needs correction", escalated: "Escalated" })[status];
-  const lines = input.state.items.length
-    ? input.state.items.map(item => `- [${item.status === "confirmed" ? "x" : " "}] **${item.label}**${item.reportedValue ? ` — Reported: ${item.reportedValue}` : ""}${item.correctedValue ? ` · Corrected: ${item.correctedValue}` : ""} · ${statusLabel(item.status)}${item.notes ? `\n  - Management note: ${item.notes}` : ""}${item.targetDate ? `\n  - Target date: ${item.targetDate}` : ""}`).join("\n")
+  const reviewItems = input.state.items.filter(requiresActiveManagerReview);
+  const lines = reviewItems.length
+    ? reviewItems.map(item => `- [${item.status === "confirmed" ? "x" : " "}] **${item.label}**${item.reportedValue ? ` — Reported: ${item.reportedValue}` : ""}${item.correctedValue ? ` · Corrected: ${item.correctedValue}` : ""} · ${statusLabel(item.status)}${item.notes ? `\n  - Management note: ${item.notes}` : ""}${item.targetDate ? `\n  - Target date: ${item.targetDate}` : ""}`).join("\n")
     : "- [ ] Open the report data and create review items for the entries requiring manager validation.";
   return `# ${input.propertyName} — Report Review\n\n**Report:** ${input.reportName}  \n**Request:** #${input.requestId}  \n**Review status:** ${input.status === "submitted" ? "Submitted for approval" : "In progress"}  \n**Progress:** ${progress.completed}/${progress.total} verified (${progress.percent}%) · **Needs attention:** ${progress.missing}${input.submittedAt ? `  \n**Submitted:** ${input.submittedAt.toLocaleString()}` : ""}\n\n## Report line validation\n${lines}\n\n## Manager Summary & Commitments\n${input.managerSummary.trim() || "No summary has been entered yet."}\n\n---\nSaved in OneSite Reporting Hub. Email delivery is not enabled for this review.`;
 }

@@ -31,4 +31,14 @@ describe("manager checklist review state", () => {
     ]);
     expect(managerChecklistBlockers(normalizeManagerChecklistState({ version: 2, items: [{ ...state.items[0], correctedValue: "$200.00", notes: "Ledger corrected" }] }), "Review complete")).toEqual([]);
   });
+
+  it("excludes pending zero-balance report lines from default progress, blockers, and Markdown", () => {
+    const state = normalizeManagerChecklistState({ version: 2, items: [
+      { id: "zero-balance", sectionId: "report_lines", label: "Unit 101 · Zero balance", detail: "Current resident", reportedValue: "$0.00", status: "pending", notes: "", targetDate: "" },
+      { id: "balance-due", sectionId: "report_lines", label: "Unit 102 · Balance due", detail: "Current resident", reportedValue: "$250.00", status: "pending", notes: "", targetDate: "" },
+    ] });
+    expect(managerChecklistProgress(state)).toMatchObject({ total: 1, completed: 0 });
+    expect(managerChecklistBlockers(state, "").map(blocker => blocker.itemId)).toEqual(["balance-due", "manager-summary"]);
+    expect(renderManagerChecklistMarkdown({ propertyName: "Example", reportName: "Delinquency", requestId: 9, state, managerSummary: "Review in progress", status: "in_progress" })).not.toContain("Zero balance");
+  });
 });
