@@ -90,3 +90,9 @@ The Custom Correspondence category opened a report-name grid that contained no v
 ## System category observed
 
 System Reports contains Attachments Review, Elevate Usage, and Background Tasks.
+
+## Count reconciliation
+
+On 2026-08-28, the authorized Microsoft Edge Compliance Manager **Tax Credit** page was reopened read-only to reconcile a prior working-note discrepancy. The visible groups contain 9 Tax Credit Reports, 12 State Reports, and 5 New York Tax Credit Reports, for **26 Tax Credit titles**. No additional titles were visible, and no report link or report form was opened.
+
+The complete deterministic catalog represented by this document therefore contains **138 reports**: 24 Affordable, 37 50059, 26 Tax Credit, 10 Waiting List, 26 Financial Reports, 12 RentCafe, and 3 System. The Financial Reports selector placeholder `Report Type` is excluded. Custom Reports and Custom Correspondence remain absent because no report rows were visible in the authorized context.

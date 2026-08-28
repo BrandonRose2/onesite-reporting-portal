@@ -206,11 +206,11 @@
 - [ ] Preserve the existing 35-property OneSite Select All run and repair only its multi-page file staging so all completed current outputs—not a newly generated subset—are filed.
 - [x] File the ten verified staged current All Units workbooks with original and responsive HTML companion documents, while retaining Request #60001 as in progress until the remaining provider outputs are reconciled.
 - [ ] Discover and configure the source-isolated Yardi reporting connection and catalog-import workflow only after OneSite filing is complete, without reusing OneSite sessions, credentials, settings, or artifacts.
-- [ ] Synchronize, validate, and publish the Yardi report catalog in the existing Yardi Pull Reports section without generating a Yardi report.
-- [ ] Add a source-isolated Yardi sign-in initiation and session-status flow that uses only the authorized Yardi browser context and stores no Yardi credentials, cookies, MFA codes, or session tokens in the portal.
-- [ ] Collect and synchronize the Yardi report catalog after the authorized Yardi session is confirmed, without generating a Yardi report or reusing OneSite source data.
-- [ ] Inspect the recovered runner’s Elevate → Voyager 8 navigation and catalog code, then use that exact source-isolated path for the authorized Edge catalog collection.
-- [ ] Extend the Yardi-only Microsoft Edge helper to recognize the authorized Elevate Voyager 8 host in addition to YardiOne, without accepting any unrelated or OneSite browser tab.
+- [x] Synchronize, validate, and publish the Yardi report catalog in the existing Yardi Pull Reports section without generating a Yardi report.
+- [x] Add a source-isolated Yardi sign-in initiation and session-status flow that uses only the authorized Yardi browser context and stores no Yardi credentials, cookies, MFA codes, or session tokens in the portal.
+- [x] Collect and synchronize the Yardi report catalog after the authorized Yardi session is confirmed, without generating a Yardi report or reusing OneSite source data.
+- [x] Inspect the recovered runner’s Elevate → Voyager 8 navigation and catalog code, then use that exact source-isolated path for the authorized Edge catalog collection.
+- [x] Extend the Yardi-only Microsoft Edge helper to recognize the authorized Elevate Voyager 8 host in addition to YardiOne, without accepting any unrelated or OneSite browser tab.
 - [x] Collect every Yardi Elevate Voyager 8 report title and available metadata from each Reports sidebar category, Affordable through System, without opening report-run forms or generating reports.
 - [x] Define and verify the Yardi-only session, credential, catalog, storage, and runner-token boundaries before implementing its sign-in flow.
 - [x] Implement a Yardi-only portal sign-in initiation and session-status experience with no persisted credentials, browser cookies, MFA codes, or OneSite session reuse.
