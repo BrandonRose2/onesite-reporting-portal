@@ -182,5 +182,12 @@
 - [x] Add a final portal confirmation dialog that summarizes source, report, format, parameters, and scope before authorizing the OneSite handoff.
 - [x] Correct and document the local Mac Edge runner service startup path so it can process only portal-authorized requests while the user’s Edge Reports session is available.
 - [ ] Add a source-isolated one-time setup experience per report that captures provider-supported defaults, stores approved defaults independently for OneSite and Yardi, and reopens later runs prefilled but editable.
+- [x] Save the verified OneSite Rent Roll Detail (Excel) controls and defaults from the read-only live form into the catalog’s one-time setup metadata.
+- [x] Map the verified Rent Roll Detail (Excel) setup keys to their exact OneSite controls in the authorized local Edge runner and verify them during preflight before any Generate action.
+- [ ] Inspect the All Units property selector’s provider Advanced Search path read-only, because its primary dropdown exposes only the visible ten-option slice despite previous multi-property report evidence.
+- [ ] Inspect the All Units Advanced Property Search component’s shadow DOM, hidden controls, and product/property data model read-only before treating its Apply action or any list endpoint as eligible scope evidence.
+- [ ] Inspect the All Units Advanced Property Search Angular component context and non-enumerable rendered state read-only, because its host exposes no shadow DOM, visible property controls, or enumerable model data.
+- [ ] Replace the unnecessary All Units property-list collector gate with provider-native Select All for all-properties requests and exact single-property selection for selected-property requests, verifying OneSite’s visible selected-count confirmation before Generate.
+- [x] Replace “All active properties” with “All Properties” throughout the Pull Reports property-scope controls and confirmation copy.
 - [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
 - [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

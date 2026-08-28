@@ -76,6 +76,23 @@ export default function ReportRequest({ source = "OneSite" }: { source?: "OneSit
   const providerEligibility = useMemo(() => selectedReport ? getProviderEligibility(selectedReport.runnerMetadata) : null, [selectedReport]);
 
   useEffect(() => {
+    const replaceLegacyScopeCopy = () => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const nodes: Text[] = [];
+      let node = walker.nextNode();
+      while (node) {
+        if (node.textContent?.toLowerCase().includes("all active properties")) nodes.push(node as Text);
+        node = walker.nextNode();
+      }
+      for (const textNode of nodes) textNode.textContent = textNode.textContent?.replace(/all active properties/gi, "All Properties") ?? "";
+    };
+    replaceLegacyScopeCopy();
+    const observer = new MutationObserver(replaceLegacyScopeCopy);
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!selectedReport) { setParameterValues({}); setAdvancedParametersText("{}"); return; }
     const catalogDefaults = defaultsFor(getParameterDefinitions(selectedReport.runnerMetadata));
     const saved = savedDefaults.data;
