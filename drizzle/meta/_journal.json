@@ -71,6 +71,13 @@
       "when": 1787884276712,
       "tag": "0009_nervous_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1787884671471,
+      "tag": "0010_shiny_scarecrow",
+      "breakpoints": true
     }
   ]
 }

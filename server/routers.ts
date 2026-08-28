@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   createReportRequest,
+  archiveReportHistoryEntry,
   generateManagerChecklist,
   getAccessiblePropertyHistory,
   getAccessibleRequestDetails,
@@ -17,6 +18,7 @@ import {
   getRequestDetails,
   getManagerContactMatch,
   getRunnerSessionStatus,
+  updateReportHistoryNote,
   listCatalog,
   listAccessibleProperties,
   listAccessibleReportLibraryRequests,
@@ -105,6 +107,8 @@ export const appRouter = router({
       if (parameterErrors.length) throw new TRPCError({ code: "BAD_REQUEST", message: parameterErrors.join(" ") });
       return upsertReportUserDefaults({ source: input.source, reportCatalogId: input.catalogId, userId: ctx.user.id, requestedFormat: input.requestedFormat, parameterValues: input.parameters });
     }),
+    updateHistoryNote: adminProcedure.input(z.object({ requestId: z.number().int().positive(), historyNote: z.string().max(4000) })).mutation(({ ctx, input }) => updateReportHistoryNote({ ...input, actorId: ctx.user.id })),
+    archiveHistoryEntry: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => archiveReportHistoryEntry({ ...input, actorId: ctx.user.id })),
     create: adminProcedure.input(requestCreateSchema).mutation(async ({ ctx, input }) => {
       if (input.requestType === "sync_my_reports") return createReportRequest({ ...input, requestedById: ctx.user.id });
       const catalogEntry = await getCatalogEntryById(input.catalogId!);

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, isNotNull, like, notInArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, like, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -203,7 +203,7 @@ export async function upsertReportUserDefaults(input: { source: RunnerSource; re
 
 export async function listRecentRequests(limit = 25, source?: RunnerSource) {
   const db = await requireDb();
-  return db.select().from(reportRequests).where(source ? eq(reportRequests.source, source) : undefined).orderBy(desc(reportRequests.createdAt)).limit(limit);
+  return db.select().from(reportRequests).where(and(isNull(reportRequests.archivedAt), source ? eq(reportRequests.source, source) : undefined)).orderBy(desc(reportRequests.createdAt)).limit(limit);
 }
 
 export async function listReportLibraryRequests(limit = 200, source?: RunnerSource) {
@@ -242,9 +242,33 @@ export async function getPropertyHistory(propertyId: number) {
   if (!property) return undefined;
   const requests = await db.select({ request: reportRequests, propertyName: requestProperties.propertyNameSnapshot })
     .from(requestProperties).innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
-    .where(eq(requestProperties.propertyId, propertyId)).orderBy(desc(reportRequests.createdAt));
+    .where(and(eq(requestProperties.propertyId, propertyId), isNull(reportRequests.archivedAt))).orderBy(desc(reportRequests.createdAt));
   const documents = await db.select().from(reportDocuments).where(eq(reportDocuments.propertyId, propertyId)).orderBy(desc(reportDocuments.createdAt));
   return { property, requests, documents };
+}
+
+export async function updateReportHistoryNote(input: { requestId: number; historyNote: string; actorId: number }) {
+  const db = await requireDb();
+  const historyNote = input.historyNote.trim().slice(0, 4000);
+  const update = await db.update(reportRequests).set({ historyNote: historyNote || null }).where(and(eq(reportRequests.id, input.requestId), isNull(reportRequests.archivedAt)));
+  if (update[0].affectedRows !== 1) throw new Error("This active report-history entry is unavailable for editing.");
+  await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "history_note_updated", detail: historyNote ? "Report-history note updated." : "Report-history note cleared." });
+  return getRequestDetails(input.requestId);
+}
+
+export function canArchiveReportHistoryEntry(status: RequestStatus) {
+  return status !== "claimed" && status !== "in_progress";
+}
+
+export async function archiveReportHistoryEntry(input: { requestId: number; actorId: number }) {
+  const db = await requireDb();
+  const current = (await db.select({ status: reportRequests.status }).from(reportRequests).where(and(eq(reportRequests.id, input.requestId), isNull(reportRequests.archivedAt))).limit(1))[0];
+  if (!current) throw new Error("This active report-history entry is unavailable for removal.");
+  if (!canArchiveReportHistoryEntry(current.status as RequestStatus)) throw new Error("A report cannot be removed from history while the runner is working on it.");
+  const archivedAt = new Date();
+  await db.update(reportRequests).set({ archivedById: input.actorId, archivedAt }).where(eq(reportRequests.id, input.requestId));
+  await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "history_archived", detail: "History entry removed from active views. Original provider files remain preserved for audit." });
+  return { requestId: input.requestId, archivedAt };
 }
 
 export async function upsertManagerContacts(contacts: ManagerContactInput[]) {
@@ -340,7 +364,7 @@ export async function listManagerChecklistAssignments(actor: PortalActor) {
   }).from(requestProperties)
     .innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
     .leftJoin(managerChecklistReviews, and(eq(managerChecklistReviews.requestId, requestProperties.requestId), eq(managerChecklistReviews.propertyId, requestProperties.propertyId)))
-    .where(and(inArray(reportRequests.status, ["completed", "completed_with_warnings"]), propertyIds === null ? undefined : inArray(requestProperties.propertyId, propertyIds)))
+    .where(and(inArray(reportRequests.status, ["completed", "completed_with_warnings"]), isNull(reportRequests.archivedAt), propertyIds === null ? undefined : inArray(requestProperties.propertyId, propertyIds)))
     .orderBy(desc(reportRequests.completedAt), asc(requestProperties.propertyNameSnapshot));
 }
 
@@ -408,7 +432,7 @@ export async function listAccessibleReportLibraryRequests(actor: PortalActor, li
   const db = await requireDb();
   const rows = await db.select({ request: reportRequests, propertyName: requestProperties.propertyNameSnapshot })
     .from(requestProperties).innerJoin(reportRequests, eq(requestProperties.requestId, reportRequests.id))
-    .where(and(inArray(requestProperties.propertyId, allowedIds), source ? eq(reportRequests.source, source) : undefined))
+    .where(and(inArray(requestProperties.propertyId, allowedIds), isNull(reportRequests.archivedAt), source ? eq(reportRequests.source, source) : undefined))
     .orderBy(desc(reportRequests.createdAt), asc(requestProperties.propertyNameSnapshot));
   const byRequest = new Map<number, { request: typeof reportRequests.$inferSelect; propertyNames: string[] }>();
   for (const row of rows) {

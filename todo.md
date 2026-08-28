@@ -182,5 +182,5 @@
 - [x] Add a final portal confirmation dialog that summarizes source, report, format, parameters, and scope before authorizing the OneSite handoff.
 - [x] Correct and document the local Mac Edge runner service startup path so it can process only portal-authorized requests while the user’s Edge Reports session is available.
 - [ ] Add a source-isolated one-time setup experience per report that captures provider-supported defaults, stores approved defaults independently for OneSite and Yardi, and reopens later runs prefilled but editable.
-- [ ] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
-- [ ] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.
+- [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
+- [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.
