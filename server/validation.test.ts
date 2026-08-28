@@ -5,6 +5,7 @@ describe("portal input validation", () => {
   it("rejects property records without runner-safe identifiers", () => {
     expect(propertySaveSchema.safeParse({ externalId: "", name: "Northpoint", active: true }).success).toBe(false);
     expect(propertySaveSchema.safeParse({ externalId: "prop-101", name: "Northpoint", managerEmail: "not-an-email", active: true }).success).toBe(false);
+    expect(propertySaveSchema.parse({ externalId: "yard-001", name: "Yardi-only Home", source: "yardi", active: true }).source).toBe("yardi");
   });
 
   it("requires exact catalog metadata and a supported format", () => {

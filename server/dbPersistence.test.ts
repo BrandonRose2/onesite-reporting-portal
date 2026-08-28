@@ -8,7 +8,7 @@ function withoutUndefined<T extends Record<string, unknown>>(values: T) {
 
 function createPersistenceDouble() {
   const property = {
-    id: 9, externalId: "prop-09", name: "Northpoint", market: "Austin", managerName: "Avery", managerEmail: "avery@example.com", active: true,
+    id: 9, source: "onesite" as const, externalId: "prop-09", name: "Northpoint", market: "Austin", managerName: "Avery", managerEmail: "avery@example.com", active: true,
     createdAt: new Date("2026-08-01T00:00:00Z"), updatedAt: new Date("2026-08-01T00:00:00Z"),
   };
   const catalog = {

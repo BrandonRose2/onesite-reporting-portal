@@ -219,5 +219,9 @@
 - [x] Make property directory queries source-scoped so Yardi request forms and filed-report workflows cannot display or select OneSite property records.
 - [x] Replace “All active properties” with “All Properties” throughout the Pull Reports property-scope controls and confirmation copy.
 - [x] Preserve unverified Yardi report formats as unconfigured during catalog synchronization, rather than defaulting any uninspected report to Excel.
+- [ ] Implement and validate a request-scoped, idempotent OneSite #60001 reconciliation and filing path that stages only provider-completed current-batch outputs, preserves the existing ten filed pairs, and never invokes report generation.
+- [x] Enforce a hard source-portfolio invariant: a property record, report request, document, and manager-review context must belong to either Yardi or OneSite and must never be shared, copied, or selectable across providers.
+- [x] Collect and synchronize the Yardi property directory only from the Notion Company Contacts 07.23.2026 template before enabling a Yardi property-scoped report setup; do not reuse OneSite property records.
+- [ ] Design and implement a combined collaborative report layer that aggregates independently filed OneSite and Yardi outputs only after both source-specific property directories are available, retaining provider labels, original-file lineage, and separate property identities.
 - [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
 - [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

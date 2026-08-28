@@ -83,13 +83,36 @@ export async function getPropertyByName(name: string, source?: RunnerSource) {
   return result[0];
 }
 
+type SourcePropertyName = { id?: number; source: RunnerSource; name: string };
+
+export function findCrossSourcePropertyNameConflict(source: RunnerSource, name: string, candidates: SourcePropertyName[], excludeId?: number) {
+  const normalized = normalizePropertyName(name);
+  if (!normalized) return null;
+  return candidates.find(candidate => candidate.id !== excludeId && candidate.source !== source && normalizePropertyName(candidate.name) === normalized) ?? null;
+}
+
+async function assertNoCrossSourcePropertyNameConflict(source: RunnerSource, name: string, excludeId?: number) {
+  const db = await requireDb();
+  const otherSource: RunnerSource = source === "onesite" ? "yardi" : "onesite";
+  const candidates = await db.select({ id: properties.id, source: properties.source, name: properties.name }).from(properties).where(eq(properties.source, otherSource)).limit(500);
+  const conflict = findCrossSourcePropertyNameConflict(source, name, candidates, excludeId);
+  if (conflict) throw new Error(`Property “${name}” is already assigned to the ${conflict.source === "onesite" ? "OneSite" : "Yardi"} portfolio and cannot be shared across providers.`);
+}
+
 export async function upsertProperty(input: { id?: number; source?: RunnerSource; externalId: string; name: string; market?: string | null; managerName?: string | null; managerEmail?: string | null; active: boolean }) {
   const db = await requireDb();
   if (input.id) {
-    await db.update(properties).set({ ...input, id: undefined }).where(eq(properties.id, input.id));
+    const existing = await getPropertyById(input.id);
+    if (!existing) throw new Error("Property was not found.");
+    const source = input.source ?? existing.source;
+    if (input.source && input.source !== existing.source) throw new Error("A property cannot be moved between the OneSite and Yardi portfolios.");
+    await assertNoCrossSourcePropertyNameConflict(source, input.name, input.id);
+    await db.update(properties).set({ ...input, source, id: undefined }).where(eq(properties.id, input.id));
     return getPropertyById(input.id);
   }
-  const [result] = await db.insert(properties).values({ ...input, source: input.source ?? "onesite" });
+  const source = input.source ?? "onesite";
+  await assertNoCrossSourcePropertyNameConflict(source, input.name);
+  const [result] = await db.insert(properties).values({ ...input, source });
   return getPropertyById(result.insertId);
 }
 
@@ -520,7 +543,59 @@ export async function completeRunnerRequest(input: { requestId: number; status: 
   await db.insert(requestEvents).values({ requestId: input.requestId, eventType: input.status, detail: input.errorMessage ?? input.warningSummary ?? "Runner completed request." });
 }
 
-export async function createReportDocument(input: { requestId: number; source: RunnerSource; propertyId?: number; propertyName: string; originalFilename: string; mimeType: string; documentKind: "source_report" | "property_workbook" | "manager_checklist"; storageKey: string; storageUrl: string; sizeBytes: number }) {
+export type RunnerReconciliation = {
+  request: {
+    id: number;
+    requestedReportName: string;
+    requestedFormat: "excel" | "pdf" | "csv";
+    status: RequestStatus;
+    providerSelectedPropertyCount: number | null;
+  };
+  properties: Array<{ id: number; name: string }>;
+  documents: Array<{ propertyName: string; documentKind: "source_report" | "property_workbook" | "workbook_html" | "manager_checklist"; originalFilename: string }>;
+};
+
+function positiveInteger(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+export function getProviderSelectedPropertyCount(parameters: Record<string, unknown>) {
+  const direct = positiveInteger(parameters.providerSelectedPropertyCount);
+  if (direct) return direct;
+  const generationSettings = parameters.generationSettings;
+  if (!generationSettings || typeof generationSettings !== "object") return null;
+  const reportParameters = (generationSettings as Record<string, unknown>).reportParameters;
+  return reportParameters && typeof reportParameters === "object"
+    ? positiveInteger((reportParameters as Record<string, unknown>).providerSelectedPropertyCount)
+    : null;
+}
+
+export async function getRunnerReconciliation(requestId: number, source: RunnerSource): Promise<RunnerReconciliation | null> {
+  const db = await requireDb();
+  const request = (await db.select({ id: reportRequests.id, requestedReportName: reportRequests.requestedReportName, requestedFormat: reportRequests.requestedFormat, status: reportRequests.status, parameters: reportRequests.parameters }).from(reportRequests).where(and(eq(reportRequests.id, requestId), eq(reportRequests.source, source))).limit(1))[0];
+  if (!request) return null;
+  const reportParameters = request.parameters && typeof request.parameters === "object" ? request.parameters as Record<string, unknown> : {};
+  const selectedCount = getProviderSelectedPropertyCount(reportParameters);
+  const [requestPropertyRows, documentRows] = await Promise.all([
+    db.select({ id: requestProperties.propertyId, name: requestProperties.propertyNameSnapshot }).from(requestProperties).where(eq(requestProperties.requestId, requestId)).orderBy(asc(requestProperties.propertyNameSnapshot)),
+    db.select({ propertyName: reportDocuments.propertyName, documentKind: reportDocuments.documentKind, originalFilename: reportDocuments.originalFilename }).from(reportDocuments).where(and(eq(reportDocuments.requestId, requestId), eq(reportDocuments.source, source))).orderBy(asc(reportDocuments.propertyName), asc(reportDocuments.originalFilename)),
+  ]);
+  return {
+    request: { id: request.id, requestedReportName: request.requestedReportName, requestedFormat: request.requestedFormat, status: request.status as RequestStatus, providerSelectedPropertyCount: selectedCount },
+    properties: requestPropertyRows,
+    documents: documentRows,
+  };
+}
+
+export async function getExistingRunnerDocument(input: { requestId: number; source: RunnerSource; propertyId?: number; propertyName: string; originalFilename: string; documentKind: "source_report" | "property_workbook" | "workbook_html" | "manager_checklist" }) {
+  const db = await requireDb();
+  const common = [eq(reportDocuments.requestId, input.requestId), eq(reportDocuments.source, input.source), eq(reportDocuments.originalFilename, input.originalFilename), eq(reportDocuments.documentKind, input.documentKind)];
+  const propertyCondition = input.propertyId ? eq(reportDocuments.propertyId, input.propertyId) : eq(reportDocuments.propertyName, input.propertyName);
+  const existing = await db.select({ key: reportDocuments.storageKey, url: reportDocuments.storageUrl }).from(reportDocuments).where(and(...common, propertyCondition)).limit(1);
+  return existing[0] ?? null;
+}
+
+export async function createReportDocument(input: { requestId: number; source: RunnerSource; propertyId?: number; propertyName: string; originalFilename: string; mimeType: string; documentKind: "source_report" | "property_workbook" | "workbook_html" | "manager_checklist"; storageKey: string; storageUrl: string; sizeBytes: number }) {
   const db = await requireDb();
   await db.insert(reportDocuments).values(input);
   await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "document_filed", detail: `${input.originalFilename} filed for ${input.propertyName}.` });
@@ -587,6 +662,10 @@ export async function syncCatalogFromRunner(source: RunnerSource, reports: Array
 
 export async function syncPropertiesFromRunner(source: RunnerSource, incoming: Array<{ externalId: string; name: string; market?: string; active?: boolean }>) {
   const db = await requireDb();
+  const otherSource: RunnerSource = source === "onesite" ? "yardi" : "onesite";
+  const otherSourceProperties = await db.select({ id: properties.id, source: properties.source, name: properties.name }).from(properties).where(eq(properties.source, otherSource)).limit(500);
+  const conflicts = incoming.map(property => findCrossSourcePropertyNameConflict(source, property.name, otherSourceProperties)).filter((property): property is SourcePropertyName => Boolean(property));
+  if (conflicts.length) throw new Error(`Property synchronization would share provider portfolios: ${Array.from(new Set(conflicts.map(property => property.name))).join(", ")}.`);
   const incomingExternalIds = incoming.map(property => property.externalId.trim().slice(0, 128)).filter(Boolean);
   for (const property of incoming) {
     const externalId = property.externalId.trim().slice(0, 128);

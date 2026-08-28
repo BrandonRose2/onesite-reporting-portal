@@ -5,7 +5,9 @@ import {
   claimRunnerRequest,
   completeRunnerRequest,
   createReportDocument,
+  getExistingRunnerDocument,
   getPropertyByName,
+  getRunnerReconciliation,
   recordRunnerProgress,
   requestBelongsToSource,
   setLiveEdgeStatus,
@@ -189,6 +191,19 @@ function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
     } catch (error) { next(error); }
   });
 
+  app.get(`${base}/requests/:requestId/reconciliation`, auth, async (req, res, next) => {
+    try {
+      const requestId = Number(req.params.requestId);
+      if (!await requireOwnedRequest(requestId, definition.source, res)) return;
+      const reconciliation = await getRunnerReconciliation(requestId, definition.source);
+      if (!reconciliation) {
+        res.status(404).json({ error: "Request was not found for this runner source." });
+        return;
+      }
+      res.json({ source: definition.source, ...reconciliation });
+    } catch (error) { next(error); }
+  });
+
   app.post(`${base}/requests/:requestId/documents`, auth, async (req, res, next) => {
     try {
       const requestId = Number(req.params.requestId);
@@ -209,6 +224,11 @@ function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
       }
       const property = await getPropertyByName(propertyName, definition.source);
       const filename = safeFilename(originalFilename);
+      const existing = await getExistingRunnerDocument({ requestId, source: definition.source, propertyId: property?.id, propertyName: propertyName.slice(0, 255), originalFilename: filename, documentKind });
+      if (existing) {
+        res.json({ success: true, source: definition.source, existing: true, key: existing.key, url: existing.url });
+        return;
+      }
       const propertyFolder = safeFolderName(property?.name ?? propertyName);
       const filingDate = new Date().toISOString().slice(0, 10);
       const storageKey = `${definition.storageRoot}/${propertyFolder}/${filingDate}/${requestId}-${nanoid(10)}-${filename}`;

@@ -7,6 +7,7 @@ export const metadataSchema = z.record(z.string(), z.unknown());
 
 export const propertySaveSchema = z.object({
   id: z.number().int().positive().optional(),
+  source: runnerSourceSchema.default("onesite"),
   externalId: z.string().trim().min(1).max(128),
   name: z.string().trim().min(1).max(255),
   market: z.string().trim().max(128).nullable().optional(),
