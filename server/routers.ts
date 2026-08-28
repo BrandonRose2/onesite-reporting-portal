@@ -36,6 +36,7 @@ import { knownOperationalLimitations } from "./operationalLimitations";
 import { catalogSaveSchema, propertySaveSchema, reportUserDefaultsSaveSchema, requestCreateSchema, runnerSourceSchema } from "./validation";
 import { getCatalogParameterDefinitions, getCompleteProviderEligiblePropertyNames, requiresProviderEligibility, validateCatalogParameterValues } from "./reportParameters";
 import { afterHoursWorkMessage, isOutsideWorkHours } from "./workHours";
+import { fileOneSite60001BrowserWorkbook, getOneSite60001BrowserUploadPlan } from "./browserBatchFiling";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required for this operation." });
@@ -155,6 +156,14 @@ export const appRouter = router({
         runners,
         limitations: knownOperationalLimitations,
       };
+    }),
+  }),
+
+  batchFiling: router({
+    oneSite60001Plan: adminProcedure.query(() => getOneSite60001BrowserUploadPlan()),
+    uploadOneSite60001Workbook: adminProcedure.input(z.object({ propertyName: z.string().trim().min(1).max(255), originalFilename: z.string().trim().min(1).max(180), dataBase64: z.string().min(4).max(34 * 1024 * 1024) })).mutation(async ({ input }) => {
+      if (isOutsideWorkHours()) throw new TRPCError({ code: "FORBIDDEN", message: afterHoursWorkMessage });
+      return fileOneSite60001BrowserWorkbook(input);
     }),
   }),
 

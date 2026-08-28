@@ -601,6 +601,20 @@ export async function createReportDocument(input: { requestId: number; source: R
   await db.insert(requestEvents).values({ requestId: input.requestId, eventType: "document_filed", detail: `${input.originalFilename} filed for ${input.propertyName}.` });
 }
 
+export async function createReportDocumentPair(input: { requestId: number; source: RunnerSource; propertyId: number; propertyName: string; original: { originalFilename: string; mimeType: string; storageKey: string; storageUrl: string; sizeBytes: number }; html: { originalFilename: string; mimeType: string; storageKey: string; storageUrl: string; sizeBytes: number } }) {
+  const db = await requireDb();
+  await db.transaction(async transaction => {
+    await transaction.insert(reportDocuments).values([
+      { requestId: input.requestId, source: input.source, propertyId: input.propertyId, propertyName: input.propertyName, documentKind: "source_report", ...input.original },
+      { requestId: input.requestId, source: input.source, propertyId: input.propertyId, propertyName: input.propertyName, documentKind: "workbook_html", ...input.html },
+    ]);
+    await transaction.insert(requestEvents).values([
+      { requestId: input.requestId, eventType: "document_filed", detail: `${input.original.originalFilename} filed for ${input.propertyName}.` },
+      { requestId: input.requestId, eventType: "document_filed", detail: `${input.html.originalFilename} filed for ${input.propertyName}.` },
+    ]);
+  });
+}
+
 export async function getOperationalConfig(configKey: string) {
   const db = await requireDb();
   const rows = await db.select().from(operationalConfig).where(eq(operationalConfig.configKey, configKey)).limit(1);
