@@ -150,8 +150,8 @@
 - [x] Show only Net Delinquency Amount, Current, resident name, 30/60/90 aging, permitted contact details, and move-in/move-out dates in manager delinquency previews; hide Total Prepaid, Net Balance, Prorate Credit, and all later columns.
 - [x] Create a reusable source-agnostic reporting workflow skill covering secure runner boundaries, catalog collection, parameterized reporting, filing, HTML summaries, manager review, approval, and later confirmation-gated email delivery for Yardi reuse.
 - [x] Document the future email response sequence: interactive HTML checklist link, auto-saved manager edits, reply-to-sender delivery, and user-editable CC recipients, all behind explicit send approval.
-- [ ] Push the current portal and recovered Edge-runner source updates to the user’s GitHub repositories while deferring Vercel or Netlify configuration until a hosting choice is provided.
-- [ ] Publish the validated manager, Pull Reports, and Boca Ciega property-history updates, then preserve the reusable Yardi-ready reporting workflow skill before the user leaves.
+- [x] Push the current portal and recovered Edge-runner source updates to the user’s GitHub repositories while deferring Vercel or Netlify configuration until a hosting choice is provided.
+- [x] Publish the validated manager, Pull Reports, and Boca Ciega property-history updates, then preserve the reusable Yardi-ready reporting workflow skill before the user leaves.
 - [x] Add a Show non-zero balances only toggle to completed delinquency report previews, defaulting to the delinquency-focused view while retaining access to all source rows.
 - [x] Use a light-purple visual treatment for editable Pull Reports controls and retain neutral styling for read-only or unavailable controls.
 - [x] Apply clean, readable viewer transformations to every workbook sheet, not only Sheet1, while preserving each sheet’s actual source data.
@@ -162,8 +162,13 @@
 - [x] Simplify Pull Reports Section 2 report-picker choices so each result displays only its report title, without catalog metadata or secondary descriptive lines.
 - [x] Fix the Boca Ciega Start verification action so the manager checklist reliably opens its interactive report review instead of remaining on a loading preview.
 - [x] Refine the in-portal Excel preview to hide redundant report header and parameter rows, default to the management worksheet, and de-emphasize supporting sheet tabs while preserving the original workbook unchanged.
-- [ ] Immediately verify and publish the repaired Boca Ciega Start Verification launch, title-only Pull Reports choices, and searchable/sortable Boca Ciega property report history.
-- [ ] Remove broken legacy static checklist document links from the manager path and replace them with authenticated portal report and original-file routes.
+- [x] Immediately verify and publish the repaired Boca Ciega Start Verification launch, title-only Pull Reports choices, and searchable/sortable Boca Ciega property report history.
+- [x] Remove broken legacy static checklist document links from the manager path and replace them with authenticated portal report and original-file routes.
 - [x] Turn each Properties tab detail page into a searchable, sortable history of pulled reports with direct HTML view, original download, and manager-review actions.
 - [ ] After checklist workflow verification, prepare an all-properties Delinquent and Prepaid (Excel) request for explicit settings approval, then file each completed property artifact with separate HTML and original document links.
 - [ ] After the all-properties delinquency run is reviewed, prepare Rent Roll Detail (Excel) for all properties and then All Units, with separate explicit settings approval before each provider run.
+- [x] Reconcile the All Units provider selector’s complete eligible-property list with the 38-property portal directory before any all-properties generation.
+- [x] Enhance the read-only All Units Edge inspector to collect the virtualized provider property selector completely, retain canonical identifiers where available, and fail closed when completeness cannot be proven.
+- [x] Correct the All Units inspector’s virtual-list scroll-target detection after its first guarded run stopped at 10 visible options without reaching the selector’s terminal position.
+- [x] Add the verified OneSite All Units (Excel) parameter definitions—Excel output, Report Type, Subproperty, and Sort by—to its catalog metadata and confirm the existing Pull Reports form renders them correctly.
+- [x] Map the approved All Units parameter keys to their exact OneSite controls in the local Edge runner and verify settings during future preflight without submitting a report.
