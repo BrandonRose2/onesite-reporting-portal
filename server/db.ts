@@ -63,9 +63,12 @@ export async function getUserByOpenId(openId: string) {
   return result[0];
 }
 
-export async function listProperties(includeInactive = true) {
+export async function listProperties(includeInactive = true, source?: RunnerSource) {
   const db = await requireDb();
-  return db.select().from(properties).where(includeInactive ? undefined : eq(properties.active, true)).orderBy(asc(properties.name));
+  const condition = source
+    ? (includeInactive ? eq(properties.source, source) : and(eq(properties.source, source), eq(properties.active, true)))
+    : (includeInactive ? undefined : eq(properties.active, true));
+  return db.select().from(properties).where(condition).orderBy(asc(properties.name));
 }
 
 export async function getPropertyById(id: number) {
@@ -74,19 +77,19 @@ export async function getPropertyById(id: number) {
   return result[0];
 }
 
-export async function getPropertyByName(name: string) {
+export async function getPropertyByName(name: string, source?: RunnerSource) {
   const db = await requireDb();
-  const result = await db.select().from(properties).where(eq(properties.name, name)).limit(1);
+  const result = await db.select().from(properties).where(source ? and(eq(properties.name, name), eq(properties.source, source)) : eq(properties.name, name)).limit(1);
   return result[0];
 }
 
-export async function upsertProperty(input: { id?: number; externalId: string; name: string; market?: string | null; managerName?: string | null; managerEmail?: string | null; active: boolean }) {
+export async function upsertProperty(input: { id?: number; source?: RunnerSource; externalId: string; name: string; market?: string | null; managerName?: string | null; managerEmail?: string | null; active: boolean }) {
   const db = await requireDb();
   if (input.id) {
     await db.update(properties).set({ ...input, id: undefined }).where(eq(properties.id, input.id));
     return getPropertyById(input.id);
   }
-  const [result] = await db.insert(properties).values(input);
+  const [result] = await db.insert(properties).values({ ...input, source: input.source ?? "onesite" });
   return getPropertyById(result.insertId);
 }
 
@@ -140,11 +143,11 @@ export async function createReportRequest(input: {
   const db = await requireDb();
   return db.transaction(async tx => {
     const selectedProperties = input.requestType === "generate_property"
-      ? await tx.select().from(properties).where(and(eq(properties.id, input.propertyId ?? -1), eq(properties.active, true)))
+      ? await tx.select().from(properties).where(and(eq(properties.id, input.propertyId ?? -1), eq(properties.source, input.source), eq(properties.active, true)))
       : input.requestType === "generate_all_properties"
         ? await tx.select().from(properties).where(input.eligiblePropertyNames?.length
-          ? and(eq(properties.active, true), inArray(properties.name, input.eligiblePropertyNames))
-          : eq(properties.active, true)).orderBy(asc(properties.name))
+          ? and(eq(properties.source, input.source), eq(properties.active, true), inArray(properties.name, input.eligiblePropertyNames))
+          : and(eq(properties.source, input.source), eq(properties.active, true))).orderBy(asc(properties.name))
         : [];
 
     if (input.requestType === "generate_all_properties" && input.eligiblePropertyNames?.length) {
@@ -411,12 +414,12 @@ export async function submitManagerChecklistReview(actor: PortalActor, input: { 
   return getManagerChecklistReview(actor, input);
 }
 
-export async function listAccessibleProperties(actor: PortalActor) {
+export async function listAccessibleProperties(actor: PortalActor, source?: RunnerSource) {
   const allowedIds = await accessiblePropertyIdsForActor(actor);
-  if (allowedIds === null) return listProperties(false);
+  if (allowedIds === null) return listProperties(false, source);
   if (!allowedIds.length) return [];
   const db = await requireDb();
-  return db.select().from(properties).where(and(eq(properties.active, true), inArray(properties.id, allowedIds))).orderBy(asc(properties.name));
+  return db.select().from(properties).where(source ? and(eq(properties.source, source), eq(properties.active, true), inArray(properties.id, allowedIds)) : and(eq(properties.active, true), inArray(properties.id, allowedIds))).orderBy(asc(properties.name));
 }
 
 export async function getAccessiblePropertyHistory(actor: PortalActor, propertyId: number) {
@@ -585,6 +588,7 @@ export async function syncPropertiesFromRunner(source: RunnerSource, incoming: A
     const name = property.name.trim().slice(0, 255);
     if (!externalId || !name) continue;
     await db.insert(properties).values({
+      source,
       externalId,
       name,
       market: property.market?.trim().slice(0, 128) || null,
@@ -596,8 +600,8 @@ export async function syncPropertiesFromRunner(source: RunnerSource, incoming: A
       updatedAt: new Date(),
     } });
   }
-  if (source === "onesite" && incomingExternalIds.length) {
-    await db.update(properties).set({ active: false, updatedAt: new Date() }).where(and(like(properties.externalId, "onesite:%"), notInArray(properties.externalId, incomingExternalIds)));
+  if (incomingExternalIds.length) {
+    await db.update(properties).set({ active: false, updatedAt: new Date() }).where(and(eq(properties.source, source), notInArray(properties.externalId, incomingExternalIds)));
   }
   await setOperationalConfig(`property_sync:${source}`, JSON.stringify({ source, count: incoming.length, updatedAt: new Date().toISOString() }));
 }

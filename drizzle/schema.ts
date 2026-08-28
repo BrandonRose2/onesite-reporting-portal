@@ -14,6 +14,7 @@ export const users = mysqlTable("users", {
 
 export const properties = mysqlTable("properties", {
   id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["onesite", "yardi"]).notNull().default("onesite"),
   externalId: varchar("externalId", { length: 128 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   market: varchar("market", { length: 128 }),
@@ -22,7 +23,7 @@ export const properties = mysqlTable("properties", {
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => [uniqueIndex("properties_external_id_unique").on(table.externalId), index("properties_active_name_idx").on(table.active, table.name)]);
+}, table => [uniqueIndex("properties_source_external_id_unique").on(table.source, table.externalId), index("properties_source_active_name_idx").on(table.source, table.active, table.name)]);
 
 export const reportCatalog = mysqlTable("reportCatalog", {
   id: int("id").autoincrement().primaryKey(),

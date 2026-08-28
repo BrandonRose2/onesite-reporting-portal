@@ -187,7 +187,33 @@
 - [ ] Inspect the All Units property selector’s provider Advanced Search path read-only, because its primary dropdown exposes only the visible ten-option slice despite previous multi-property report evidence.
 - [ ] Inspect the All Units Advanced Property Search component’s shadow DOM, hidden controls, and product/property data model read-only before treating its Apply action or any list endpoint as eligible scope evidence.
 - [ ] Inspect the All Units Advanced Property Search Angular component context and non-enumerable rendered state read-only, because its host exposes no shadow DOM, visible property controls, or enumerable model data.
-- [ ] Replace the unnecessary All Units property-list collector gate with provider-native Select All for all-properties requests and exact single-property selection for selected-property requests, verifying OneSite’s visible selected-count confirmation before Generate.
+- [x] Replace the unnecessary All Units property-list collector gate with provider-native Select All for all-properties requests and exact single-property selection for selected-property requests, verifying OneSite’s visible selected-count confirmation before Generate.
+- [x] Correct the OneSite Select All selected-count parser after its read-only preflight observed 35 selected properties but failed to reject the expected 38-property scope mismatch.
+- [x] Reconcile the three-property difference between OneSite Select All’s 35-property scope and the 38 active OneSite portal records before authorizing any all-properties generation.
+- [x] Treat OneSite’s native Select All confirmation as the all-properties execution scope for a report, record its actual selected count, and surface any portal-directory variance as a non-blocking filing/reconciliation warning.
+- [x] Create and authorize the explicitly approved OneSite All Units (Excel) request using OneSite Select All, its 35-property confirmation, Details + Summary, all subproperties, Floorplan sort, Excel, and no provider delivery options.
+- [x] Verify the authorized All Units request stores its exact approved settings in the runner-consumed payload shape before the local Edge runner can claim it.
+- [ ] Correct the read-only All Units completed-batch inspector to traverse the current My Reports pages directly instead of reopening the Reports catalog.
+- [ ] Correct the All Units My Reports batch filter to recognize the provider’s actual grid-cell layout after its direct current-page scan returned no rows despite visible completed reports.
+- [ ] Add read-only My Reports first-page navigation and current-run timestamp filtering so completed All Units discovery excludes historical 08/17 and 08/20 workbook rows before any download.
+- [ ] Diagnose the actual My Reports pagination controls and visible page state after the attempted first-page reset still scanned historical All Units rows instead of the current 08/28 batch.
+- [ ] Inspect all 08/28 OneSite All Units row statuses across the first four My Reports pages and reconcile the three entries not returned by the completed-only scan before any download.
+- [ ] Replace exploratory batch scanning with a streamlined current-day All Units download list that excludes historical workbooks and stages only visible completed 08/28 provider outputs for filing.
+- [ ] Increase and verify My Reports pagination-settle timing in the staged downloader after it returned only the first page’s ten workbooks despite four-page traversal.
+- [ ] Replace the failed generic current-batch row filter with a direct property-aware My Reports grid-cell matcher, using the actual provider cell order before staging remaining workbooks.
+- [ ] Make the current-batch downloader wait for a verified My Reports grid-row signature change after every Previous or Next Entries action before scanning the next page.
+- [ ] Remove the failing My Reports first-page reset from the staged downloader and rely on the provider’s 50-entry view to expose the current batch in one screen.
+- [ ] Preserve the existing 35-property OneSite Select All run and repair only its multi-page file staging so all completed current outputs—not a newly generated subset—are filed.
+- [x] File the ten verified staged current All Units workbooks with original and responsive HTML companion documents, while retaining Request #60001 as in progress until the remaining provider outputs are reconciled.
+- [ ] Discover and configure the source-isolated Yardi reporting connection and catalog-import workflow only after OneSite filing is complete, without reusing OneSite sessions, credentials, settings, or artifacts.
+- [ ] Synchronize, validate, and publish the Yardi report catalog in the existing Yardi Pull Reports section without generating a Yardi report.
+- [ ] Add a source-isolated Yardi sign-in initiation and session-status flow that uses only the authorized Yardi browser context and stores no Yardi credentials, cookies, MFA codes, or session tokens in the portal.
+- [ ] Collect and synchronize the Yardi report catalog after the authorized Yardi session is confirmed, without generating a Yardi report or reusing OneSite source data.
+- [x] Define and verify the Yardi-only session, credential, catalog, storage, and runner-token boundaries before implementing its sign-in flow.
+- [x] Implement a Yardi-only portal sign-in initiation and session-status experience with no persisted credentials, browser cookies, MFA codes, or OneSite session reuse.
+- [ ] Implement the Yardi-only local catalog collector and source-isolated portal synchronization contract without generating reports.
+- [x] Add a Pacific-time after-hours and weekend reminder to block or clearly discourage new portal work actions after 6:00 PM on weekdays and throughout Saturday/Sunday, without triggering provider execution.
+- [x] Make property directory queries source-scoped so Yardi request forms and filed-report workflows cannot display or select OneSite property records.
 - [x] Replace “All active properties” with “All Properties” throughout the Pull Reports property-scope controls and confirmation copy.
 - [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
 - [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

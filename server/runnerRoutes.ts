@@ -207,7 +207,7 @@ function registerRoutesForRunner(app: Express, definition: RunnerDefinition) {
         res.status(413).json({ error: "Document must be between 1 byte and 25 MB." });
         return;
       }
-      const property = await getPropertyByName(propertyName);
+      const property = await getPropertyByName(propertyName, definition.source);
       const filename = safeFilename(originalFilename);
       const propertyFolder = safeFolderName(property?.name ?? propertyName);
       const filingDate = new Date().toISOString().slice(0, 10);

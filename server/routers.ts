@@ -35,6 +35,7 @@ import {
 import { knownOperationalLimitations } from "./operationalLimitations";
 import { catalogSaveSchema, propertySaveSchema, reportUserDefaultsSaveSchema, requestCreateSchema, runnerSourceSchema } from "./validation";
 import { getCatalogParameterDefinitions, getCompleteProviderEligiblePropertyNames, requiresProviderEligibility, validateCatalogParameterValues } from "./reportParameters";
+import { afterHoursWorkMessage, isOutsideWorkHours } from "./workHours";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required for this operation." });
@@ -79,7 +80,7 @@ export const appRouter = router({
   }),
 
   properties: router({
-    list: protectedProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query(({ ctx, input }) => input?.includeInactive && ctx.user.role === "admin" ? listProperties(true) : listAccessibleProperties(ctx.user)),
+    list: protectedProcedure.input(z.object({ includeInactive: z.boolean().optional(), source: runnerSourceSchema.optional() }).optional()).query(({ ctx, input }) => input?.includeInactive && ctx.user.role === "admin" ? listProperties(true, input.source) : listAccessibleProperties(ctx.user, input?.source)),
     details: protectedProcedure.input(z.object({ id: z.number().int().positive() })).query(({ ctx, input }) => getAccessiblePropertyHistory(ctx.user, input.id)),
     save: adminProcedure.input(propertySaveSchema).mutation(({ input }) => upsertProperty(input)),
   }),
@@ -100,6 +101,7 @@ export const appRouter = router({
     }),
     defaults: adminProcedure.input(z.object({ source: runnerSourceSchema, catalogId: z.number().int().positive() })).query(({ ctx, input }) => getReportUserDefaults({ source: input.source, reportCatalogId: input.catalogId, userId: ctx.user.id })),
     saveDefaults: adminProcedure.input(reportUserDefaultsSaveSchema).mutation(async ({ ctx, input }) => {
+      if (isOutsideWorkHours()) throw new TRPCError({ code: "FORBIDDEN", message: afterHoursWorkMessage });
       const catalogEntry = await getCatalogEntryById(input.catalogId);
       if (!catalogEntry || !catalogEntry.active || catalogEntry.source !== input.source) throw new TRPCError({ code: "BAD_REQUEST", message: "Select an active report from the matching source catalog." });
       if (!catalogEntry.availableFormats.includes(input.requestedFormat)) throw new TRPCError({ code: "BAD_REQUEST", message: "The selected format is not approved for this source report." });
@@ -110,6 +112,7 @@ export const appRouter = router({
     updateHistoryNote: adminProcedure.input(z.object({ requestId: z.number().int().positive(), historyNote: z.string().max(4000) })).mutation(({ ctx, input }) => updateReportHistoryNote({ ...input, actorId: ctx.user.id })),
     archiveHistoryEntry: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => archiveReportHistoryEntry({ ...input, actorId: ctx.user.id })),
     create: adminProcedure.input(requestCreateSchema).mutation(async ({ ctx, input }) => {
+      if (isOutsideWorkHours()) throw new TRPCError({ code: "FORBIDDEN", message: afterHoursWorkMessage });
       if (input.requestType === "sync_my_reports") return createReportRequest({ ...input, requestedById: ctx.user.id });
       const catalogEntry = await getCatalogEntryById(input.catalogId!);
       if (!catalogEntry || !catalogEntry.active || catalogEntry.source !== input.source) throw new TRPCError({ code: "BAD_REQUEST", message: "Select an active report from the matching source catalog." });
