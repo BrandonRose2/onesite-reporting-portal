@@ -53,11 +53,24 @@ export const reportRequests = mysqlTable("reportRequests", {
   summaryHtml: text("summaryHtml"),
   sourceRunReference: varchar("sourceRunReference", { length: 500 }),
   requestedById: int("requestedById"),
+  executionAuthorizedById: int("executionAuthorizedById"),
+  executionAuthorizedAt: timestamp("executionAuthorizedAt"),
   claimedAt: timestamp("claimedAt"),
   completedAt: timestamp("completedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("report_requests_source_status_created_idx").on(table.source, table.status, table.createdAt), index("report_requests_requester_created_idx").on(table.requestedById, table.createdAt)]);
+
+export const reportUserDefaults = mysqlTable("reportUserDefaults", {
+  id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["onesite", "yardi"]).notNull(),
+  reportCatalogId: int("reportCatalogId").notNull(),
+  userId: int("userId").notNull(),
+  requestedFormat: mysqlEnum("requestedFormat", ["excel", "pdf", "csv"]).notNull(),
+  parameterValues: json("parameterValues").$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("report_user_defaults_source_catalog_user_unique").on(table.source, table.reportCatalogId, table.userId), index("report_user_defaults_user_updated_idx").on(table.userId, table.updatedAt)]);
 
 export const requestProperties = mysqlTable("requestProperties", {
   id: int("id").autoincrement().primaryKey(),

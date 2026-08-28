@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, like, notInArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, like, notInArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -9,6 +9,7 @@ import {
   reportCatalog,
   reportDocuments,
   reportRequests,
+  reportUserDefaults,
   requestEvents,
   requestProperties,
   users,
@@ -134,6 +135,7 @@ export async function createReportRequest(input: {
   requestedById: number;
   propertyId?: number;
   eligiblePropertyNames?: string[];
+  executionAuthorized: boolean;
 }) {
   const db = await requireDb();
   return db.transaction(async tx => {
@@ -164,6 +166,8 @@ export async function createReportRequest(input: {
       requestedFormat: input.requestedFormat,
       parameters: input.parameters,
       requestedById: input.requestedById,
+      executionAuthorizedById: input.executionAuthorized ? input.requestedById : null,
+      executionAuthorizedAt: input.executionAuthorized ? new Date() : null,
     });
     const requestId = requestResult.insertId;
 
@@ -175,9 +179,26 @@ export async function createReportRequest(input: {
       })));
     }
 
-    await tx.insert(requestEvents).values({ requestId, eventType: "queued", detail: "Report request submitted from the internal portal." });
+    await tx.insert(requestEvents).values({ requestId, eventType: input.executionAuthorized ? "execution_authorized" : "queued", detail: input.executionAuthorized ? "Report request was explicitly approved for the authorized local runner." : "Report request saved without provider-execution authorization." });
     return requestId;
   });
+}
+
+export async function getReportUserDefaults(input: { source: RunnerSource; reportCatalogId: number; userId: number }) {
+  const db = await requireDb();
+  return (await db.select().from(reportUserDefaults).where(and(
+    eq(reportUserDefaults.source, input.source),
+    eq(reportUserDefaults.reportCatalogId, input.reportCatalogId),
+    eq(reportUserDefaults.userId, input.userId),
+  )).limit(1))[0];
+}
+
+export async function upsertReportUserDefaults(input: { source: RunnerSource; reportCatalogId: number; userId: number; requestedFormat: "excel" | "pdf" | "csv"; parameterValues: Record<string, unknown> }) {
+  const db = await requireDb();
+  await db.insert(reportUserDefaults).values(input).onDuplicateKeyUpdate({
+    set: { requestedFormat: input.requestedFormat, parameterValues: input.parameterValues, updatedAt: new Date() },
+  });
+  return getReportUserDefaults(input);
 }
 
 export async function listRecentRequests(limit = 25, source?: RunnerSource) {
@@ -431,7 +452,7 @@ export async function getDashboardOverview() {
 export async function claimRunnerRequest(input: { source: RunnerSource; requestId?: number; minimumRequestId?: number }) {
   const db = await requireDb();
   return db.transaction(async tx => {
-    const conditions = [eq(reportRequests.status, "queued"), eq(reportRequests.source, input.source)];
+    const conditions = [eq(reportRequests.status, "queued"), eq(reportRequests.source, input.source), isNotNull(reportRequests.executionAuthorizedAt)];
     if (input.requestId) conditions.push(eq(reportRequests.id, input.requestId));
     if (input.minimumRequestId) conditions.push(gte(reportRequests.id, input.minimumRequestId));
     const candidate = (await tx.select().from(reportRequests).where(and(...conditions)).orderBy(asc(reportRequests.createdAt)).limit(1))[0];

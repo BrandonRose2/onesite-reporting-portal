@@ -176,3 +176,11 @@
 - [x] Withdraw the disproven ten-property All Units eligibility metadata and server-side request restriction before any report can be queued.
 - [ ] Rebuild the read-only All Units Edge collector to identify and traverse the actual provider property-list container, using the user’s prior multi-property report evidence as a completeness cross-check.
 - [x] Hide zero-balance rows by default in the manager checklist, provide an explicit reveal control, and preserve the original report and all review-state records unchanged.
+- [ ] Inspect the newly queued all-properties OneSite Rent Roll request, reconcile its exact settings and property scope, and require a final explicit approval before the local Edge runner claims it.
+- [ ] Convert the OneSite portal request action into an explicit confirmation-on-click handoff that applies approved parameters and scope through the authorized Mac Edge runner, then records runner progress and filed outputs.
+- [x] Add a server-side execution-authorization flag so the local Edge runner can claim only requests confirmed in the portal; leave existing queued requests non-runnable until expressly approved.
+- [x] Add a final portal confirmation dialog that summarizes source, report, format, parameters, and scope before authorizing the OneSite handoff.
+- [x] Correct and document the local Mac Edge runner service startup path so it can process only portal-authorized requests while the user’s Edge Reports session is available.
+- [ ] Add a source-isolated one-time setup experience per report that captures provider-supported defaults, stores approved defaults independently for OneSite and Yardi, and reopens later runs prefilled but editable.
+- [ ] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
+- [ ] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

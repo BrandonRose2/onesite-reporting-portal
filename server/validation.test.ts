@@ -17,4 +17,10 @@ describe("portal input validation", () => {
     expect(requestCreateSchema.safeParse({ requestType: "generate_all_properties", requestedReportName: "Delinquency", requestedFormat: "excel", propertyId: 3, parameters: {} }).success).toBe(false);
     expect(requestCreateSchema.safeParse({ requestType: "generate_property", catalogId: 12, requestedReportName: "Delinquency", requestedFormat: "excel", propertyId: 3, parameters: {} }).success).toBe(true);
   });
+
+  it("defaults new report requests to non-runnable until an explicit portal authorization is supplied", () => {
+    const base = { requestType: "generate_all_properties", catalogId: 12, requestedReportName: "Delinquency", requestedFormat: "excel", parameters: {} };
+    expect(requestCreateSchema.parse(base).executionAuthorized).toBe(false);
+    expect(requestCreateSchema.parse({ ...base, executionAuthorized: true }).executionAuthorized).toBe(true);
+  });
 });

@@ -36,6 +36,7 @@ export const requestCreateSchema = z.object({
   requestedFormat: reportFormatSchema,
   parameters: metadataSchema,
   propertyId: z.number().int().positive().optional(),
+  executionAuthorized: z.boolean().default(false),
 }).superRefine((value, context) => {
   if (value.requestType === "generate_property" && !value.propertyId) {
     context.addIssue({ code: "custom", message: "A property is required for a single-property request.", path: ["propertyId"] });
@@ -46,4 +47,11 @@ export const requestCreateSchema = z.object({
   if (value.requestType !== "sync_my_reports" && !value.catalogId) {
     context.addIssue({ code: "custom", message: "An approved catalog report is required.", path: ["catalogId"] });
   }
+});
+
+export const reportUserDefaultsSaveSchema = z.object({
+  source: runnerSourceSchema,
+  catalogId: z.number().int().positive(),
+  requestedFormat: reportFormatSchema,
+  parameters: metadataSchema,
 });
