@@ -209,11 +209,15 @@
 - [ ] Synchronize, validate, and publish the Yardi report catalog in the existing Yardi Pull Reports section without generating a Yardi report.
 - [ ] Add a source-isolated Yardi sign-in initiation and session-status flow that uses only the authorized Yardi browser context and stores no Yardi credentials, cookies, MFA codes, or session tokens in the portal.
 - [ ] Collect and synchronize the Yardi report catalog after the authorized Yardi session is confirmed, without generating a Yardi report or reusing OneSite source data.
+- [ ] Inspect the recovered runner’s Elevate → Voyager 8 navigation and catalog code, then use that exact source-isolated path for the authorized Edge catalog collection.
+- [ ] Extend the Yardi-only Microsoft Edge helper to recognize the authorized Elevate Voyager 8 host in addition to YardiOne, without accepting any unrelated or OneSite browser tab.
+- [x] Collect every Yardi Elevate Voyager 8 report title and available metadata from each Reports sidebar category, Affordable through System, without opening report-run forms or generating reports.
 - [x] Define and verify the Yardi-only session, credential, catalog, storage, and runner-token boundaries before implementing its sign-in flow.
 - [x] Implement a Yardi-only portal sign-in initiation and session-status experience with no persisted credentials, browser cookies, MFA codes, or OneSite session reuse.
-- [ ] Implement the Yardi-only local catalog collector and source-isolated portal synchronization contract without generating reports.
+- [x] Implement the Yardi-only local catalog collector and source-isolated portal synchronization contract without generating reports.
 - [x] Add a Pacific-time after-hours and weekend reminder to block or clearly discourage new portal work actions after 6:00 PM on weekdays and throughout Saturday/Sunday, without triggering provider execution.
 - [x] Make property directory queries source-scoped so Yardi request forms and filed-report workflows cannot display or select OneSite property records.
 - [x] Replace “All active properties” with “All Properties” throughout the Pull Reports property-scope controls and confirmation copy.
+- [x] Preserve unverified Yardi report formats as unconfigured during catalog synchronization, rather than defaulting any uninspected report to Excel.
 - [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
 - [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

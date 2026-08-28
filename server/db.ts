@@ -545,6 +545,11 @@ export async function getRunnerSessionStatus(source: RunnerSource) {
   return getOperationalConfig(`runner_session:${source}`);
 }
 
+export function resolveCatalogFormats(source: RunnerSource, formats?: Array<"excel" | "pdf" | "csv">): Array<"excel" | "pdf" | "csv"> {
+  if (formats?.length) return formats;
+  return source === "onesite" ? ["excel"] : [];
+}
+
 export async function syncCatalogFromRunner(source: RunnerSource, reports: Array<{ catalogKey: string; name: string; reportArea?: string; reportLevel?: string; product?: string; availableFormats?: Array<"excel" | "pdf" | "csv">; runnerMetadata?: Record<string, unknown> }>, options: { expectedTotal: number; complete: boolean }) {
   if (!options.complete || !Number.isInteger(options.expectedTotal) || options.expectedTotal < 1 || reports.length !== options.expectedTotal) {
     throw new Error("Catalog synchronization requires a complete payload whose expected total matches its report count.");
@@ -563,7 +568,7 @@ export async function syncCatalogFromRunner(source: RunnerSource, reports: Array
         reportArea: report.reportArea ?? null,
         reportLevel: report.reportLevel ?? null,
         product: report.product ?? null,
-        availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
+        availableFormats: resolveCatalogFormats(source, report.availableFormats),
         runnerMetadata: suppliedMetadata ?? currentByKey.get(report.catalogKey)?.runnerMetadata ?? {},
         active: true,
       }).onDuplicateKeyUpdate({ set: {
@@ -571,7 +576,7 @@ export async function syncCatalogFromRunner(source: RunnerSource, reports: Array
         reportArea: report.reportArea ?? null,
         reportLevel: report.reportLevel ?? null,
         product: report.product ?? null,
-        availableFormats: report.availableFormats?.length ? report.availableFormats : ["excel"],
+        availableFormats: resolveCatalogFormats(source, report.availableFormats),
         runnerMetadata: suppliedMetadata ?? currentByKey.get(report.catalogKey)?.runnerMetadata ?? {},
         active: true,
       } });
