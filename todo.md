@@ -227,5 +227,12 @@
 - [x] Cancel the queued macOS-only Request #60001 job and replace it with a connected-Microsoft-Edge-only reconciliation and filing path that requires no user Terminal or Mac runner.
 - [x] Build an authenticated Edge-only Request #60001 batch uploader that validates the 21 completed-but-unfiled property names, rejects provider exceptions and duplicate pairs, preserves originals, and creates responsive HTML companions without a Mac runner.
 - [ ] Use the authenticated batch uploader to file the remaining 21 completed Request #60001 workbooks from Microsoft Edge, keeping Cumberland and Urban Rehab in progress and Granite Elmwood Indiana Homes and Granite Valencia Villas as provider-error exceptions.
+- [ ] Establish and validate an agent-operated Microsoft Edge download-to-portal handoff for existing Request #60001 workbooks; do not create, rerun, or alter a provider report while resolving local download access.
+- [ ] Use only the already-open authenticated Microsoft Edge OneSite tab for Request #60001 retrieval; do not navigate, authenticate, or enter credentials in any separate RealPage login tab.
+- [ ] Confirm the active Edge tab is the user’s already-authenticated OneSite My Reports session before any further existing-result retrieval; do not use the separate RealPage login tab.
+- [ ] Verify the user-confirmed active Edge tab is attached to the authenticated OneSite My Reports grid before any Request #60001 existing-result download attempt.
+- [ ] Implement a fully agent-operated Microsoft Edge-to-portal handoff for existing Request #60001 workbooks so the user never downloads, selects, uploads, or handles report files manually.
+- [x] Build and audit a Microsoft Edge companion that transfers only user-approved, already-generated Request #60001 Excel downloads directly to the authenticated portal, with fixed RealPage and portal origin allowlists, no credential/session/cookie access, and no provider report-generation capability.
+- [ ] Obtain one-time consent to install and pair the restricted Edge companion, then validate direct filing of an existing eligible Request #60001 workbook before processing additional outputs.
 - [x] Add consistent pencil-icon metadata editing to pulled-report history in both library and property views.
 - [x] Add deliberate double-click trash controls for report-history deletion, with a separate explicit safeguard for original provider-file removal and auditable deletion events.

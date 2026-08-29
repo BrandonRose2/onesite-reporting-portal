@@ -37,6 +37,7 @@ import { catalogSaveSchema, propertySaveSchema, reportUserDefaultsSaveSchema, re
 import { getCatalogParameterDefinitions, getCompleteProviderEligiblePropertyNames, requiresProviderEligibility, validateCatalogParameterValues } from "./reportParameters";
 import { afterHoursWorkMessage, isOutsideWorkHours } from "./workHours";
 import { fileOneSite60001BrowserWorkbook, getOneSite60001BrowserUploadPlan } from "./browserBatchFiling";
+import { issueOneSite60001EdgeFilingCapability, isValidExtensionId } from "./edgeFilingTransfer";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Administrator access is required for this operation." });
@@ -161,6 +162,7 @@ export const appRouter = router({
 
   batchFiling: router({
     oneSite60001Plan: adminProcedure.query(() => getOneSite60001BrowserUploadPlan()),
+    createOneSite60001EdgeCapability: adminProcedure.input(z.object({ extensionId: z.string().refine(isValidExtensionId, "The Edge companion identity is invalid.") })).mutation(({ input }) => issueOneSite60001EdgeFilingCapability(input.extensionId)),
     uploadOneSite60001Workbook: adminProcedure.input(z.object({ propertyName: z.string().trim().min(1).max(255), originalFilename: z.string().trim().min(1).max(180), dataBase64: z.string().min(4).max(34 * 1024 * 1024) })).mutation(async ({ input }) => {
       if (isOutsideWorkHours()) throw new TRPCError({ code: "FORBIDDEN", message: afterHoursWorkMessage });
       return fileOneSite60001BrowserWorkbook(input);

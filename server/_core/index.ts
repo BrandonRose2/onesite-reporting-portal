@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerRunnerRoutes } from "../runnerRoutes";
 import { registerReportSummaryRoutes } from "../reportSummaryRoutes";
+import { registerEdgeFilingRoutes } from "../edgeFilingRoutes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -40,6 +41,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerRunnerRoutes(app);
   registerReportSummaryRoutes(app);
+  registerEdgeFilingRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -52,7 +52,6 @@ export async function fileOneSite60001BrowserWorkbook(input: { propertyName: str
   const workbookBytes = decodeBase64(input.dataBase64);
   const filingDate = new Date().toISOString().slice(0, 10);
   const propertyFolder = safeFolderName(property.name);
-  const original = await storagePut(`OneSite-Reporting/${propertyFolder}/${filingDate}/${ONESITE_60001.requestId}-${nanoid(10)}-${filename}`, workbookBytes, contentType(filename));
   let html: string;
   try {
     const contacts = await getManagerContactMatch(property.name);
@@ -62,7 +61,7 @@ export async function fileOneSite60001BrowserWorkbook(input: { propertyName: str
       reportName: ONESITE_60001.reportName,
       propertyNames: [property.name],
       originalFilename: filename,
-      originalFileUrl: original.url,
+      originalFileUrl: "https://original-file.example.invalid/",
       workbookBytes,
       contactMatches: [{ propertyName: property.name, ...contacts }],
     });
@@ -70,6 +69,8 @@ export async function fileOneSite60001BrowserWorkbook(input: { propertyName: str
     throw new Error("The uploaded file could not be parsed as a readable Excel workbook. The original was not added to this request.");
   }
   if (Buffer.byteLength(html) > 5 * 1024 * 1024) throw new Error("The generated HTML companion exceeds the 5 MB safety limit. The original was not added to this request.");
+  const original = await storagePut(`OneSite-Reporting/${propertyFolder}/${filingDate}/${ONESITE_60001.requestId}-${nanoid(10)}-${filename}`, workbookBytes, contentType(filename));
+  html = html.replaceAll("https://original-file.example.invalid/", original.url);
   const htmlFilename = filename.replace(/\.xls[x]?$/i, ".html");
   const htmlDocument = await storagePut(`OneSite-Reporting/${propertyFolder}/${filingDate}/${ONESITE_60001.requestId}-${nanoid(10)}-${htmlFilename}`, html, "text/html");
   await createReportDocumentPair({
