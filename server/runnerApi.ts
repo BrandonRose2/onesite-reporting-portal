@@ -1,9 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Express, Request } from "express";
 import { and, asc, desc, eq, gte, notInArray } from "drizzle-orm";
-import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
+import { properties, propertyContacts, propertySources, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses } from "../drizzle/schema";
 import { getDb } from "./db";
 import { storagePut } from "./storage";
+import { classifySessionSignal, isSessionStatus, resolveProvider, resolveSourceSystem } from "./providerSessions";
 
 function isAuthorized(req: Request) {
   const expected = process.env.ONESITE_RUNNER_TOKEN;
@@ -39,12 +40,24 @@ export function registerOneSiteRunnerApi(app: Express) {
 
   app.post("/api/onesite-runner/live-edge-status", async (req, res) => {
     if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
-    const status = req.body?.status;
-    if (!['ready', 'unavailable', 'interactive_required'].includes(status)) return res.status(400).json({ ok: false, error: "A valid live Edge status is required" });
-    const detail = typeof req.body?.detail === "string" ? req.body.detail.slice(0, 4096) : null;
+    // Omitting `provider` keeps the already-deployed OneSite runner working unchanged.
+    const provider = resolveProvider(req.body?.provider);
+
+    // A runner may either report a status directly, or hand over the Edge tab it
+    // observed and let the portal classify it. The second form keeps sign-in
+    // interpretation in one tested place instead of in AppleScript.
+    let status = req.body?.status;
+    let detail = typeof req.body?.detail === "string" ? req.body.detail.slice(0, 4096) : null;
+    if (req.body?.observed && typeof req.body.observed === "object") {
+      const classified = classifySessionSignal(provider, req.body.observed);
+      status = classified.status;
+      detail = classified.detail.slice(0, 4096);
+    }
+    if (!isSessionStatus(status)) return res.status(400).json({ ok: false, error: "A valid live Edge status is required" });
+
     const db = await getDb();
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
-    const [existing] = await db.select().from(runnerConnectionStatuses).where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge")).limit(1);
+    const [existing] = await db.select().from(runnerConnectionStatuses).where(eq(runnerConnectionStatuses.runnerKey, provider.runnerKey)).limit(1);
     const now = new Date();
     if (existing) {
       await db.update(runnerConnectionStatuses).set({
@@ -56,7 +69,7 @@ export function registerOneSiteRunnerApi(app: Express) {
       }).where(eq(runnerConnectionStatuses.id, existing.id));
     } else {
       await db.insert(runnerConnectionStatuses).values({
-        runnerKey: "macos-live-edge",
+        runnerKey: provider.runnerKey,
         connectionMode: "live_microsoft_edge",
         status,
         detail,
@@ -64,7 +77,7 @@ export function registerOneSiteRunnerApi(app: Express) {
         ...(status === "ready" ? { lastReadyAt: now } : {}),
       });
     }
-    res.status(200).json({ ok: true, status });
+    res.status(200).json({ ok: true, provider: provider.provider, status, detail });
   });
 
   app.post("/api/onesite-runner/catalog/sync", async (req, res) => {
@@ -149,14 +162,27 @@ export function registerOneSiteRunnerApi(app: Express) {
     if (requestedId !== null && !Number.isInteger(requestedId)) return res.status(400).json({ ok: false, error: "A valid request ID is required" });
     const minimumRequestId = req.body?.minimumRequestId === undefined ? null : Number(req.body.minimumRequestId);
     if (minimumRequestId !== null && (!Number.isInteger(minimumRequestId) || minimumRequestId < 1)) return res.status(400).json({ ok: false, error: "A valid minimum request ID is required" });
+    const sourceSystem = resolveSourceSystem(req.body?.sourceSystem);
     const [request] = await db.select().from(reportRequests)
-      .where(and(eq(reportRequests.sourceSystem, "realpage"), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)]), ...(minimumRequestId === null ? [] : [gte(reportRequests.id, minimumRequestId)])))
+      .where(and(eq(reportRequests.sourceSystem, sourceSystem), eq(reportRequests.status, "queued"), ...(requestedId === null ? [] : [eq(reportRequests.id, requestedId)]), ...(minimumRequestId === null ? [] : [gte(reportRequests.id, minimumRequestId)])))
       .orderBy(desc(reportRequests.requestedAt))
       .limit(1);
     if (!request) return res.status(200).json({ ok: true, request: null });
+
+    // Yardi runs only ever touch properties explicitly mapped to Yardi. If that
+    // mapping is missing we refuse rather than silently running the whole
+    // portfolio through the wrong provider.
+    const activeProperties = sourceSystem === "yardi"
+      ? await db.select({ id: properties.id, externalId: properties.externalId, name: properties.name })
+          .from(properties).innerJoin(propertySources, eq(propertySources.propertyId, properties.id))
+          .where(and(eq(properties.isActive, true), eq(propertySources.sourceSystem, "yardi"))).orderBy(asc(properties.name))
+      : await db.select({ id: properties.id, externalId: properties.externalId, name: properties.name })
+          .from(properties).where(and(eq(properties.isActive, true), notInArray(properties.externalId, ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS))).orderBy(asc(properties.name));
+    if (sourceSystem === "yardi" && !activeProperties.length) {
+      await db.update(reportRequests).set({ status: "failed", errorMessage: "No active property is mapped to Yardi. Map the Yardi properties in propertySources before queueing a Yardi run.", completedAt: new Date() }).where(eq(reportRequests.id, request.id));
+      return res.status(409).json({ ok: false, error: "No active property is mapped to Yardi." });
+    }
     await db.update(reportRequests).set({ status: "running", startedAt: new Date() }).where(eq(reportRequests.id, request.id));
-    const activeProperties = await db.select({ id: properties.id, externalId: properties.externalId, name: properties.name })
-      .from(properties).where(and(eq(properties.isActive, true), notInArray(properties.externalId, ONESITE_EXECUTION_EXCLUDED_EXTERNAL_IDS))).orderBy(asc(properties.name));
     const parameters = safeParameters(request.parameterJson);
     const scopedPropertyId = parameters.propertyScope === "specific_property" ? Number(parameters.propertyId) : null;
     const scopedProperties = scopedPropertyId && Number.isInteger(scopedPropertyId)
@@ -196,10 +222,10 @@ export function registerOneSiteRunnerApi(app: Express) {
     const db = await getDb();
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
     const [request] = await db.select().from(reportRequests).where(eq(reportRequests.id, requestId));
-    if (!request || request.sourceSystem !== "realpage") return res.status(404).json({ ok: false, error: "Report request not found" });
+    if (!request) return res.status(404).json({ ok: false, error: "Report request not found" });
     const [property] = await db.select().from(properties).where(eq(properties.name, propertyName));
     if (!property) return res.status(400).json({ ok: false, error: `No active portal property matches ${propertyName}` });
-    const stored = await storagePut(`onesite-reports/${requestId}/${property.externalId}/${safeStorageFilename(originalFilename)}`, data, mimeType);
+    const stored = await storagePut(`${request.sourceSystem === "yardi" ? "yardi-reports" : "onesite-reports"}/${requestId}/${property.externalId}/${safeStorageFilename(originalFilename)}`, data, mimeType);
     const [existingDocument] = await db.select({ id: reportDocuments.id }).from(reportDocuments)
       .where(and(eq(reportDocuments.reportRequestId, requestId), eq(reportDocuments.propertyId, property.id), eq(reportDocuments.originalFilename, originalFilename), eq(reportDocuments.documentKind, documentKind)))
       .limit(1);
@@ -221,7 +247,7 @@ export function registerOneSiteRunnerApi(app: Express) {
     const db = await getDb();
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
     const [request] = await db.select().from(reportRequests).where(eq(reportRequests.id, requestId));
-    if (!request || request.sourceSystem !== "realpage") return res.status(404).json({ ok: false, error: "Report request not found" });
+    if (!request) return res.status(404).json({ ok: false, error: "Report request not found" });
     await db.update(reportRequests).set({
       status,
       warningSummary: typeof req.body?.warningSummary === "string" ? req.body.warningSummary.slice(0, 65535) : null,
