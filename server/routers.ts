@@ -7,7 +7,8 @@ import { canAccessProperty, getPortalAccessForUser } from "./portalAccess";
 import { listAccessAssignableProperties, listPortalAccessRules, savePortalAccessRule, setPortalAccessRuleActive } from "./accessAdmin";
 import { compareReportingPeriods, getDashboard, getManagerChecklistState, getPeriodExportRows, getPropertyDetail, getSourceDocumentPreview, importDelinquencyBatch, listReportingPeriods, saveManagerChecklistState } from "./delinquency";
 import { getRealPageAutomation, listRealPageRuns, queueRealPageRun, saveRealPageAutomation } from "./automation";
-import { getLiveEdgeRunnerStatus, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportCatalogAdmin, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization, saveOneSiteReportCatalogEntry } from "./onesiteReporting";
+import { getLiveEdgeRunnerStatus,
+  getProviderSessionStatuses, getOneSiteReportDocumentUrl, listOneSiteInternalNotificationUsers, listOneSitePropertyContacts, listOneSiteReportCatalog, listOneSiteReportCatalogAdmin, listOneSiteReportDocuments, listOneSiteReportRequests, queueCatalogPropertyReportRequest, queueCatalogReportRequest, queueCustomReportRequest, queueMyReportsSynchronization, saveOneSiteReportCatalogEntry } from "./onesiteReporting";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -122,6 +123,7 @@ export const appRouter = router({
     documents: portalProcedure.query(({ ctx }) => listOneSiteReportDocuments(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     documentUrl: portalProcedure.input(z.object({ documentId: z.number().int().positive() })).mutation(({ input, ctx }) => getOneSiteReportDocumentUrl(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     liveEdgeStatus: portfolioProcedure.query(() => getLiveEdgeRunnerStatus()),
+    providerSessions: portfolioProcedure.query(() => getProviderSessionStatuses()),
     propertyContacts: portalProcedure.query(({ ctx }) => listOneSitePropertyContacts(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     internalNotificationUsers: portfolioProcedure.query(() => listOneSiteInternalNotificationUsers()),
     queueCatalogReport: adminProcedure.input(z.object({

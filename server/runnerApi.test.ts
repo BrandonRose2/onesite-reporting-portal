@@ -2,11 +2,13 @@ import express from "express";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { registerOneSiteRunnerApi } from "./runnerApi";
+import { PROVIDER_SESSIONS } from "./providerSessions";
 
 describe("OneSite runner token", () => {
-  it("accepts the configured token at the lightweight runner health endpoint", async () => {
-    const token = process.env.ONESITE_RUNNER_TOKEN;
-    expect(token).toBeTruthy();
+  // Requires the deployment secret; skipped on a checkout that has not configured it
+  // so a fresh clone reports honestly instead of failing on a missing env var.
+  it.skipIf(!process.env.ONESITE_RUNNER_TOKEN)("accepts the configured token at the lightweight runner health endpoint", async () => {
+    const token = process.env.ONESITE_RUNNER_TOKEN!;
     const app = express();
     registerOneSiteRunnerApi(app);
     const server = await new Promise<ReturnType<typeof app.listen>>(resolve => {
@@ -39,11 +41,26 @@ describe("OneSite runner token", () => {
     }
   });
 
-  it("registers a protected live Microsoft Edge readiness endpoint", () => {
+  it("registers a protected live Microsoft Edge readiness endpoint for each source site", () => {
     const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
     expect(source).toContain('"/api/onesite-runner/live-edge-status"');
-    expect(source).toContain('"macos-live-edge"');
     expect(source).toContain('"x-onesite-runner-token"');
+    // The runner key moved into the provider registry so OneSite and Yardi each
+    // report their own session state instead of sharing one row.
+    expect(source).toContain("resolveProvider(req.body?.provider)");
+    expect(source).toContain("provider.runnerKey");
+    expect(PROVIDER_SESSIONS.onesite.runnerKey).toBe("macos-live-edge");
+    expect(PROVIDER_SESSIONS.yardi.runnerKey).not.toBe(PROVIDER_SESSIONS.onesite.runnerKey);
+  });
+
+  it("lets a Yardi runner claim, file, and complete its own requests", () => {
+    const source = readFileSync(new URL("./runnerApi.ts", import.meta.url), "utf8");
+    expect(source).toContain("resolveSourceSystem(req.body?.sourceSystem)");
+    expect(source).toContain("eq(reportRequests.sourceSystem, sourceSystem)");
+    // A Yardi run must never fall back to the whole portfolio.
+    expect(source).toContain('eq(propertySources.sourceSystem, "yardi")');
+    expect(source).toContain("No active property is mapped to Yardi");
+    expect(source).not.toContain('request.sourceSystem !== "realpage"');
   });
 
   it("registers a protected authorized property-contact synchronization endpoint", () => {

@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { properties, propertyContacts, reportCatalog, reportDocuments, reportRequests, runnerConnectionStatuses, users } from "../drizzle/schema";
 import { getDb } from "./db";
+import { PROVIDER_KEYS, PROVIDER_SESSIONS, type ProviderKey } from "./providerSessions";
 import { storageGet } from "./storage";
 
 export type ReportFormat = "excel" | "pdf" | "csv";
@@ -207,13 +208,36 @@ export async function listOneSiteInternalNotificationUsers() {
     .orderBy(asc(users.name));
 }
 
-export async function getLiveEdgeRunnerStatus() {
+export async function getLiveEdgeRunnerStatus(provider: ProviderKey = "onesite") {
   const db = await getDb();
   if (!db) return null;
   const [status] = await db.select().from(runnerConnectionStatuses)
-    .where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge"))
+    .where(eq(runnerConnectionStatuses.runnerKey, PROVIDER_SESSIONS[provider].runnerKey))
     .limit(1);
   return status ?? null;
+}
+
+/**
+ * Both source sessions, for the portal's connection panel. A provider with no
+ * row has never reported in, which is distinct from having reported trouble -
+ * the caller sees `status: null` rather than a fabricated "unavailable".
+ */
+export async function getProviderSessionStatuses() {
+  return Promise.all(PROVIDER_KEYS.map(async provider => {
+    const session = PROVIDER_SESSIONS[provider];
+    const status = await getLiveEdgeRunnerStatus(provider);
+    return {
+      provider,
+      label: session.label,
+      sourceSystem: session.sourceSystem,
+      signInUrl: session.signInUrl,
+      reportsUrl: session.reportsUrl,
+      status: status?.status ?? null,
+      detail: status?.detail ?? null,
+      checkedAt: status?.checkedAt ?? null,
+      lastReadyAt: status?.lastReadyAt ?? null,
+    };
+  }));
 }
 
 export async function listOneSitePropertyContacts(propertyIds?: number[]) {
