@@ -1,0 +1,23 @@
+[build]
+  command = "npx vite build"
+  publish = "dist/public"
+
+# Proxy API and file-storage calls straight through to the existing
+# Manus-hosted backend/database — this Netlify deploy is frontend-only.
+[[redirects]]
+  from = "/api/*"
+  to = "https://onesiterepor-tsrr864t.manus.space/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/manus-storage/*"
+  to = "https://onesiterepor-tsrr864t.manus.space/manus-storage/:splat"
+  status = 200
+  force = true
+
+# SPA fallback for client-side routing (must stay last).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
