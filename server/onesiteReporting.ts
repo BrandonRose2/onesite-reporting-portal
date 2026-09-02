@@ -207,11 +207,11 @@ export async function listOneSiteInternalNotificationUsers() {
     .orderBy(asc(users.name));
 }
 
-export async function getLiveEdgeRunnerStatus() {
+export async function getLiveEdgeRunnerStatus(runnerKey: string = "macos-live-edge") {
   const db = await getDb();
   if (!db) return null;
   const [status] = await db.select().from(runnerConnectionStatuses)
-    .where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge"))
+    .where(eq(runnerConnectionStatuses.runnerKey, runnerKey))
     .limit(1);
   return status ?? null;
 }

@@ -45,6 +45,7 @@ function Router() {
       <Route path={"/onesite-reports"}><PortalRoute><OneSiteReportingHub /></PortalRoute></Route>
       <Route path={"/report-catalog"}><PortalRoute><ReportCatalogManager /></PortalRoute></Route>
       <Route path={"/yardi-reports"}><PortalRoute><YardiReports /></PortalRoute></Route>
+      <Route path={"/request/yardi"}><PortalRoute><YardiReports /></PortalRoute></Route>
       <Route path={"/access"}><PortalRoute><AccessManagement /></PortalRoute></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

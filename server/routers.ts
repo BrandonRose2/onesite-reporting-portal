@@ -122,6 +122,7 @@ export const appRouter = router({
     documents: portalProcedure.query(({ ctx }) => listOneSiteReportDocuments(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     documentUrl: portalProcedure.input(z.object({ documentId: z.number().int().positive() })).mutation(({ input, ctx }) => getOneSiteReportDocumentUrl(input, ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     liveEdgeStatus: portfolioProcedure.query(() => getLiveEdgeRunnerStatus()),
+    liveYardiStatus: portfolioProcedure.query(() => getLiveEdgeRunnerStatus("macos-live-yardi")),
     propertyContacts: portalProcedure.query(({ ctx }) => listOneSitePropertyContacts(ctx.portalAccess.role === "manager" ? ctx.portalAccess.propertyIds ?? [] : undefined)),
     internalNotificationUsers: portfolioProcedure.query(() => listOneSiteInternalNotificationUsers()),
     queueCatalogReport: adminProcedure.input(z.object({

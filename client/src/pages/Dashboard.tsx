@@ -5,9 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import type { LiveEdgeStatus } from "@/pages/OneSiteReportingHub";
 import { Archive, ArrowRight, FileOutput, History } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
+
+function YardiSessionBadge({ status, isLoading }: { status: LiveEdgeStatus | null | undefined; isLoading: boolean }) {
+  if (isLoading) return <Badge className="border border-white/15 bg-white/10 px-3 py-1.5 text-white hover:bg-white/10">Checking Yardi…</Badge>;
+  if (status?.status === "ready") return <Badge className="border border-[#77d2c5] bg-[#0c7469] px-3 py-1.5 text-white hover:bg-[#0c7469]">Yardi online</Badge>;
+  const helper = status?.status === "interactive_required" ? "Yardi action required" : "Yardi offline";
+  return <Badge variant="outline" title={status?.detail ?? "The Mac runner has not confirmed a live Yardi/RealPage Voyager session recently."} className="border-[#e9c979] bg-[#5b4925] px-3 py-1.5 text-[#fff6dc] hover:bg-[#5b4925]">{helper}</Badge>;
+}
 
 function dateLabel(value: Date | string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
@@ -25,6 +33,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const requestsQuery = trpc.onesiteReporting.requests.useQuery();
   const documentsQuery = trpc.onesiteReporting.documents.useQuery();
+  const yardiStatusQuery = trpc.onesiteReporting.liveYardiStatus.useQuery(undefined, { refetchInterval: 30_000 });
   const quickLookReports = useMemo(() => (requestsQuery.data ?? [])
     .filter(({ request }) => request.status === "completed" || request.status === "completed_with_warnings")
     .slice(0, 4), [requestsQuery.data]);
@@ -40,6 +49,7 @@ export default function Dashboard() {
       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a9d8d1]">Apartment Corp</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-[-0.045em]"><ScrambleText text="AptCorp Property Reports" /></h1>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">Request, file, review, and follow up on property reporting in one secure workspace.</p>
+      <div className="mt-5 flex flex-wrap gap-2"><YardiSessionBadge status={yardiStatusQuery.data} isLoading={yardiStatusQuery.isLoading} /></div>
       <div className="portal-marquee mt-6" aria-hidden="true"><div><span>WORKBOOKS FILED</span><span>AUDIT TRAIL</span><span>PROPERTY SCOPE</span><span>REPORT READY</span><span>WORKBOOKS FILED</span><span>AUDIT TRAIL</span><span>PROPERTY SCOPE</span><span>REPORT READY</span></div></div>
     </section>
 

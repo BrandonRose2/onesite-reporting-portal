@@ -37,18 +37,26 @@ export function registerOneSiteRunnerApi(app: Express) {
     res.status(200).json({ ok: true, service: "onesite-reporting-hub" });
   });
 
+  const ALLOWED_LIVE_STATUS_RUNNER_KEYS: Record<string, string> = {
+    "macos-live-edge": "live_microsoft_edge",
+    "macos-live-yardi": "live_yardi_session",
+  };
+
   app.post("/api/onesite-runner/live-edge-status", async (req, res) => {
     if (!isAuthorized(req)) return res.status(401).json({ ok: false, error: "Unauthorized runner" });
     const status = req.body?.status;
     if (!['ready', 'unavailable', 'interactive_required'].includes(status)) return res.status(400).json({ ok: false, error: "A valid live Edge status is required" });
+    const requestedRunnerKey = typeof req.body?.runnerKey === "string" ? req.body.runnerKey : "macos-live-edge";
+    const connectionMode = ALLOWED_LIVE_STATUS_RUNNER_KEYS[requestedRunnerKey];
+    if (!connectionMode) return res.status(400).json({ ok: false, error: "Unrecognized runnerKey" });
     const detail = typeof req.body?.detail === "string" ? req.body.detail.slice(0, 4096) : null;
     const db = await getDb();
     if (!db) return res.status(503).json({ ok: false, error: "Reporting database unavailable" });
-    const [existing] = await db.select().from(runnerConnectionStatuses).where(eq(runnerConnectionStatuses.runnerKey, "macos-live-edge")).limit(1);
+    const [existing] = await db.select().from(runnerConnectionStatuses).where(eq(runnerConnectionStatuses.runnerKey, requestedRunnerKey)).limit(1);
     const now = new Date();
     if (existing) {
       await db.update(runnerConnectionStatuses).set({
-        connectionMode: "live_microsoft_edge",
+        connectionMode,
         status,
         detail,
         checkedAt: now,
@@ -56,8 +64,8 @@ export function registerOneSiteRunnerApi(app: Express) {
       }).where(eq(runnerConnectionStatuses.id, existing.id));
     } else {
       await db.insert(runnerConnectionStatuses).values({
-        runnerKey: "macos-live-edge",
-        connectionMode: "live_microsoft_edge",
+        runnerKey: requestedRunnerKey,
+        connectionMode,
         status,
         detail,
         checkedAt: now,
