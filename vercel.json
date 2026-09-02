@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npx vite build",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://onesiterepor-tsrr864t.manus.space/api/:path*" },
+    { "source": "/manus-storage/:path*", "destination": "https://onesiterepor-tsrr864t.manus.space/manus-storage/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
